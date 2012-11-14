@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+ <head>
+   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<!--
+   Copyright (C) 2012 Alexander Barth <a.barth at ulg.ac.be>.
+                                                                             
+   This program is free software: you can redistribute it and/or modify      
+   it under the terms of the GNU Affero General Public License as published  
+   by the Free Software Foundation, either version 3 of the License, or      
+   (at your option) any later version.                                       
+                                                                             
+   This program is distributed in the hope that it will be useful,           
+   but WITHOUT ANY WARRANTY; without even the implied warranty of            
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             
+   GNU Affero General Public License for more details.                       
+                                                                             
+   You should have received a copy of the GNU Affero General Public License  
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.     
+-->
+
+    <title>Data Assimilation Demo</title>
+    <!--<script type="text/javascript" src="jquery/js/jquery-1.3.2.min.js"></script>-->
+
+    <!--<link href="reset.css" rel="stylesheet" type="text/css" />-->
+    <link href="style.css" rel="stylesheet" type="text/css" />
+    <!--[if lt IE 9]><script type="text/javascript" src="flot/excanvas.min.js"></script><![endif]-->
+    <script type="text/javascript" src="flot/jquery.js"></script>
+    <script type="text/javascript" src="flot/jquery.flot.js"></script>
+    <script type="text/javascript" src="flot/jquery.flot.crosshair.js"></script> 
+
+    <!--<link type="text/css" href="jquery/css/ui-lightness/jquery-ui-1.7.3.custom.css" rel="stylesheet" />	
+    <script type="text/javascript" src="jquery/js/jquery-ui-1.7.3.custom.min.js"></script> -->
+    <script type="text/javascript" src="numeric-1.2.3.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+    <script type="text/javascript" src="AssimDemo.js"></script>
+    <script type="text/javascript">
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-36162818-1']);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+ </head>
+    <body>
+    <h1>Data Assimilation Demo</h1>
+    <div style="clear: both"></div>
+    <p class="abstract">This web-page aims to demonstrate the Kalman Filter with some simple linear toy models. First choose model and data assimilation parameters and then click on "Run assimilation"</p>
+    <!--[if lt IE 9]>
+    <p class="IE_warning">Note to Internet Explorer 8 users: The Internet Explorer 8 (or below) does not support many web standards correctly. Please use a standards-compliant browser such as <a href="http://www.mozilla.org/firefox/">Mozilla Firefox</a> or 
+      <a href="http://www.google.com/chrome/">Google Chrome</a>. Internet Explorer 9 (or later) also works.
+    <![endif]-->
+    <form>
+    <fieldset class="sec">
+      <legend>Model parameters</legend>
+    
+    <table>
+      <tbody>
+	<tr>
+	  <td><label for="model">Model</label></td><td><select id="model"></select></td>
+	</tr>
+	<tr>
+	  <td>Equation(s)</td><td id="model_eqn"></td>
+	</tr>
+	<tr>
+	  <td><label for="model">State vector size</label></td><td><span id="statevector_size"></span></td>
+	</tr>
+	<tr>
+	  <td><label for="nmax">Number of time steps</label></td><td><input type="text" id="nmax" value="40" pattern="[0-9]+" title="Postive number"></td>
+	</tr>
+	<tr>
+	  <td><label>True initial condition x<sup>i</sup></label></td><td id="statevector_xi"></td>
+	</tr>
+      </tbody>
+    </table>
+    </fieldset>
+
+
+    <fieldset class="sec">
+      <legend>Data assimilation parameters</legend>
+    
+    <table>
+      <tbody>
+	<tr>
+	  <td><label>Covariance matrix of initial condition error P<sup>i</sup></label></td><td id="covar_Pi"></td>
+	</tr>
+	<tr>
+	  <td><label>Covariance matrix of model error Q</label></td><td id="covar_Q"></td>
+	</tr>
+	<tr>
+	  <td><label>Observed every x grid points</label></td><td><input type="text" id="obs_xsteps" value="2" min="1" pattern="[0-9]+" title="Postive number"> </td>
+	</tr>
+	<tr>
+	  <td><label>Model time steps between observations</label></td><td><input type="text" id="obs_tsteps" value="5" min="1" pattern="[0-9]+" title="Postive number"> </td>
+	</tr>
+	<tr>
+	  <td><label>Observation error variance</label></td><td><input type="text" id="obs_var" value="0.2" pattern="[.0-9]+" title="Postive number"> </td>
+	</tr>
+	<tr>
+	  <td><label>Seed for random numbers</label></td><td><input type="text" id="randseed" value="3" pattern="[0-9]+" title="Postive number"> </td>
+	</tr>
+      </tbody>
+    </table>
+      <input id="update" type="submit" value="Run assimilation">
+      <input id="reset" type="button" value="Reset to defaults">
+    </fieldset>
+    </form>
+
+    <fieldset class="sec">
+      <legend>State vector</legend>
+      <div class="plot_param">
+	<label>Index</label><select id="statevector_index"></select> 
+	Show:
+	<input type="checkbox" id="show_truth" checked="checked">Truth
+	<input type="checkbox" id="show_freerun" checked="checked">Free run
+	<input type="checkbox" id="show_assimilation" checked="checked">Assimilation
+	<input type="checkbox" id="show_observations" checked="checked">Observations
+      </div>
+
+      <div id="state_vector" style="width:1200px;height:300px;"></div>
+    </fieldset>
+
+    <fieldset class="sec">
+      <legend>Error covariance</legend>
+        <div class="plot_param">
+	<label>Index 1</label><select id="covar_index_i"></select> 
+	<label>Index 2</label><select id="covar_index_j"></select> 
+	Show:
+	<input type="checkbox" id="show_covar_freerun" checked="checked">Free run
+	<input type="checkbox" id="show_covar_assimilation" checked="checked">Assimilation
+	</div>
+
+      <div id="error_covariance" style="width:1200px;height:300px;"></div>
+    </fieldset>
+
+    <p style="clear: both">Contact: Alexander Barth, a.barth at ulg.ac.be, 2012.</p>
+  </body>
+</html>

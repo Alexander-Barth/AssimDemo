@@ -1,0 +1,65 @@
+body {
+  font-family: sans-serif, Verdana;
+/*font-family:'Lucida Casual', 'Comic Sans MS';*/
+}
+
+h1 {
+ color: #008;
+ margin: 0.1em 0px;
+ text-shadow: rgba(0, 0, 0, 0.5) 0 2px 2px;
+}
+
+fieldset.sec {
+  border: 1px solid #888;
+  float:left; 
+  margin: 7px;
+  padding: 15px;
+}
+
+.sec legend {
+  border: 1px solid #888;
+  color: #008;
+  font-size: large;
+  font-weight: bold;
+  padding: 4px;
+}
+
+
+#warning {
+  color: red;
+  font-weight: bold;
+}
+
+.data {
+  font-weight: bold;
+}
+
+.IE_warning {
+  font-weight: bold;
+  font-size: large;
+  color: red;
+}
+.abstract {
+
+}
+
+.matrix_element {
+  border: 1px inset;
+/*  border: 1px solid;*/
+  margin: 0px;
+  padding: 0px;
+}
+
+.matrix {
+	border-spacing: 0;
+}
+.matrix td {
+  padding: 0px;
+}
+
+.sec > table > tbody > tr:nth-child(odd) {
+  background: #EEE;
+}
+.sec > table > tbody > tr:nth-child(even) {
+  background: #FFF;
+}
