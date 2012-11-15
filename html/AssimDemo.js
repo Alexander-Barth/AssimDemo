@@ -216,10 +216,14 @@ function AssimDemo() {
 	{'title': 'oscillation',
 	 'name': 'oscillation',
 	 'fun': function() {	     
-	     var f=1, Dt = 0.5, L = [[0,-f],[f,0]];
-	     var M = nu.dot(nu.inv(nu.add(nu.identity(2),nu.mul(-Dt/2,L))),
+	     var f=2*Math.PI, Dt = 0.1, L, M;
+	     /*
+	       // Crank-Nicolson
+	       L = [[0,f],[-f,0]];
+	       M = nu.dot(nu.inv(nu.add(nu.identity(2),nu.mul(-Dt/2,L))),
 			    nu.add(nu.identity(2),nu.mul(Dt/2,L)));
-				   
+	     */
+	     M = [[Math.cos(f*Dt), Math.sin(f*Dt)], [-Math.sin(f*Dt), Math.cos(f*Dt)]];
 	     return function(t,x) { return nu.dot(M,x) };
 	 }(),
 	 'n': 2,
