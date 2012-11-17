@@ -50,7 +50,7 @@ if (!Array.prototype.filter)
   {
     "use strict";
  
-    if (this == null)
+    if (this === null)
       throw new TypeError();
  
     var t = Object(this);
@@ -76,7 +76,7 @@ if (!Array.prototype.filter)
 
 function str2mat(str) {
     var rows = str.split(/ *; */);
-    return rows.map(function (r)  { return r.split(/ *, */).map(parseFloat); });
+    return rows.map(function (r) { return r.split(/ *, */).map(parseFloat); });
 
 }
 function mat2str(A) {
@@ -85,44 +85,42 @@ function mat2str(A) {
 }
 
 function MatInput(size,id) {
-    var i,j, $row;
+    var i, j, $row, $tbody;
     this.size = size;
     this.id = id;
     this.$elem = [];
-    
-    var $tbody;
 
     // create table for matrix
     $('#' + id).empty();
     $('#' + id).append($('<table/>').attr({'class': 'matrix'}).
-		       append($tbody = $('<tobdy/>')));
+                       append($tbody = $('<tobdy/>')));
 
 
     if (this.size.length === 1) {
-	$row = $('<tr/>');
+        $row = $('<tr/>');
 
-	for (i = 0; i<size[0]; i++) {
-	    this.$elem[i] = $('<input/>').attr({'type':'text','size': '1','class': 'matrix_element'});
+        for (i = 0; i<size[0]; i++) {
+            this.$elem[i] = $('<input/>').attr({'type':'text','size': '1','class': 'matrix_element'});
 
-	    $row.append($('<td/>').
-			append(this.$elem[i]));
-	}
-	    
-	$tbody.append($row);
+            $row.append($('<td/>').
+                        append(this.$elem[i]));
+        }
+        
+        $tbody.append($row);
     }
     else {
-	for (i = 0; i<size[0]; i++) {
-	    this.$elem[i] = [];
-	    $row = $('<tr/>');
-	    for (j = 0; j<size[1]; j++) {
-		this.$elem[i][j] = $('<input/>').attr({'type':'text','size': '1','class': 'matrix_element'});
+        for (i = 0; i<size[0]; i++) {
+            this.$elem[i] = [];
+            $row = $('<tr/>');
+            for (j = 0; j<size[1]; j++) {
+                this.$elem[i][j] = $('<input/>').attr({'type':'text','size': '1','class': 'matrix_element'});
 
-		$row.append($('<td/>').
-			    append(this.$elem[i][j]));
-	    }
-	    
-	    $tbody.append($row);
-	}
+                $row.append($('<td/>').
+                            append(this.$elem[i][j]));
+            }
+            
+            $tbody.append($row);
+        }
     }
 }
 
@@ -130,46 +128,48 @@ MatInput.prototype.val = function(data) {
     var i,j;
 
     if (this.size.length === 1) {
-	if (data) {
-	    // fill-in
-	    for (i = 0; i<this.size[0]; i++) {
-		this.$elem[i].val(data[i]);
-	    }
-	}
-	else {
-	    // get value
-	    data = [];
-	    
-	    for (i = 0; i<this.size[0]; i++) {
-		data[i] = parseFloat(this.$elem[i].val());
-	    }
-	}
-	return data;
+        if (data) {
+            // fill-in
+            for (i = 0; i<this.size[0]; i++) {
+                this.$elem[i].val(data[i]);
+            }
+        }
+        else {
+            // get value
+            data = [];
+            
+            for (i = 0; i<this.size[0]; i++) {
+                data[i] = parseFloat(this.$elem[i].val());
+            }
+        }
+        return data;
     }
 
     else {
-	if (data) {
-	    // fill-in
-	    for (i = 0; i<this.size[0]; i++) {
-		for (j = 0; j<this.size[1]; j++) {
-		    this.$elem[i][j].val(data[i][j]);
-		}
-	    }
-	}
-	else {
-	    // get value
-	    data = [];
-	    
-	    for (i = 0; i<this.size[0]; i++) {
-		data[i] = [];
+        if (data) {
+            // fill-in
+            for (i = 0; i<this.size[0]; i++) {
+                for (j = 0; j<this.size[1]; j++) {
+                    this.$elem[i][j].val(data[i][j]);
+                }
+            }
+        }
+        else {
+            // get value
+            data = [];
+            
+            for (i = 0; i<this.size[0]; i++) {
+                data[i] = [];
 
-		for (j = 0; j<this.size[1]; j++) {
-		    data[i][j] = parseFloat(this.$elem[i][j].val());
-		}
-	    }
-	    return data;
-	}
+                for (j = 0; j<this.size[1]; j++) {
+                    data[i][j] = parseFloat(this.$elem[i][j].val());
+                }
+            }
+            return data;
+        }
     }
+
+    return null;
 };
 
 
@@ -177,28 +177,28 @@ function AssimDemo() {
     var m, that = this;
 
     this.models = [
-	{'title': 'Identity matrix',
-	 'name': 'idmat',
-	 'fun': function(t,x) {
-	     return x;
-	 },
-	 'n': 2,
-	 'xit': [1,1],
-	 'Pi': nu.identity(2),
-	 'Q': nu.rep([2,2],0),
-	 'formula': '\\mathbf x^{(n+1)} = \\mathbf x^{(n)}'},
+        {'title': 'Identity matrix',
+         'name': 'idmat',
+         'fun': function(t,x) {
+             return x;
+         },
+         'n': 2,
+         'xit': [1,1],
+         'Pi': nu.identity(2),
+         'Q': nu.rep([2,2],0),
+         'formula': '\\mathbf x^{(n+1)} = \\mathbf x^{(n)}'},
 
 
-	{'title': '1D advection in periodic domain',
-	 'name': 'advection',
-	 'fun': function(t,x) {
-	     return nu.dot([[0,1,0,0],[0,0,1,0],[0,0,0,1],[1,0,0,0]],x);
-	 },
-	 'n': 4,
-	 'xit': [1.5,2,3,4],
-	 'Pi': nu.identity(4),
-	 'Q': nu.rep([4,4],0),
-	 'formula': '\
+        {'title': '1D advection in periodic domain',
+         'name': 'advection',
+         'fun': function(t,x) {
+             return nu.dot([[0,1,0,0],[0,0,1,0],[0,0,0,1],[1,0,0,0]],x);
+         },
+         'n': 4,
+         'xit': [1.5,2,3,4],
+         'Pi': nu.identity(4),
+         'Q': nu.rep([4,4],0),
+         'formula': '\
 \\begin{equation}     \
 \\mathbf x^{(n+1)} =  \
 \\left(               \
@@ -213,33 +213,33 @@ function AssimDemo() {
 \\end{equation}       \
 '},
 
-	{'title': 'oscillation',
-	 'name': 'oscillation',
-	 'fun': function() {	     
-	     var f=2*Math.PI, Dt = 0.1, L, M;
-	     /*
-	       // Crank-Nicolson
-	       L = [[0,f],[-f,0]];
-	       M = nu.dot(nu.inv(nu.add(nu.identity(2),nu.mul(-Dt/2,L))),
-			    nu.add(nu.identity(2),nu.mul(Dt/2,L)));
-	     */
-	     M = [[Math.cos(f*Dt), Math.sin(f*Dt)], [-Math.sin(f*Dt), Math.cos(f*Dt)]];
-	     return function(t,x) { return nu.dot(M,x) };
-	 }(),
-	 'n': 2,
-	 'xit': [1,0],
-	 'Pi': nu.identity(2),
-	 'Q': nu.rep([2,2],0),
-	 'formula': '\\begin{eqnarray} \
+        {'title': 'oscillation',
+         'name': 'oscillation',
+         'fun': function() {             
+             var f=2*Math.PI, Dt = 0.1, L, M;
+             /*
+             // Crank-Nicolson
+             L = [[0,f],[-f,0]];
+             M = nu.dot(nu.inv(nu.add(nu.identity(2),nu.mul(-Dt/2,L))),
+             nu.add(nu.identity(2),nu.mul(Dt/2,L)));
+             */
+             M = [[Math.cos(f*Dt), Math.sin(f*Dt)], [-Math.sin(f*Dt), Math.cos(f*Dt)]];
+             return function(t,x) { return nu.dot(M,x); };
+         }(),
+         'n': 2,
+         'xit': [1,0],
+         'Pi': nu.identity(2),
+         'Q': nu.rep([2,2],0),
+         'formula': '\\begin{eqnarray} \
 \\frac{dx_1}{dt}  &=& f x_2 \\\\ \
 \\frac{dx_2}{dt}  &=& -f x_1 \
 \\end{eqnarray}'}
 
-];   
+    ];   
 
 
     for (m in this.models)  {
-	$('#model').append($('<option />').attr({'value': this.models[m].name}).html(this.models[m].title));
+        $('#model').append($('<option />').attr({'value': this.models[m].name}).html(this.models[m].title));
     }
 
     $('#model').append($('<option />').attr({'value': 'myfun'}).text('My function in JavaScript'));
@@ -251,21 +251,21 @@ function AssimDemo() {
     this.updateModel();
 
     $('#model, #statevector_size').change(function() {
-	that.updateModel();
+        that.updateModel();
     });
 
     $('.plot_param').find('input, select').change(function() {
-	that.plot();
+        that.plot();
     });
 
 
     $('form').submit(function(e) {
-	that.run();
-	e.preventDefault();
+        that.run();
+        e.preventDefault();
     });
 
     $('#reset').click(function() {
-	that.resetModel();
+        that.resetModel();
     });
 
 }
@@ -274,21 +274,22 @@ AssimDemo.prototype.updateModel = function() {
     var m, i;
     
     if ($('#model').val() === 'myfun') {
-	$("#statevector_size").removeAttr('disabled');
-	$(".predefined_model").hide();
-	$('.custom_model').show();
+        $("#statevector_size").removeAttr('disabled');	
+	$('#statevector_size').val(2);
+        $(".predefined_model").hide();
+        $('.custom_model').show();
     }
     else {
-	$("#statevector_size").attr('disabled', 'disabled');
-	$(".predefined_model").show();
-	$('.custom_model').hide();
+        $("#statevector_size").attr('disabled', 'disabled');
+        $(".predefined_model").show();
+        $('.custom_model').hide();
     }
 
     // get selected model
     m = this.selectedModel();
 
     if (m === null) {
-	return;
+        return;
     }
 
     //console.log(m.title);
@@ -312,7 +313,7 @@ AssimDemo.prototype.resetModel = function() {
     //$('#covar_Q').val(mat2str(m.Q));
 
     if (m === null) {
-	return;
+        return;
     }
 
     this.Pi.val(m.Pi);
@@ -322,7 +323,7 @@ AssimDemo.prototype.resetModel = function() {
     $('#nmax').val(40);
     $('#obs_xsteps').val(2);
     $('#obs_tsteps').val(5);
-    $('#obs_var').val(.2);
+    $('#obs_var').val(0.2);
     $('#randseed').val(3);
 
     $('#statevector_index').empty();
@@ -330,41 +331,36 @@ AssimDemo.prototype.resetModel = function() {
     $('#covar_index_j').empty();
 
     for (i=0; i<m.n; i++)  {
-	$('#statevector_index').append($('<option />').attr({'value': i}).html(i+1));
-	$('#covar_index_i').append($('<option />').attr({'value': i}).html(i+1));
-	$('#covar_index_j').append($('<option />').attr({'value': i}).html(i+1));
+        $('#statevector_index').append($('<option />').attr({'value': i}).html(i+1));
+        $('#covar_index_i').append($('<option />').attr({'value': i}).html(i+1));
+        $('#covar_index_j').append($('<option />').attr({'value': i}).html(i+1));
     }
 };
 AssimDemo.prototype.selectedModel = function() {
     var modelname = $('#model').val(), n, fun;
 
     if (modelname === 'myfun') {
-	n = $('#statevector_size').val();
+        n = $('#statevector_size').val();
 
-	if (n === "") {
-	    n = 1;
-	    $('#statevector_size').val(n);
-	}
+        try {
+            fun = new Function('n','x',$('#model_code').val());
+        }
+        catch (err) {
+            alert('JavaScript error: please check your model code\n' + err);
+            return null;
+        }
 
-	try {
-	    fun = new Function('n','x',$('#model_code').val());
-	}
-	catch (err) {
-	    alert('JavaScript error: please check your model code\n' + err);
-	    return null;
-	}
-
-	return 	{'title': 'myfun',
-		'name': 'myfun',
-		'fun': fun,
-		'n': n,
-		'xit': nu.rep([n],0),
-		'Pi': nu.identity(n),
-		'Q': nu.rep([n,n],0),
-		'formula': ''};
+        return         {'title': 'myfun',
+			'name': 'myfun',
+			'fun': fun,
+			'n': n,
+			'xit': nu.rep([n],0),
+			'Pi': nu.identity(n),
+			'Q': nu.rep([n,n],0),
+			'formula': ''};
     }
     else {
-	return this.models.filter(function (m)  { return m.name === modelname })[0];
+        return this.models.filter(function (m)  { return m.name === modelname; })[0];
     }
 };
 
@@ -377,9 +373,9 @@ function integrate(model,x,t0,t1) {
     n = 0;
     
     while (time[n] < t1) {
-	res[n+1] = model(time[n],dt,res[n]);	
-	time[n+1] = time[n] + dt;
-	n = n+1;
+        res[n+1] = model(time[n],dt,res[n]);        
+        time[n+1] = time[n] + dt;
+        n = n+1;
     }
     
     return {result: res, time: time};
@@ -392,27 +388,27 @@ function FreeRun(xi,Pi,nmax,no,M,Q,H,x,P,yo,time) {
 
     x[0] = xi;
     if (Q !== null) {
-	P[0] = Pi;
+        P[0] = Pi;
     }
     time[0] = 0;
     
     for (n = 1; n <= nmax; n++) {
-	Mn = function (x) { return M(n,x); };
-	
-	x[n] = Mn(x[n-1]);
-	if (Q !== null) {
-	    x[n] = nu.add(x[n],randnCovar(Q));
-	    P[n] = nu.add(nu.transpose(P[n-1].map(Mn)).map(Mn),
-			  Q);
-	}
+        Mn = function (x) { return M(n,x); };
+        
+        x[n] = Mn(x[n-1]);
+        if (Q !== null) {
+            x[n] = nu.add(x[n],randnCovar(Q));
+            P[n] = nu.add(nu.transpose(P[n-1].map(Mn)).map(Mn),
+                          Q);
+        }
 
 
-	time[n] = n;
-	
-	if (n == no[obsindex]) {
-	    yo[obsindex] = H(obsindex,x[n]);
-	    obsindex = obsindex+1;	
-	}
+        time[n] = n;
+        
+        if (n == no[obsindex]) {
+            yo[obsindex] = H(obsindex,x[n]);
+            obsindex = obsindex+1;        
+        }
     }
 }
 
@@ -429,46 +425,46 @@ function KalmanFilter(xi,Pi,Q,M,nmax,no,yo,R,H,x,P,time) {
     // i index of x with forecast and analysis
 
     for (n = 1; n <= nmax; n++) {
-	//console.log('n ',n);
-	Mn = function (x) { return M(n,x); };
+        //console.log('n ',n);
+        Mn = function (x) { return M(n,x); };
 
-	x[i] = nu.add(Mn(x[i-1]),randnCovar(Q));
-	P[i] = nu.add(nu.transpose(P[i-1].map(Mn)).map(Mn),
-		      Q);
-	
-	time[i] = n;
-	i = i+1;
+        x[i] = nu.add(Mn(x[i-1]),randnCovar(Q));
+        P[i] = nu.add(nu.transpose(P[i-1].map(Mn)).map(Mn),
+                      Q);
+        
+        time[i] = n;
+        i = i+1;
 
-	//P[n] = (M(P[n-1])).transpose();
-	//console.log('assim row ',Pi.col(1));
+        //P[n] = (M(P[n-1])).transpose();
+        //console.log('assim row ',Pi.col(1));
 
-	if (n == no[obsindex]) {
-	    //console.log('assim ',n);
+        if (n == no[obsindex]) {
+            //console.log('assim ',n);
 
-	    Hn = function (x) { return H(obsindex,x); };
+            Hn = function (x) { return H(obsindex,x); };
 
-	    PH = P[i-1].map(Hn);
-	    HPH = nu.transpose(PH).map(Hn);
+            PH = P[i-1].map(Hn);
+            HPH = nu.transpose(PH).map(Hn);
 
-	    
-	    K = nu.dot(PH,
-		       nu.inv(nu.add(HPH,
-				     R)));
-	    
-	    x[i] = nu.add(x[i-1],
-			  nu.dot(K,
-				 nu.sub(yo[obsindex],
-					Hn(x[i-1]))));
+            
+            K = nu.dot(PH,
+                       nu.inv(nu.add(HPH,
+                                     R)));
+            
+            x[i] = nu.add(x[i-1],
+                          nu.dot(K,
+                                 nu.sub(yo[obsindex],
+                                        Hn(x[i-1]))));
 
-	    P[i] = nu.sub(P[i-1],
-			  nu.dot(K,
-				 nu.transpose(PH)));
-	    
-	    time[i] = n;
-	    i = i+1;
+            P[i] = nu.sub(P[i-1],
+                          nu.dot(K,
+                                 nu.transpose(PH)));
+            
+            time[i] = n;
+            i = i+1;
 
-	    obsindex = obsindex+1;
-	}
+            obsindex = obsindex+1;
+        }
     }
 }
 
@@ -480,10 +476,9 @@ function randn(size) {
     V = nu.random(size);
 
     X = nu.mul(nu.sqrt(nu.mul(-2,
-		     nu.log(U)
-		    )),
-	    nu.cos(nu.mul(2*Math.PI,
-		    V)));
+			      nu.log(U))),
+               nu.cos(nu.mul(2*Math.PI,
+			     V)));
 
     return X;
 }
@@ -512,7 +507,7 @@ function range(start,end,step) {
     step = step || 1;
 
     for (i=start; i<=end; i+=step) {
-	r.push(i);
+        r.push(i);
     }
     return r;
 }
@@ -520,11 +515,11 @@ function range(start,end,step) {
 
 AssimDemo.prototype.run = function () {
     var model = this.selectedModel(),
-        M, n, Pi, Q, R, xit, no, 
-        H, yt, xt, timet, yo, xi, xfree, x, P, time, m, obs_var, obs_xsteps, obs_tsteps, i, nmax, Pfree;
+    M, n, Pi, Q, R, xit, no, 
+    H, yt, xt, timet, yo, xi, xfree, x, P, time, m, obs_var, obs_xsteps, obs_tsteps, i, nmax, Pfree;
 
     if (model === null) {
-	return;
+        return;
     }
 
     M = model['fun'];
@@ -540,7 +535,7 @@ AssimDemo.prototype.run = function () {
     Q = this.Q.val();
     xit = this.xit.val();
 
-    nmax = parseInt($('#nmax').val());
+    nmax = parseInt($('#nmax').val(),10);
     obs_var = parseFloat($('#obs_var').val());
     obs_xsteps = parseFloat($('#obs_xsteps').val());
     obs_tsteps = parseFloat($('#obs_tsteps').val());
@@ -556,12 +551,12 @@ AssimDemo.prototype.run = function () {
 
     // observation operator
     H = function(t,x) {
-	var hx = [], i;
-	for (i = 0; i < x.length; i+=obs_xsteps) {
-	    hx.push(x[i]);
-	}
-	return hx;
-    }
+        var hx = [], i;
+        for (i = 0; i < x.length; i+=obs_xsteps) {
+            hx.push(x[i]);
+        }
+        return hx;
+    };
 
     // true run
 
@@ -579,7 +574,7 @@ AssimDemo.prototype.run = function () {
     // add perturbations
 
     for (i=0; i<no.length; i++) {
-	yo[i] = nu.add(yt[i], randnCovar(R));
+        yo[i] = nu.add(yt[i], randnCovar(R));
     }
 
     // free run
@@ -598,29 +593,29 @@ AssimDemo.prototype.run = function () {
     console.log('x ',x[x.length-1][0] == 1.3043300264354254,x[x.length-1][0]);
 
     this.result = {x: x, yo: yo, time: time, timet: timet, 
-		   xfree: xfree, Pfree: Pfree,
-		   xt: xt, no: no, P: P, obs_xsteps: obs_xsteps};
+                   xfree: xfree, Pfree: Pfree,
+                   xt: xt, no: no, P: P, obs_xsteps: obs_xsteps};
 
     this.plot();
 };
 
 AssimDemo.prototype.plot = function () {
     var x = this.result.x,
-        yo = this.result.yo, 
-        time = this.result.time, 
-        timet = this.result.timet, 
-        xfree = this.result.xfree, 
-        Pfree = this.result.Pfree, 
-        xt = this.result.xt, 
-        P = this.result.P, 
+    yo = this.result.yo, 
+    time = this.result.time, 
+    timet = this.result.timet, 
+    xfree = this.result.xfree, 
+    Pfree = this.result.Pfree, 
+    xt = this.result.xt, 
+    P = this.result.P, 
     obs_xsteps = this.result.obs_xsteps,
     no = this.result.no,
     i,j;
 
     var obs = [];
-    var statevector_index = parseInt($('#statevector_index').val());
-    var covar_index_i = parseInt($('#covar_index_i').val());
-    var covar_index_j = parseInt($('#covar_index_j').val());
+    var statevector_index = parseInt($('#statevector_index').val(),10);
+    var covar_index_i = parseInt($('#covar_index_i').val(),10);
+    var covar_index_j = parseInt($('#covar_index_j').val(),10);
 
 
     // statevector and observation plot
@@ -628,15 +623,15 @@ AssimDemo.prototype.plot = function () {
     var plot_data = [];
 
     function xtimeseries(time,x,checked,s) {
-	var ts = [], n;
+        var ts = [], n;
 
-	if (checked) {
-	    for (n=0; n<time.length; n++) {
-		ts.push([time[n], x[n][statevector_index]]);
-	    }
-	    s.data = ts;
-	    plot_data.push(s);
-	}
+        if (checked) {
+            for (n=0; n<time.length; n++) {
+                ts.push([time[n], x[n][statevector_index]]);
+            }
+            s.data = ts;
+            plot_data.push(s);
+        }
     }
 
     xtimeseries(timet,xt,$('#show_truth').attr('checked'),{label: 'Truth',color: 0});
@@ -644,26 +639,26 @@ AssimDemo.prototype.plot = function () {
 
     if ($('#show_observations').attr('checked')) {
 
-	// observations to plot
-	j = 0;
-	for (i = 0; i < x[0].length; i+=obs_xsteps) {
-	    // this condition will be true only once (at most)
+        // observations to plot
+        j = 0;
+        for (i = 0; i < x[0].length; i+=obs_xsteps) {
+            // this condition will be true only once (at most)
 
-	    if (i === statevector_index) {
-		for (var n=0; n<yo.length; n++) {
-		    obs.push([no[n], yo[n][j]]);
-		}	    
+            if (i === statevector_index) {
+                for (var n=0; n<yo.length; n++) {
+                    obs.push([no[n], yo[n][j]]);
+                }            
 
-		plot_data.push({
-		    data: obs,  
-		    label: 'Observations',
-		    points: { show: true },
-		    color: 3
-		});
+                plot_data.push({
+                    data: obs,  
+                    label: 'Observations',
+                    points: { show: true },
+                    color: 3
+                });
 
-	    }
-	    j = j+1;
-	}
+            }
+            j = j+1;
+        }
     }
 
     xtimeseries(time,x,$('#show_assimilation').attr('checked'), {label: 'Assimilation',color: 2});
@@ -674,15 +669,15 @@ AssimDemo.prototype.plot = function () {
     var plot_covar = [];
 
     function covartimeseries(time,P,checked,s) {
-	var errvar = [], n;
+        var errvar = [], n;
 
-	if (checked) {
-	    for (n=0; n<time.length; n++) {
-		errvar.push([time[n], P[n][covar_index_i][covar_index_j]]);
-	    }
-	    s.data = errvar;
-	    plot_covar.push(s);
-	}
+        if (checked) {
+            for (n=0; n<time.length; n++) {
+                errvar.push([time[n], P[n][covar_index_i][covar_index_j]]);
+            }
+            s.data = errvar;
+            plot_covar.push(s);
+        }
     }
 
     covartimeseries(timet,Pfree,$('#show_covar_freerun').attr('checked'),{label: 'Free run', color: 1});
