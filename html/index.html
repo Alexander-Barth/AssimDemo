@@ -67,8 +67,28 @@
 	<tr>
 	  <td>Equation(s)</td><td id="model_eqn"></td>
 	</tr>
+
 	<tr>
-	  <td><label for="model">State vector size</label></td><td><span id="statevector_size"></span></td>
+	  <td><label for="model_code">Model code</label></td>
+	  <td>
+	    <pre>
+// t: time-step (scalar)
+// x: array with the state vector 
+// (x[0] is the first element, 
+// x[1] the second,...
+// model should return the state vector at the next time step
+
+function model(t,x) {
+</pre>
+	    <textarea id="model_code" rows="4" cols="50" spellcheck="false" >
+return x;
+	  </textarea>
+	    <pre>}</pre>
+	  </td>
+	</tr>
+
+	<tr>
+	  <td><label for="model">State vector size</label></td><td><input id="statevector_size" type="text" disabled="disabled"></td>
 	</tr>
 	<tr>
 	  <td><label for="nmax">Number of time steps</label></td><td><input type="text" id="nmax" value="40" pattern="[0-9]+" title="Postive number"></td>

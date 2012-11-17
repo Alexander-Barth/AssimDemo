@@ -242,13 +242,15 @@ function AssimDemo() {
 	$('#model').append($('<option />').attr({'value': this.models[m].name}).html(this.models[m].title));
     }
 
+    $('#model').append($('<option />').attr({'value': 'myfun'}).text('My function in JavaScript'));
+
     // default model
     //$('#model').val('advection');
     //$('#model').val('oscillation');
 
     this.updateModel();
 
-    $('#model').change(function() {
+    $('#model, #statevector_size').change(function() {
 	that.updateModel();
     });
 
@@ -271,7 +273,7 @@ function AssimDemo() {
 AssimDemo.prototype.updateModel = function() {
     var m = this.selectedModel(), i;
     //console.log(m.title);
-    $('#statevector_size').html(m.n);
+    $('#statevector_size').val(m.n);
 
     $('#model_eqn').empty();
     //$('#model_eqn').append($('<script/>').attr({'type': 'math/tex; mode=display'}).html(m.formula));
@@ -289,7 +291,14 @@ AssimDemo.prototype.resetModel = function() {
     var m = this.selectedModel(), i;
     //$('#covar_Pi').val(mat2str(m.Pi));
     //$('#covar_Q').val(mat2str(m.Q));
-    
+
+    if (m.name === 'myfun') {
+	$("#statevector_size").removeAttr('disabled');
+    }
+    else {
+	$("#statevector_size").attr('disabled', 'disabled');
+    }
+
     this.Pi.val(m.Pi);
     this.Q.val(m.Q);
     this.xit.val(m.xit);
@@ -311,7 +320,28 @@ AssimDemo.prototype.resetModel = function() {
     }
 };
 AssimDemo.prototype.selectedModel = function() {
-    return this.models.filter(function (m)  { return m.name === $('#model').val(); })[0];
+    var modelname = $('#model').val(), n;
+
+    if (modelname === 'myfun') {
+	n = $('#statevector_size').val();
+
+	if (n === "") {
+	    n = 1;
+	    $('#statevector_size').val(n);
+	}
+
+	return 	{'title': 'myfun',
+		'name': 'myfun',
+		'fun': new Function('t','x',$('#model_code').val()),
+		'n': n,
+		'xit': nu.rep([n],0),
+		'Pi': nu.identity(n),
+		'Q': nu.rep([n,n],0),
+		'formula': ''};
+    }
+    else {
+	return this.models.filter(function (m)  { return m.name === modelname })[0];
+    }
 };
 
 function integrate(model,x,t0,t1) {
