@@ -63,3 +63,24 @@ fieldset.sec {
 .sec > table > tbody > tr:nth-child(even) {
   background: #FFF;
 }
+
+.code {
+ font-family: monospace; 
+}
+
+.function {
+  color: blue;
+}
+
+.custom_model {
+  width: 15em;
+}
+#model_code {
+  width: 100%;
+}
+
+p.instructions {
+  font-size: small;
+  margin-top: 0px;
+  margin-bottom: 5px;
+}

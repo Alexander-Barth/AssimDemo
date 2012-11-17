@@ -64,26 +64,28 @@
 	<tr>
 	  <td><label for="model">Model</label></td><td><select id="model"></select></td>
 	</tr>
-	<tr>
-	  <td>Equation(s)</td><td id="model_eqn"></td>
-	</tr>
 
 	<tr>
-	  <td><label for="model_code">Model code</label></td>
 	  <td>
-	    <pre>
-// t: time-step (scalar)
-// x: array with the state vector 
-// (x[0] is the first element, 
-// x[1] the second,...
-// model should return the state vector at the next time step
+	    <span class="predefined_model">Equation(s)</span>
+	    <span class="custom_model"><label for="model_code">Model code</label></span>
+	  </td>
+	  <td>
+	    <span class="predefined_model" id="model_eqn"></span>
+	    <div class="custom_model">
+	      <p class="instructions">
+		The function <span class="code">model</span> should return the state vector 
+		at the next time step given the state vector <span class="param code">x</span>
+		at the time step <span class="param code">n</span>.</p>
+	      <div class="code"><span class="function">function</span> model(<span class="param" title="time step (scalar)">n</span>,<span class="param" title="array with the state vector (x[0] is the first element, x[1] the second,...)
+">x</span>) {</div>
 
-function model(t,x) {
-</pre>
 	    <textarea id="model_code" rows="4" cols="50" spellcheck="false" >
-return x;
-	  </textarea>
-	    <pre>}</pre>
+// swap elements
+return [x[1],x[0]];
+</textarea>
+	    <div class="code">}</div>
+	    </div>
 	  </td>
 	</tr>
 
@@ -113,10 +115,10 @@ return x;
 	  <td><label>Covariance matrix of model error Q</label></td><td id="covar_Q"></td>
 	</tr>
 	<tr>
-	  <td><label>Observed every x grid points</label></td><td><input type="text" id="obs_xsteps" value="2" min="1" pattern="[0-9]+" title="Postive number"> </td>
+	  <td><label>Observed every x grid points</label></td><td><input type="number" id="obs_xsteps" value="2" min="1" pattern="[0-9]+" title="Postive number"> </td>
 	</tr>
 	<tr>
-	  <td><label>Model time steps between observations</label></td><td><input type="text" id="obs_tsteps" value="5" min="1" pattern="[0-9]+" title="Postive number"> </td>
+	  <td><label>Model time steps between observations</label></td><td><input type="number" id="obs_tsteps" value="5" min="1" pattern="[0-9]+" title="Postive number"> </td>
 	</tr>
 	<tr>
 	  <td><label>Observation error variance</label></td><td><input type="text" id="obs_var" value="0.2" pattern="[.0-9]+" title="Postive number"> </td>

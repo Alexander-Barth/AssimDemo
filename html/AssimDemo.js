@@ -271,7 +271,26 @@ function AssimDemo() {
 }
 
 AssimDemo.prototype.updateModel = function() {
-    var m = this.selectedModel(), i;
+    var m, i;
+    
+    if ($('#model').val() === 'myfun') {
+	$("#statevector_size").removeAttr('disabled');
+	$(".predefined_model").hide();
+	$('.custom_model').show();
+    }
+    else {
+	$("#statevector_size").attr('disabled', 'disabled');
+	$(".predefined_model").show();
+	$('.custom_model').hide();
+    }
+
+    // get selected model
+    m = this.selectedModel();
+
+    if (m === null) {
+	return;
+    }
+
     //console.log(m.title);
     $('#statevector_size').val(m.n);
 
@@ -292,11 +311,8 @@ AssimDemo.prototype.resetModel = function() {
     //$('#covar_Pi').val(mat2str(m.Pi));
     //$('#covar_Q').val(mat2str(m.Q));
 
-    if (m.name === 'myfun') {
-	$("#statevector_size").removeAttr('disabled');
-    }
-    else {
-	$("#statevector_size").attr('disabled', 'disabled');
+    if (m === null) {
+	return;
     }
 
     this.Pi.val(m.Pi);
@@ -320,7 +336,7 @@ AssimDemo.prototype.resetModel = function() {
     }
 };
 AssimDemo.prototype.selectedModel = function() {
-    var modelname = $('#model').val(), n;
+    var modelname = $('#model').val(), n, fun;
 
     if (modelname === 'myfun') {
 	n = $('#statevector_size').val();
@@ -330,9 +346,17 @@ AssimDemo.prototype.selectedModel = function() {
 	    $('#statevector_size').val(n);
 	}
 
+	try {
+	    fun = new Function('n','x',$('#model_code').val());
+	}
+	catch (err) {
+	    alert('JavaScript error: please check your model code\n' + err);
+	    return null;
+	}
+
 	return 	{'title': 'myfun',
 		'name': 'myfun',
-		'fun': new Function('t','x',$('#model_code').val()),
+		'fun': fun,
 		'n': n,
 		'xit': nu.rep([n],0),
 		'Pi': nu.identity(n),
@@ -496,8 +520,17 @@ function range(start,end,step) {
 
 AssimDemo.prototype.run = function () {
     var model = this.selectedModel(),
-        M = model['fun'], n = model.n, Pi = model.Pi, Q = model.Q, R, xit, no, 
-    H, yt, xt, timet, yo, xi, xfree, x, P, time, m, obs_var, obs_xsteps, obs_tsteps, i, nmax, Pfree;
+        M, n, Pi, Q, R, xit, no, 
+        H, yt, xt, timet, yo, xi, xfree, x, P, time, m, obs_var, obs_xsteps, obs_tsteps, i, nmax, Pfree;
+
+    if (model === null) {
+	return;
+    }
+
+    M = model['fun'];
+    n = model.n;
+    Pi = model.Pi;
+    Q = model.Q;
 
     // seed for random numbers
     nu.seedrandom.seedrandom(parseFloat($('#randseed').val()));
