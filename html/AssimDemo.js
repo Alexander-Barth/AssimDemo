@@ -274,8 +274,8 @@ AssimDemo.prototype.updateModel = function() {
     $('#statevector_size').html(m.n);
 
     $('#model_eqn').empty();
-    $('#model_eqn').append(
-	$('<script type="math/tex; mode=display">').html(m.formula));
+    //$('#model_eqn').append($('<script/>').attr({'type': 'math/tex; mode=display'}).html(m.formula));
+    $('#model_eqn').append($('<script/>').attr({'type': 'math/tex; mode=display'}).text(m.formula));
     MathJax.Hub.Typeset();
 
     this.Pi = new MatInput([m.n,m.n],'covar_Pi');
