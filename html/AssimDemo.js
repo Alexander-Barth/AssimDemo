@@ -1,19 +1,22 @@
 /*
-   Copyright (C) 2012 Alexander Barth <a.barth at ulg.ac.be>.      
-                                                                             
-   This program is free software: you can redistribute it and/or modify      
-   it under the terms of the GNU Affero General Public License as published  
-   by the Free Software Foundation, either version 3 of the License, or      
-   (at your option) any later version.                                       
-                                                                             
-   This program is distributed in the hope that it will be useful,           
-   but WITHOUT ANY WARRANTY; without even the implied warranty of            
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             
-   GNU Affero General Public License for more details.                       
-                                                                             
-   You should have received a copy of the GNU Affero General Public License  
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.     
+  Copyright (C) 2012 Alexander Barth <a.barth at ulg.ac.be>.      
+  
+  This program is free software: you can redistribute it and/or modify      
+  it under the terms of the GNU Affero General Public License as published  
+  by the Free Software Foundation, either version 3 of the License, or      
+  (at your option) any later version.                                       
+  
+  This program is distributed in the hope that it will be useful,           
+  but WITHOUT ANY WARRANTY; without even the implied warranty of            
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             
+  GNU Affero General Public License for more details.                       
+  
+  You should have received a copy of the GNU Affero General Public License  
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.     
 */
+
+/*jslint browse: true, continue : true, devel : true, indent : 4, maxerr : 50, newcap : false, nomen : true, plusplus : false, regexp : true, sloppy : true, vars : true, white : false */
+/*global jQuery: false, $: false, numeric: false, MathJax */
 
 "use strict";
 
@@ -21,58 +24,6 @@ var nu = numeric;
 var pp = numeric.prettyPrint;
 var demo;
 
-/**
- * Copyright (c) Mozilla Foundation http://www.mozilla.org/
- * This code is available under the terms of the MIT License
- */
-if (!Array.prototype.map) {
-    Array.prototype.map = function(fun /*, thisp*/) {
-        var len = this.length >>> 0;
-        if (typeof fun != "function") {
-            throw new TypeError();
-        }
-
-        var res = new Array(len);
-        var thisp = arguments[1];
-        for (var i = 0; i < len; i++) {
-            if (i in this) {
-                res[i] = fun.call(thisp, this[i], i, this);
-            }
-        }
-
-        return res;
-    };
-}
-
-if (!Array.prototype.filter)
-{
-  Array.prototype.filter = function(fun /*, thisp */)
-  {
-    "use strict";
- 
-    if (this === null)
-      throw new TypeError();
- 
-    var t = Object(this);
-    var len = t.length >>> 0;
-    if (typeof fun != "function")
-      throw new TypeError();
- 
-    var res = [];
-    var thisp = arguments[1];
-    for (var i = 0; i < len; i++)
-    {
-      if (i in t)
-      {
-        var val = t[i]; // in case fun mutates this
-        if (fun.call(thisp, val, i, t))
-          res.push(val);
-      }
-    }
- 
-    return res;
-  };
-}
 
 function str2mat(str) {
     var rows = str.split(/ *; */);
@@ -84,7 +35,52 @@ function mat2str(A) {
     return A.map(function (c) { return c.join(', '); }).join(';  ');
 }
 
-function MatInput(size,id) {
+// gaussian random numbers
+function randn(size) { 
+    var U,V,X;
+
+    U = nu.random(size);
+    V = nu.random(size);
+
+    X = nu.mul(nu.sqrt(nu.mul(-2,
+			      nu.log(U))),
+               nu.cos(nu.mul(2*Math.PI,
+			     V)));
+
+    return X;
+}
+
+function covarDecomp(P) {
+    var S, B;
+    B = nu.svd(P);
+    S = nu.dot(B.U,nu.diag(nu.sqrt(B.S)));
+
+    //console.log('P ',nu.prettyPrint(P));
+    //console.log('S*S^T ' ,nu.prettyPrint(nu.dot(S,nu.transpose(S))));
+    return S;
+}
+
+
+function randnCovar(P) {
+    var S,Z, n = P.length;
+    
+    S = covarDecomp(P);
+    Z = randn([n]);
+    return nu.dot(S,Z);
+}
+
+
+function range(start,end,step) {
+    var i, r = [];
+    step = step || 1;
+
+    for (i=start; i<=end; i+=step) {
+        r.push(i);
+    }
+    return r;
+}
+
+function MatInput(size, id) {
     var i, j, $row, $tbody;
     this.size = size;
     this.id = id;
@@ -99,7 +95,7 @@ function MatInput(size,id) {
     if (this.size.length === 1) {
         $row = $('<tr/>');
 
-        for (i = 0; i<size[0]; i++) {
+        for (i = 0; i < size[0]; i++) {
             this.$elem[i] = $('<input/>').attr({'type':'text','size': '1','class': 'matrix_element'});
 
             $row.append($('<td/>').
@@ -107,12 +103,11 @@ function MatInput(size,id) {
         }
         
         $tbody.append($row);
-    }
-    else {
-        for (i = 0; i<size[0]; i++) {
+    } else {
+        for (i = 0; i < size[0]; i++) {
             this.$elem[i] = [];
             $row = $('<tr/>');
-            for (j = 0; j<size[1]; j++) {
+            for (j = 0; j < size[1]; j++) {
                 this.$elem[i][j] = $('<input/>').attr({'type':'text','size': '1','class': 'matrix_element'});
 
                 $row.append($('<td/>').
@@ -130,7 +125,7 @@ MatInput.prototype.val = function(data) {
     if (this.size.length === 1) {
         if (data) {
             // fill-in
-            for (i = 0; i<this.size[0]; i++) {
+            for (i = 0; i < this.size[0]; i++) {
                 this.$elem[i].val(data[i]);
             }
         }
@@ -138,7 +133,7 @@ MatInput.prototype.val = function(data) {
             // get value
             data = [];
             
-            for (i = 0; i<this.size[0]; i++) {
+            for (i = 0; i < this.size[0]; i++) {
                 data[i] = parseFloat(this.$elem[i].val());
             }
         }
@@ -148,8 +143,8 @@ MatInput.prototype.val = function(data) {
     else {
         if (data) {
             // fill-in
-            for (i = 0; i<this.size[0]; i++) {
-                for (j = 0; j<this.size[1]; j++) {
+            for (i = 0; i < this.size[0]; i++) {
+                for (j = 0; j < this.size[1]; j++) {
                     this.$elem[i][j].val(data[i][j]);
                 }
             }
@@ -158,10 +153,10 @@ MatInput.prototype.val = function(data) {
             // get value
             data = [];
             
-            for (i = 0; i<this.size[0]; i++) {
+            for (i = 0; i < this.size[0]; i++) {
                 data[i] = [];
 
-                for (j = 0; j<this.size[1]; j++) {
+                for (j = 0; j < this.size[1]; j++) {
                     data[i][j] = parseFloat(this.$elem[i][j].val());
                 }
             }
@@ -198,24 +193,24 @@ function AssimDemo() {
          'xit': [1.5,2,3,4],
          'Pi': nu.identity(4),
          'Q': nu.rep([4,4],0),
-         'formula': '\
-\\begin{equation}     \
-\\mathbf x^{(n+1)} =  \
-\\left(               \
-\\begin{array}{cccc}  \
-0 & 1 & 0 & 0 \\\\    \
-0 & 0 & 1 & 0 \\\\    \
-0 & 0 & 0 & 1 \\\\    \
-1 & 0 & 0 & 0         \
-\\end{array}          \
-\\right)              \
-\\mathbf x^{(n)}      \
-\\end{equation}       \
-'},
+         'formula': 
+         '\\begin{equation}     ' +
+	 '\\mathbf x^{(n+1)} =  ' +
+	 '\\left(               ' +
+	 '\\begin{array}{cccc}  ' +
+	 '0 & 1 & 0 & 0 \\\\    ' +
+	 '0 & 0 & 1 & 0 \\\\    ' +
+	 '0 & 0 & 0 & 1 \\\\    ' +
+	 '1 & 0 & 0 & 0         ' +
+	 '\\end{array}          ' +
+	 '\\right)              ' +
+	 '\\mathbf x^{(n)}      ' +
+	 '\\end{equation}       ' 
+	 },
 
         {'title': 'oscillation',
          'name': 'oscillation',
-         'fun': function() {             
+         'fun': (function() {             
              var f=2*Math.PI, Dt = 0.1, L, M;
              /*
              // Crank-Nicolson
@@ -225,39 +220,52 @@ function AssimDemo() {
              */
              M = [[Math.cos(f*Dt), Math.sin(f*Dt)], [-Math.sin(f*Dt), Math.cos(f*Dt)]];
              return function(t,x) { return nu.dot(M,x); };
-         }(),
+         }()),
          'n': 2,
          'xit': [1,0],
          'Pi': nu.identity(2),
          'Q': nu.rep([2,2],0),
-         'formula': '\\begin{eqnarray} \
-\\frac{dx_1}{dt}  &=& f x_2 \\\\ \
-\\frac{dx_2}{dt}  &=& -f x_1 \
-\\end{eqnarray}'}
+         'formula': 
+	 '\\begin{eqnarray} ' +
+	 '\\frac{dx_1}{dt}  &=& f x_2 \\\\ ' +
+	 '\\frac{dx_2}{dt}  &=& -f x_1 ' +
+	 '\\end{eqnarray}'}
 
     ];   
 
 
     for (m in this.models)  {
-        $('#model').append($('<option />').attr({'value': this.models[m].name}).html(this.models[m].title));
+	if (this.models.hasOwnProperty(m)) {
+            $('#model').append($('<option />').attr({'value': this.models[m].name}).html(this.models[m].title));
+	}
     }
 
     $('#model').append($('<option />').attr({'value': 'myfun'}).text('My function in JavaScript'));
 
     // default model
-    //$('#model').val('advection');
+    $('#model').val('advection');
     //$('#model').val('oscillation');
 
-    this.updateModel();
+    // install event handlers
 
     $('#model, #statevector_size').change(function() {
         that.updateModel();
     });
 
+    $('#method').change(function() {
+	that.method = $('#method').val();
+
+	if (that.method === 'Nudging') {
+	    $('.Nudging').show();
+	}
+	else {
+	    $('.Nudging').hide();
+	}
+    });
+   
     $('.plot_param').find('input, select').change(function() {
         that.plot();
     });
-
 
     $('form').submit(function(e) {
         that.run();
@@ -268,6 +276,8 @@ function AssimDemo() {
         that.resetModel();
     });
 
+    this.updateModel();
+    $('#method').change();
 }
 
 AssimDemo.prototype.updateModel = function() {
@@ -391,10 +401,10 @@ function FreeRun(xi,Pi,nmax,no,M,Q,H,x,P,yo,time) {
         P[0] = Pi;
     }
     time[0] = 0;
+
+    Mn = function (x) { return M(n,x); };
     
-    for (n = 1; n <= nmax; n++) {
-        Mn = function (x) { return M(n,x); };
-        
+    for (n = 1; n <= nmax; n++) {        
         x[n] = Mn(x[n-1]);
         if (Q !== null) {
             x[n] = nu.add(x[n],randnCovar(Q));
@@ -405,16 +415,39 @@ function FreeRun(xi,Pi,nmax,no,M,Q,H,x,P,yo,time) {
 
         time[n] = n;
         
-        if (n == no[obsindex]) {
+        if (n === no[obsindex]) {
             yo[obsindex] = H(obsindex,x[n]);
             obsindex = obsindex+1;        
         }
     }
 }
 
+function analysis(xf,Pf,yo,R,Hn) {
+    var PH, HPH, K, xa, Pa;
 
-function KalmanFilter(xi,Pi,Q,M,nmax,no,yo,R,H,x,P,time) {
-    var obsindex = 0, n, Mn, i, Hn, PH, HPH, K;
+    PH = Pf.map(Hn);
+    HPH = nu.transpose(PH).map(Hn);
+
+            
+    K = nu.dot(PH,
+               nu.inv(nu.add(HPH,
+                             R)));
+            
+    xa = nu.add(xf,
+                nu.dot(K,
+                       nu.sub(yo,
+                              Hn(xf))));
+
+    Pa = nu.sub(Pf,
+                nu.dot(K,
+                       nu.transpose(PH)));
+
+    return {xa: xa, Pa: Pa};
+}
+
+function KalmanFilter(xi,Pi,Q,M,nmax,no,yo,R,H,x,P,time,options) {
+    var obsindex = 0, n, Mn, i, Hn, res;
+    options = options || {method: 'KF'};
 
     x[0] = xi;
     P[0] = Pi;
@@ -424,42 +457,28 @@ function KalmanFilter(xi,Pi,Q,M,nmax,no,yo,R,H,x,P,time) {
     // n time index
     // i index of x with forecast and analysis
 
-    for (n = 1; n <= nmax; n++) {
-        //console.log('n ',n);
-        Mn = function (x) { return M(n,x); };
+    Mn = function (x) { return M(n,x); };
+    Hn = function (x) { return H(obsindex,x); };
 
+    for (n = 1; n <= nmax; n++) {
         x[i] = nu.add(Mn(x[i-1]),randnCovar(Q));
-        P[i] = nu.add(nu.transpose(P[i-1].map(Mn)).map(Mn),
-                      Q);
-        
+
+	if (options.method === 'KF') {
+            P[i] = nu.add(nu.transpose(P[i-1].map(Mn)).map(Mn),
+			  Q);
+	}
+        else {
+            P[i] = Pi;
+	}
+
         time[i] = n;
         i = i+1;
 
-        //P[n] = (M(P[n-1])).transpose();
-        //console.log('assim row ',Pi.col(1));
-
-        if (n == no[obsindex]) {
+        if (n === no[obsindex]) {
             //console.log('assim ',n);
-
-            Hn = function (x) { return H(obsindex,x); };
-
-            PH = P[i-1].map(Hn);
-            HPH = nu.transpose(PH).map(Hn);
-
-            
-            K = nu.dot(PH,
-                       nu.inv(nu.add(HPH,
-                                     R)));
-            
-            x[i] = nu.add(x[i-1],
-                          nu.dot(K,
-                                 nu.sub(yo[obsindex],
-                                        Hn(x[i-1]))));
-
-            P[i] = nu.sub(P[i-1],
-                          nu.dot(K,
-                                 nu.transpose(PH)));
-            
+	    res = analysis(x[i-1],P[i-1],yo[obsindex],R,Hn);
+	    x[i] = res.xa;
+	    P[i] = res.Pa;
             time[i] = n;
             i = i+1;
 
@@ -468,61 +487,50 @@ function KalmanFilter(xi,Pi,Q,M,nmax,no,yo,R,H,x,P,time) {
     }
 }
 
-// gaussian random numbers
-function randn(size) { 
-    var U,V,X;
-
-    U = nu.random(size);
-    V = nu.random(size);
-
-    X = nu.mul(nu.sqrt(nu.mul(-2,
-			      nu.log(U))),
-               nu.cos(nu.mul(2*Math.PI,
-			     V)));
-
-    return X;
-}
-
-function covarDecomp(P) {
-    var S, B;
-    B = nu.svd(P);
-    S = nu.dot(B.U,nu.diag(nu.sqrt(B.S)));
-
-    //console.log('P ',nu.prettyPrint(P));
-    //console.log('S*S^T ' ,nu.prettyPrint(nu.dot(S,nu.transpose(S))));
-    return S;
-}
-
-function randnCovar(P) {
-    var S,Z, n = P.length;
-    
-    S = covarDecomp(P);
-    Z = randn([n]);
-    return nu.dot(S,Z);
-}
 
 
-function range(start,end,step) {
-    var i, r = [];
-    step = step || 1;
+function Nudging(xi,Q,M,nmax,no,yo,io,tau,x,time) {
+    var obsindex = 0, n, Mn, j;
 
-    for (i=start; i<=end; i+=step) {
-        r.push(i);
+    x[0] = xi;
+    time[0] = 0;
+
+    // n time index
+
+    Mn = function (x) { return M(n,x); };
+
+    for (n = 1; n <= nmax; n++) {
+        //console.log('n ',n);
+
+        x[n] = nu.add(Mn(x[n-1]),randnCovar(Q));        
+        time[n] = n;
+	
+	// loop over all observations
+        for (j = 0; j < yo[obsindex].length; j += 1) {
+	    // nudging toward observations
+	    x[n][io[j]] += (yo[obsindex][j] - x[n][io[j]])/tau;
+        }
+
+        if (n === no[obsindex]) {
+            //console.log('assim ',n);
+	    // use next observation
+            obsindex = obsindex+1;
+        }
     }
-    return r;
 }
+
 
 
 AssimDemo.prototype.run = function () {
     var model = this.selectedModel(),
-    M, n, Pi, Q, R, xit, no, 
-    H, yt, xt, timet, yo, xi, xfree, x, P, time, m, obs_var, obs_xsteps, obs_tsteps, i, nmax, Pfree;
+    M, n, Pi, Q, R, xit, no, io,
+    H, yt, xt, timet, yo, xi, xfree, x, P, time, m, obs_var, obs_xsteps, obs_tsteps, i, nmax, Pfree, options, tau;
 
     if (model === null) {
         return;
     }
 
-    M = model['fun'];
+    M = model.fun;
     n = model.n;
     Pi = model.Pi;
     Q = model.Q;
@@ -540,20 +548,26 @@ AssimDemo.prototype.run = function () {
     obs_xsteps = parseFloat($('#obs_xsteps').val());
     obs_tsteps = parseFloat($('#obs_tsteps').val());
 
+    // time indices of observations
+    no = range(obs_tsteps,nmax,obs_tsteps);
+
+    // space indices of observations
+    io = range(0,n-1,obs_xsteps);
+
     // number of observations
-    m = 1+Math.floor((n-1)  / obs_xsteps);
+    m = io.length;
 
     // observation error covariance matrix
     R = nu.mul(obs_var, nu.identity(m));
 
-    // time indices of observations
-    no = range(obs_tsteps,nmax,obs_tsteps);
-
+    console.log('indices obs',io,m);
     // observation operator
     H = function(t,x) {
         var hx = [], i;
-        for (i = 0; i < x.length; i+=obs_xsteps) {
-            hx.push(x[i]);
+        for (i in io) {
+	    if (io.hasOwnProperty(i)) {
+		hx.push(x[io[i]]);
+	    }
         }
         return hx;
     };
@@ -573,7 +587,7 @@ AssimDemo.prototype.run = function () {
     
     // add perturbations
 
-    for (i=0; i<no.length; i++) {
+    for (i = 0; i < no.length; i++) {
         yo[i] = nu.add(yt[i], randnCovar(R));
     }
 
@@ -587,11 +601,17 @@ AssimDemo.prototype.run = function () {
     x = [];
     P = [];
     time = [];
+    options = {method: this.method};
 
-    KalmanFilter(xi,Pi,Q,M,nmax,no,yo,R,H,x,P,time);
-
-    console.log('x ',x[x.length-1][0] == 1.3043300264354254,x[x.length-1][0]);
-
+    if (options.method === 'Nudging') {
+	tau = $('#nudging_ts').val();
+	Nudging(xi,Q,M,nmax,no,yo,io,tau,x,time);
+    }
+    else {
+        KalmanFilter(xi,Pi,Q,M,nmax,no,yo,R,H,x,P,time,options);
+	console.log('x ',x[x.length-1][0] === 1.3043300264354254,x[x.length-1][0]);
+    }
+    
     this.result = {x: x, yo: yo, time: time, timet: timet, 
                    xfree: xfree, Pfree: Pfree,
                    xt: xt, no: no, P: P, obs_xsteps: obs_xsteps};
@@ -600,7 +620,7 @@ AssimDemo.prototype.run = function () {
 };
 
 AssimDemo.prototype.plot = function () {
-    var x = this.result.x,
+    var i,j,n,x = this.result.x,
     yo = this.result.yo, 
     time = this.result.time, 
     timet = this.result.timet, 
@@ -609,8 +629,7 @@ AssimDemo.prototype.plot = function () {
     xt = this.result.xt, 
     P = this.result.P, 
     obs_xsteps = this.result.obs_xsteps,
-    no = this.result.no,
-    i,j;
+    no = this.result.no;
 
     var obs = [];
     var statevector_index = parseInt($('#statevector_index').val(),10);
@@ -645,7 +664,7 @@ AssimDemo.prototype.plot = function () {
             // this condition will be true only once (at most)
 
             if (i === statevector_index) {
-                for (var n=0; n<yo.length; n++) {
+                for (n=0; n < yo.length; n++) {
                     obs.push([no[n], yo[n][j]]);
                 }            
 
@@ -665,25 +684,31 @@ AssimDemo.prototype.plot = function () {
 
     var plot = $.plot($("#state_vector"),plot_data);
 
-    // covariance plot
-    var plot_covar = [];
-
     function covartimeseries(time,P,checked,s) {
         var errvar = [], n;
-
+	    
         if (checked) {
-            for (n=0; n<time.length; n++) {
+	    for (n=0; n<time.length; n++) {
                 errvar.push([time[n], P[n][covar_index_i][covar_index_j]]);
-            }
-            s.data = errvar;
-            plot_covar.push(s);
+	    }
+	    s.data = errvar;
+	    plot_covar.push(s);
         }
     }
 
-    covartimeseries(timet,Pfree,$('#show_covar_freerun').attr('checked'),{label: 'Free run', color: 1});
-    covartimeseries(time,P,$('#show_covar_assimilation').attr('checked'),{label: 'Assimilation', color: 2});
-    var plot2 = $.plot($("#error_covariance"),plot_covar);
+    if (this.method === 'KF' || this.method == 'OI') {
+	// covariance plot
+	var plot_covar = [];
+	$('#error_covariance').parent('fieldset').show();
 
+	
+	covartimeseries(timet,Pfree,$('#show_covar_freerun').attr('checked'),{label: 'Free run', color: 1});
+	covartimeseries(time,P,$('#show_covar_assimilation').attr('checked'),{label: 'Assimilation', color: 2});
+	$.plot($("#error_covariance"),plot_covar);
+    }
+    else {
+	$('#error_covariance').parent('fieldset').hide();
+    }
 };
 
 $(document).ready(function() {
