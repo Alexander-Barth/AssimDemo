@@ -538,17 +538,12 @@ function Nudging(xi,Q,M,nmax,no,yo,io,tau,x,time) {
 }
 
 function FourDVar(xi,Pi,Q,M,MT,nmax,no,yo,R,H,HT,x,lambda,time) {
-    var obsindex = 0, n, i, res;
+    var n, res, b, fun, x0;
 
     function gradient(x0) {
-	var x, i, grad;
+	var x=[], grad, obsindex;
     
 	x[0] = x0;
-	// obs index
-	i = 1;
-
-	// n time index
-	// i index of x with forecast and analysis
 
 	// foreward integration
 	for (n = 0; n <= nmax-1; n++) {
@@ -557,7 +552,6 @@ function FourDVar(xi,Pi,Q,M,MT,nmax,no,yo,R,H,HT,x,lambda,time) {
 
 	// backward integration
 	lambda[nmax+1] = nu.rep([xi.length],0);
-	i = nmax;
 	obsindex = no.length-1; // start with last obs.
 
 	for (n = nmax; n >= 0; n--) {
@@ -583,20 +577,21 @@ function FourDVar(xi,Pi,Q,M,MT,nmax,no,yo,R,H,HT,x,lambda,time) {
 		   nu.sub(xi,x0)),
 	         lambda[0]);
 
-	grad = nu.mul(-2,grad);
+	return nu.mul(-2,grad);
 
     }
 
-	// correction of IC
-	x[0] = nu.add(xi,
-		  nu.dot(Pi,MT(0,lambda[0])));
+    b = gradient(nu.rep([xi.length],0));
+    fun = function(x) { return nu.sub(b,gradient(x)); };
+
+    x[0] = conjugategradient(fun,b,{tol: 1e-6, maxit: 20, x0: xi});
+    time[0] = 0;
 
     // foreward run with corrected IC
     for (n = 1; n <= nmax; n++) {
         x[n] = nu.add(M(n,x[n-1]),randnCovar(Q));
+	time[n] = n;
     }
-
-
 }
 
 
@@ -839,7 +834,43 @@ var xa = conjugategradient(fun,b,{tol: 1e-6, maxit: 20, x0: [1,1]});
 console.log('conjugategradient',nu.sub(fun(xa),b))
 }
 
-test_conjugategradient()
+function test_fourDVar(){
 
+var H,R,xi,Pi,M,no,nmax,model,modelT,obsoper,obsoperT,Q,yo,lambda,x,time;
+xi = [1,1];
+H = [[1,0]];
+R = [[1]];
+Pi = nu.identity(2);
+Q = nu.rep([2,2],0);
+M =  [[1, -.1],[ 0.1, 1]];
+no = [1,4];
+nmax = 10;
+yo = [[3],[7]];
 
-//FourDVar(xi,Pi,Q,M,MT,nmax,no,yo,R,H,HT,x,lambda,time)
+model = function(n,x) { return nu.dot(M,x); };
+modelT = function(n,x) { return nu.dot(nu.transpose(M),x); };
+obsoper = function(n,x) { return nu.dot(H,x); };
+obsoperT = function(n,x) { return nu.dot(nu.transpose(H),x); };
+
+lambda = [];
+x = [];
+time = [];
+
+FourDVar(xi,Pi,Q,model,modelT,nmax,no,yo,R,obsoper,obsoperT,x,lambda,time);
+//    3.618040483830431  -0.311337252414055 (matlab)
+console.log('FourDVar ',x[0])
+console.log('FourDVar ',x[x.length-1])
+
+var x_kf = [];
+var P = [];
+
+KalmanFilter(xi,Pi,Q,model,nmax,no,yo,R,obsoper,x_kf,P,time);
+
+    console.log('KF ',x_kf[x_kf.length-1]);
+
+// should be ~0
+    console.log('diff KF 4Dvar ',nu.sub(x_kf[x_kf.length-1], x[x.length-1]));
+}
+
+test_conjugategradient();
+test_fourDVar();
