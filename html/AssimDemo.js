@@ -24,6 +24,18 @@ var nu = numeric;
 var pp = numeric.prettyPrint;
 var demo;
 
+// parse query string
+var qs = (function(a) {
+    if (a === "") return {};
+    var b = {};
+    for (var i = 0; i < a.length; ++i)
+    {
+        var p=a[i].split('=');
+        if (p.length != 2) continue;
+        b[p[0]] = decodeURIComponent(p[1].replace(/\+/g, " "));
+    }
+    return b;
+})(window.location.search.substr(1).split('&'));
 
 function str2mat(str) {
     var rows = str.split(/ *; */);
@@ -173,8 +185,11 @@ function AssimDemo() {
 
     this.models = [
         {'title': 'Identity matrix',
-         'name': 'idmat',
+         'name': 'id',
          'fun': function(t,x) {
+             return x;
+         },
+         'fun_adj': function(t,x) {
              return x;
          },
          'n': 2,
@@ -188,6 +203,9 @@ function AssimDemo() {
          'name': 'advection',
          'fun': function(t,x) {
              return nu.dot([[0,1,0,0],[0,0,1,0],[0,0,0,1],[1,0,0,0]],x);
+         },
+         'fun_adj': function(t,x) {
+             return nu.dot(nu.transpose([[0,1,0,0],[0,0,1,0],[0,0,0,1],[1,0,0,0]]),x);
          },
          'n': 4,
          'xit': [1.5,2,3,4],
@@ -242,9 +260,9 @@ function AssimDemo() {
 
     $('#model').append($('<option />').attr({'value': 'myfun'}).text('My function in JavaScript'));
 
+    $('#method').val(qs['method'] || 'KF');
     // default model
-    $('#model').val('advection');
-    //$('#model').val('oscillation');
+    $('#model').val(qs['model'] || 'advection');
 
     // install event handlers
 
@@ -360,14 +378,14 @@ AssimDemo.prototype.selectedModel = function() {
             return null;
         }
 
-        return         {'title': 'myfun',
-			'name': 'myfun',
-			'fun': fun,
-			'n': n,
-			'xit': nu.rep([n],0),
-			'Pi': nu.identity(n),
-			'Q': nu.rep([n,n],0),
-			'formula': ''};
+        return {'title': 'myfun',
+		'name': 'myfun',
+		'fun': fun,
+		'n': n,
+		'xit': nu.rep([n],0),
+		'Pi': nu.identity(n),
+		'Q': nu.rep([n,n],0),
+		'formula': ''};
     }
     else {
         return this.models.filter(function (m)  { return m.name === modelname; })[0];
@@ -519,12 +537,73 @@ function Nudging(xi,Q,M,nmax,no,yo,io,tau,x,time) {
     }
 }
 
+function FourDVar(xi,Pi,Q,M,MT,nmax,no,yo,R,H,HT,x,lambda,time) {
+    var obsindex = 0, n, i, res;
+
+    function gradient(x0) {
+	var x, i, grad;
+    
+	x[0] = x0;
+	// obs index
+	i = 1;
+
+	// n time index
+	// i index of x with forecast and analysis
+
+	// foreward integration
+	for (n = 0; n <= nmax-1; n++) {
+            x[n+1] = nu.add(M(n,x[n]),randnCovar(Q));
+	}
+
+	// backward integration
+	lambda[nmax+1] = nu.rep([xi.length],0);
+	i = nmax;
+	obsindex = no.length-1; // start with last obs.
+
+	for (n = nmax; n >= 0; n--) {
+	    lambda[n] = MT(n,lambda[n+1]);
+	    
+            if (n === no[obsindex]) {
+            //console.log('assim ',n);
+	    
+		lambda[n] = nu.add(
+		    lambda[n],
+		    HT(obsindex,nu.dot(nu.inv(R),
+				       nu.sub(yo[obsindex],
+					      H(obsindex,x[n])))));
+		
+		obsindex = obsindex-1;
+		
+	    }
+	}
+
+	grad = nu.add(
+	         nu.dot(
+		   nu.inv(Pi),
+		   nu.sub(xi,x0)),
+	         lambda[0]);
+
+	grad = nu.mul(-2,grad);
+
+    }
+
+	// correction of IC
+	x[0] = nu.add(xi,
+		  nu.dot(Pi,MT(0,lambda[0])));
+
+    // foreward run with corrected IC
+    for (n = 1; n <= nmax; n++) {
+        x[n] = nu.add(M(n,x[n-1]),randnCovar(Q));
+    }
+
+
+}
 
 
 AssimDemo.prototype.run = function () {
     var model = this.selectedModel(),
-    M, n, Pi, Q, R, xit, no, io,
-    H, yt, xt, timet, yo, xi, xfree, x, P, time, m, obs_var, obs_xsteps, obs_tsteps, i, nmax, Pfree, options, tau;
+    M, MT, n, Pi, Q, R, xit, no, io,
+    H, HT, yt, xt, timet, yo, xi, xfree, x, P, time, m, obs_var, obs_xsteps, obs_tsteps, i, nmax, Pfree, options, tau;
 
     if (model === null) {
         return;
@@ -572,6 +651,18 @@ AssimDemo.prototype.run = function () {
         return hx;
     };
 
+    // adjoint of observation operator
+    HT = function(t,y) {
+        var x = [], j;
+	x = nu.rep([n],0);
+
+	// loop over all "observations"
+        for (j = 0; j < y.length; j += 1) {
+	    x[io[j]] = y[j];
+        }
+        return x;
+    };
+
     // true run
 
     yt = [];
@@ -607,6 +698,11 @@ AssimDemo.prototype.run = function () {
 	tau = $('#nudging_ts').val();
 	Nudging(xi,Q,M,nmax,no,yo,io,tau,x,time);
     }
+    else if (options.method === '4DVar') {
+	MT = model.fun_adj;	
+	var lambda = [];
+	FourDVar(xi,Pi,Q,M,MT,nmax,no,yo,R,H,HT,x,lambda,time);
+    }
     else {
         KalmanFilter(xi,Pi,Q,M,nmax,no,yo,R,H,x,P,time,options);
 	console.log('x ',x[x.length-1][0] === 1.3043300264354254,x[x.length-1][0]);
@@ -614,7 +710,7 @@ AssimDemo.prototype.run = function () {
     
     this.result = {x: x, yo: yo, time: time, timet: timet, 
                    xfree: xfree, Pfree: Pfree,
-                   xt: xt, no: no, P: P, obs_xsteps: obs_xsteps};
+                   xt: xt, no: no, P: P, obs_xsteps: obs_xsteps, lambda: lambda};
 
     this.plot();
 };
@@ -629,17 +725,19 @@ AssimDemo.prototype.plot = function () {
     xt = this.result.xt, 
     P = this.result.P, 
     obs_xsteps = this.result.obs_xsteps,
-    no = this.result.no;
+    no = this.result.no,
+    lambda = this.result.lambda;
 
     var obs = [];
     var statevector_index = parseInt($('#statevector_index').val(),10);
     var covar_index_i = parseInt($('#covar_index_i').val(),10);
     var covar_index_j = parseInt($('#covar_index_j').val(),10);
+    var plot_covar = [];
+    var plot_data = [];
 
 
     // statevector and observation plot
 
-    var plot_data = [];
 
     function xtimeseries(time,x,checked,s) {
         var ts = [], n;
@@ -696,9 +794,8 @@ AssimDemo.prototype.plot = function () {
         }
     }
 
-    if (this.method === 'KF' || this.method == 'OI') {
+    if (this.method === 'KF' || this.method === 'OI') {
 	// covariance plot
-	var plot_covar = [];
 	$('#error_covariance').parent('fieldset').show();
 
 	
@@ -709,9 +806,40 @@ AssimDemo.prototype.plot = function () {
     else {
 	$('#error_covariance').parent('fieldset').hide();
     }
+
+    if (this.method === '4DVar') {
+	$('#adjoint_sensitivity').parent('fieldset').show();
+
+	plot_data = [];	
+	xtimeseries(time,lambda,true, {label: 'Sens',color: 2});
+	$.plot($("#adjoint_sensitivity"),plot_data);
+    }
+    else {
+	$('#adjoint_sensitivity').parent('fieldset').hide();
+    }
+
+//lambda_index_i
+
 };
 
 $(document).ready(function() {
     demo = new AssimDemo();
     demo.run();   
+
+
+    
 });
+
+function test_conjugategradient(){
+var fun = function(x) { return nu.dot([[1,0.1],[0.1,1]],x); };
+var b = [1,2];
+
+var xa = conjugategradient(fun,b,{tol: 1e-6, maxit: 20, x0: [1,1]});
+
+console.log('conjugategradient',nu.sub(fun(xa),b))
+}
+
+test_conjugategradient()
+
+
+//FourDVar(xi,Pi,Q,M,MT,nmax,no,yo,R,H,HT,x,lambda,time)

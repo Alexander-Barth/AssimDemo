@@ -37,6 +37,7 @@
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
     <script type="text/javascript" src="compat.js"></script>
+    <script type="text/javascript" src="assim.js"></script>
     <script type="text/javascript" src="AssimDemo.js"></script>
     <script type="text/javascript">
       var _gaq = _gaq || [];
@@ -118,6 +119,7 @@ return [x[1],x[0]];
 	      <option value="KF">Kalman Filter</option>
 	      <option value="OI">Optimal Interpolation</option>
 	      <option value="Nudging">Nudging</option>
+	      <option value="4DVar">4DVar</option>
 	    </select> 
 	  </td>
 	</tr>
@@ -177,6 +179,15 @@ return [x[1],x[0]];
 	</div>
 
       <div id="error_covariance" style="width:1200px;height:300px;"></div>
+    </fieldset>
+
+    <fieldset class="sec">
+      <legend>Adjoint sensitivity</legend>
+        <div class="plot_param">
+	<label>Index</label><select id="lambda_index_i"></select> 
+	</div>
+
+      <div id="adjoint_sensitivity" style="width:1200px;height:300px;"></div>
     </fieldset>
 
     <p style="clear: both">Contact: Alexander Barth, a.barth at ulg.ac.be, 2012.</p>
