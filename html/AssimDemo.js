@@ -195,6 +195,19 @@ function AssimDemo() {
              M = [[Math.cos(f*Dt), Math.sin(f*Dt)], [-Math.sin(f*Dt), Math.cos(f*Dt)]];
              return function(t,x) { return nu.dot(M,x); };
          }()),
+
+         'fun_adj': (function() {             
+             var f=2*Math.PI, Dt = 0.1, L, M;
+             /*
+             // Crank-Nicolson
+             L = [[0,f],[-f,0]];
+             M = nu.dot(nu.inv(nu.add(nu.identity(2),nu.mul(-Dt/2,L))),
+             nu.add(nu.identity(2),nu.mul(Dt/2,L)));
+             */
+             M = [[Math.cos(f*Dt), Math.sin(f*Dt)], [-Math.sin(f*Dt), Math.cos(f*Dt)]];
+             return function(t,x) { return nu.dot(nu.transpose(M),x); };
+         }()),
+
          'n': 2,
          'xit': [1,0],
          'Pi': nu.identity(2),
@@ -573,7 +586,7 @@ AssimDemo.prototype.plot = function () {
 	$('#error_covariance').parent('fieldset').hide();
     }
 
-    if (this.method === '4DVar') {
+    if (this.method === '4DVar-xx') {
 	$('#adjoint_sensitivity').parent('fieldset').show();
 
 	plot_data = [];	
@@ -596,6 +609,6 @@ $(document).ready(function() {
     
 });
 
-
+/*
 test_conjugategradient();
-test_fourDVar();
+test_fourDVar();*/
