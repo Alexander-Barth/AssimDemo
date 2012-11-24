@@ -1,3 +1,6 @@
+var nu = numeric;
+var pp = numeric.prettyPrint;
+
 // gaussian random numbers
 function randn(size) { 
     var U,V,X;
@@ -344,6 +347,138 @@ function FourDVar(xi,Pi,Q,M,MT,nmax,no,yo,R,H,HT,x,lambda,time) {
     }
 }
 
+function EnsembleAnalysis(E,H,R,yo) {
+    var n, Mn, i, Hn, res, Nens, HET, B, U, Lambda, ampl;
+
+    Nens = E[0].length;
+    var scale = 1/Math.sqrt(Nens-1);
+
+    // mean operator
+    var M = nu.rep([Nens,Nens],1/Nens);
+    var Mm = nu.rep([Nens],1/Nens);
+
+    var I = nu.identity(Nens);
+    var iR = nu.inv(R);
+
+    // E[space index][ensemble index]
+
+    // apply H to every ensemble member HE^T[ensemble index][obs space index]
+    HET = nu.transpose(E).map(H);
+
+    // HSf = HE (I - M) * scale
+
+    // A = HE^T R^{-1} HE ; A[ensemble index][ensemble index]
+    var A = nu.dot(nu.dot(HET,iR),nu.transpose(HET));
+    // HSf = HE (I - M) * scale
+    // B = (HSf)' inv(R) (HSf)
+    var AM = nu.dot(A,M);
+    // (A - A*M - M*A + M*A*M)*scale^2;
+    var B = nu.mul(nu.add(nu.sub(nu.sub(A,AM),nu.transpose(AM)),nu.dot(M,AM)),scale*scale);
+
+    res = nu.svd(B);
+    U = res.U; 
+    Lambda = res.S;
+    // Hxf = HE * M = (M HE^T)^T
+    var Hxf = nu.dot(Mm,HET);
+    var d = nu.sub(yo,Hxf);
+
+    // tmp = (HE'*(iR * d)) * scale;
+    var tmp = nu.mul(nu.dot(HET,nu.dot(iR,d)),scale);
+
+    // tmp = tmp - mean(tmp);
+    tmp = nu.sub(tmp,nu.sum(tmp)/Nens);
+
+    // ampl = U*inv(eye(r) + Lambda)* (U' * tmp) ;
+
+    ampl = nu.dot(U,
+		  nu.dot(nu.diag(nu.div(1,nu.add(1,Lambda))),
+			 nu.dot(nu.transpose(U),tmp)));
+
+    // inc = Sf * ampl = E * (I-M) * ampl * scale;
+    
+    var inc = nu.dot(E,
+		     nu.dot(nu.sub(I,M),
+			    nu.mul(ampl,scale)));
+
+    var xf = nu.dot(E,Mm);
+    var xa = nu.add(xf,inc);
+
+    // inc = (E * ampl - mean(E,2)*sum(ampl)) * scale;
+
+    // A2 = (eye(r) - M) * (U * sqrt(inv(eye(r) + Lambda)) * U'  )
+    // E*A2 = Sa * scale
+    var A2 = nu.dot(nu.sub(I,M),
+		    nu.dot(U,
+			   nu.dot(nu.diag(nu.div(1,nu.sqrt(nu.add(1,Lambda)))),
+				  nu.transpose(U))));
+
+    var XA = nu.dot(nu.transpose([xa]),nu.rep([1,Nens],1));
+
+    var Ea = nu.add(XA,
+		    nu.dot(E,A2));
+
+    return Ea;
+}
+
+function EnsembleKalmanFilter(xi,Pi,Q,M,nmax,no,yo,R,H,x,P,time,options) {
+    var obsindex = 0, n, Mn, i, Hn, res, Nens = 10, HET, B, U, Lambda, ampl;
+    options = options || {method: 'KF'};
+
+    x[0] = xi;
+    P[0] = Pi;
+
+    // obs index
+    i = 0;
+    // n time index
+    // i index of x with forecast and analysis
+
+    Mn = function (x) { return M(n,x); };
+    Hn = function (x) { return H(obsindex,x); };
+
+
+    // x[time index][ensemble index][space index]
+    for (n = 0; n <= nmax; n++) {
+
+	if (n === 0) {
+	    // initialize ensemble
+	    for (j = 0; j < Nens; j++) {
+		x[i][j] = nu.add(xi,randnCovar(Pi));
+	    }
+	}
+	else {
+	    // ensemble run
+	    for (j = 0; j < Nens; j++) {
+		x[i][j] = nu.add(Mn(x[i-1][j]),randnCovar(Q));
+	    }
+	}
+
+        time[i] = i;
+        i = i+1;
+
+        if (n === no[obsindex]) {
+	    // analysis
+
+
+	    // Hxa = Hxf + (HE * ampl - Hxf*sum(ampl)) * scale;
+
+	    var E = nu.transpose(x[n]);
+
+
+
+            //console.log('assim ',n);
+	    res = analysis(x[i-1],P[i-1],yo[obsindex],R,Hn);
+	    x[i] = res.xa;
+	    P[i] = res.Pa;
+            time[i] = n;
+            i = i+1;
+
+            obsindex = obsindex+1;
+        }
+    }
+}
+
+
+
 
 function test_conjugategradient(){
 var fun = function(x) { return nu.dot([[1,0.1],[0.1,1]],x); };
@@ -391,3 +526,31 @@ KalmanFilter(xi,Pi,Q,model,nmax,no,yo,R,obsoper,x_kf,P,time);
 // should be ~0
     console.log('diff KF 4Dvar ',nu.sub(x_kf[x_kf.length-1], x[x.length-1]));
 }
+
+
+
+//function test_EnsembleAnalysis() 
+
+var E = [[1,10],
+	 [2,20],
+	 [3,30]];
+
+/*var H = [[1,0,0],
+	 [0,2,0]];*/
+
+var H = function(x) { return [x[0],2*x[1]]; };
+var yo = [[-1],
+	  [-2]];
+
+var R = [[1,.1],
+	 [.1,2]];
+
+
+var Ea = EnsembleAnalysis(E,H,R,yo);
+console.log('Ea',Ea)
+
+var Ea_ref = [[ -0.769462603828705, -0.289112526075811],
+	  [ -1.538925207657411, -0.578225052151622],
+	  [ -2.308387811486116, -0.867337578227433]];
+
+console.log('Ea diff',pp(nu.sub(Ea,Ea_ref)));
