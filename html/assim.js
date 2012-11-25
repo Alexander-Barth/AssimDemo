@@ -442,7 +442,7 @@ function EnsembleAnalysis(E,H,R,yo,inflation) {
     return Ea;
 }
 
-function EnsembleKalmanFilter(xi,Pi,QS,M,nmax,no,yo,R,H,x,time,options) {
+function EnsembleKalmanFilter(xi,PiS,QS,M,nmax,no,yo,R,H,x,time,options) {
     var obsindex = 0, n, Mn, i, Hn, res, Nens, E, Ea;
     options = options || {};
     Nens = options.Nens || 100;
@@ -464,7 +464,7 @@ function EnsembleKalmanFilter(xi,Pi,QS,M,nmax,no,yo,R,H,x,time,options) {
         if (n === 0) {
             // initialize ensemble
             for (j = 0; j < Nens; j++) {
-                x[i][j] = nu.add(xi,randnCovar(Pi));
+                x[i][j] = nu.add(xi,randnCovarS(PiS));
             }
         }
         else {

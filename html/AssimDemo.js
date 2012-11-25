@@ -497,7 +497,7 @@ AssimDemo.prototype.run = function () {
         var Nens = parseInt($('#Nens').val(),10);
         var inflation = parseFloat($('#inflation').val());
 
-        EnsembleKalmanFilter(xi,Pi,QS,M,nmax,no,yo,R,H,E,time,{Nens: Nens, inflation: inflation});        
+        EnsembleKalmanFilter(xi,PiS,QS,M,nmax,no,yo,R,H,E,time,{Nens: Nens, inflation: inflation});        
         EnsembleDiag(E,x,P);
 
         console.log('x ',x[x.length-1][0] === 1.3137242479551203,x[x.length-1][0]);
