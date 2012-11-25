@@ -442,7 +442,7 @@ function EnsembleAnalysis(E,H,R,yo,inflation) {
     return Ea;
 }
 
-function EnsembleKalmanFilter(xi,Pi,Q,QS,M,nmax,no,yo,R,H,x,time,options) {
+function EnsembleKalmanFilter(xi,Pi,QS,M,nmax,no,yo,R,H,x,time,options) {
     var obsindex = 0, n, Mn, i, Hn, res, Nens, E, Ea;
     options = options || {};
     Nens = options.Nens || 100;
