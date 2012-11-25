@@ -476,6 +476,11 @@ AssimDemo.prototype.run = function () {
     P = [];
     time = [];
     options = {method: this.method};
+    
+    var QS = covarDecomp(Q);
+    var PiS = covarDecomp(Pi);
+
+    var startTime=new Date() ;
 
     if (options.method === 'Nudging') {
         tau = parseFloat($('#nudging_ts').val());
@@ -492,23 +497,19 @@ AssimDemo.prototype.run = function () {
         var Nens = parseInt($('#Nens').val(),10);
         var inflation = parseFloat($('#inflation').val());
 
-        EnsembleKalmanFilter(xi,Pi,Q,M,nmax,no,yo,R,H,E,time,{Nens: Nens, inflation: inflation});
-        
-        // mean operator
-        var M = nu.mul(nu.sub(nu.identity(Nens), nu.rep([Nens,Nens],1/Nens)),1./Math.sqrt(Nens-1));
-        M = nu.dot(M,M);
-        var Mm = nu.rep([Nens],1/Nens);
+        EnsembleKalmanFilter(xi,Pi,Q,QS,M,nmax,no,yo,R,H,E,time,{Nens: Nens, inflation: inflation});        
+        EnsembleDiag(E,x,P);
 
-        // ensemble statistics
-        for (i = 0; i < E.length; i++) {
-            x[i] = nu.dot(nu.transpose(E[i]),Mm);     
-            P[i] = nu.dot(nu.dot(nu.transpose(E[i]),M),E[i]);
-        } 
+        console.log('x ',x[x.length-1][0] === 1.3137242479551203,x[x.length-1][0]);
+
     }
     else {
         KalmanFilter(xi,Pi,Q,M,nmax,no,yo,R,H,x,P,time,options);
         console.log('x ',x[x.length-1][0] === 1.3043300264354254,x[x.length-1][0]);
     }
+
+    var endTime=new Date();
+    console.log('run in ',endTime-startTime,' ms');
     
     this.result = {x: x, yo: yo, time: time, timet: timet, 
                    xfree: xfree, Pfree: Pfree,

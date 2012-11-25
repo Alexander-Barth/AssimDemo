@@ -35,6 +35,13 @@ function randnCovar(P) {
     return nu.dot(S,Z);
 }
 
+function randnCovarS(S) {
+    var Z, n = S.length;
+    
+    Z = randn([n]);
+    return nu.dot(S,Z);
+}
+
 
 function range(start,end,step) {
     var i, r = [];
@@ -435,7 +442,7 @@ function EnsembleAnalysis(E,H,R,yo,inflation) {
     return Ea;
 }
 
-function EnsembleKalmanFilter(xi,Pi,Q,M,nmax,no,yo,R,H,x,time,options) {
+function EnsembleKalmanFilter(xi,Pi,Q,QS,M,nmax,no,yo,R,H,x,time,options) {
     var obsindex = 0, n, Mn, i, Hn, res, Nens, E, Ea;
     options = options || {};
     Nens = options.Nens || 100;
@@ -463,7 +470,8 @@ function EnsembleKalmanFilter(xi,Pi,Q,M,nmax,no,yo,R,H,x,time,options) {
         else {
             // ensemble run
             for (j = 0; j < Nens; j++) {
-                x[i][j] = nu.add(Mn(x[i-1][j]),randnCovar(Q));
+                x[i][j] = nu.add(Mn(x[i-1][j]),randnCovarS(QS));
+
             }
         }
 
@@ -485,7 +493,21 @@ function EnsembleKalmanFilter(xi,Pi,Q,M,nmax,no,yo,R,H,x,time,options) {
     }
 }
 
+function EnsembleDiag(E,x,P) {
+    var Ens, M, Mm, i;
 
+    Nens = E[0].length;
+    // mean operator
+    var M = nu.mul(nu.sub(nu.identity(Nens), nu.rep([Nens,Nens],1/Nens)),1./Math.sqrt(Nens-1));
+    M = nu.dot(M,M);
+    var Mm = nu.rep([Nens],1/Nens);
+
+    // ensemble statistics
+    for (i = 0; i < E.length; i++) {
+        x[i] = nu.dot(nu.transpose(E[i]),Mm);     
+        P[i] = nu.dot(nu.dot(nu.transpose(E[i]),M),E[i]);
+    } 
+}
 
 
 function test_conjugategradient(){
