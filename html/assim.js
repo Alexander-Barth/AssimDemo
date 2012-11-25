@@ -200,11 +200,11 @@ function analysis(xf,Pf,yo,R,Hn) {
     PH = Pf.map(Hn);
     HPH = nu.transpose(PH).map(Hn);
 
-            
+    
     K = nu.dot(PH,
                nu.inv(nu.add(HPH,
                              R)));
-            
+    
     xa = nu.add(xf,
                 nu.dot(K,
                        nu.sub(yo,
@@ -296,7 +296,7 @@ function FourDVar(xi,Pi,Q,M,MT,nmax,no,yo,R,H,HT,x,lambda,time,options) {
 
     function gradient(x0) {
 	var x=[], grad, obsindex;
-    
+	
 	x[0] = x0;
 
 	// foreward integration
@@ -312,8 +312,8 @@ function FourDVar(xi,Pi,Q,M,MT,nmax,no,yo,R,H,HT,x,lambda,time,options) {
 	    lambda[n] = MT(n,lambda[n+1]);
 	    
             if (n === no[obsindex]) {
-            //console.log('assim ',n);
-	    
+		//console.log('assim ',n);
+		
 		lambda[n] = nu.add(
 		    lambda[n],
 		    HT(obsindex,nu.dot(nu.inv(R),
@@ -326,10 +326,10 @@ function FourDVar(xi,Pi,Q,M,MT,nmax,no,yo,R,H,HT,x,lambda,time,options) {
 	}
 
 	grad = nu.add(
-	         nu.dot(
-		   nu.inv(Pi),
-		   nu.sub(xi,x0)),
-	         lambda[0]);
+            nu.dot(
+		nu.inv(Pi),
+		nu.sub(xi,x0)),
+            lambda[0]);
 
 	return nu.mul(-2,grad);
 
@@ -477,50 +477,50 @@ function EnsembleKalmanFilter(xi,Pi,Q,M,nmax,no,yo,R,H,x,time,options) {
 
 
 function test_conjugategradient(){
-var fun = function(x) { return nu.dot([[1,0.1],[0.1,1]],x); };
-var b = [1,2];
+    var fun = function(x) { return nu.dot([[1,0.1],[0.1,1]],x); };
+    var b = [1,2];
 
-var xa = conjugategradient(fun,b,{tol: 1e-6, maxit: 20, x0: [1,1]});
+    var xa = conjugategradient(fun,b,{tol: 1e-6, maxit: 20, x0: [1,1]});
 
-console.log('conjugategradient',nu.sub(fun(xa),b))
+    console.log('conjugategradient',nu.sub(fun(xa),b))
 }
 
 function test_fourDVar(){
 
-var H,R,xi,Pi,M,no,nmax,model,modelT,obsoper,obsoperT,Q,yo,lambda,x,time;
-xi = [1,1];
-H = [[1,0]];
-R = [[1]];
-Pi = nu.identity(2);
-Q = nu.rep([2,2],0);
-M =  [[1, -.1],[ 0.1, 1]];
-no = [1,4];
-nmax = 10;
-yo = [[3],[7]];
+    var H,R,xi,Pi,M,no,nmax,model,modelT,obsoper,obsoperT,Q,yo,lambda,x,time;
+    xi = [1,1];
+    H = [[1,0]];
+    R = [[1]];
+    Pi = nu.identity(2);
+    Q = nu.rep([2,2],0);
+    M =  [[1, -.1],[ 0.1, 1]];
+    no = [1,4];
+    nmax = 10;
+    yo = [[3],[7]];
 
-model = function(n,x) { return nu.dot(M,x); };
-modelT = function(n,x) { return nu.dot(nu.transpose(M),x); };
-obsoper = function(n,x) { return nu.dot(H,x); };
-obsoperT = function(n,x) { return nu.dot(nu.transpose(H),x); };
+    model = function(n,x) { return nu.dot(M,x); };
+    modelT = function(n,x) { return nu.dot(nu.transpose(M),x); };
+    obsoper = function(n,x) { return nu.dot(H,x); };
+    obsoperT = function(n,x) { return nu.dot(nu.transpose(H),x); };
 
-lambda = [];
-x = [];
-time = [];
+    lambda = [];
+    x = [];
+    time = [];
 
-FourDVar(xi,Pi,Q,model,modelT,nmax,no,yo,R,obsoper,obsoperT,x,lambda,time);
+    FourDVar(xi,Pi,Q,model,modelT,nmax,no,yo,R,obsoper,obsoperT,x,lambda,time);
     var x0_ref = [    3.618040483830431,  -0.311337252414055]; // (matlab)
 
     console.log('FourDVar diff ',nu.sub(x[0],x0_ref));
-//console.log('FourDVar ',x[x.length-1])
+    //console.log('FourDVar ',x[x.length-1])
 
-var x_kf = [];
-var P = [];
+    var x_kf = [];
+    var P = [];
 
-KalmanFilter(xi,Pi,Q,model,nmax,no,yo,R,obsoper,x_kf,P,time);
+    KalmanFilter(xi,Pi,Q,model,nmax,no,yo,R,obsoper,x_kf,P,time);
 
-//    console.log('KF ',x_kf[x_kf.length-1]);
+    //    console.log('KF ',x_kf[x_kf.length-1]);
 
-// should be ~0
+    // should be ~0
     console.log('diff KF 4Dvar ',nu.sub(x_kf[x_kf.length-1], x[x.length-1]));
 }
 
@@ -528,27 +528,27 @@ KalmanFilter(xi,Pi,Q,model,nmax,no,yo,R,obsoper,x_kf,P,time);
 
 function test_EnsembleAnalysis()  {
 
-var E = [[1,10],
-	 [2,20],
-	 [3,30]];
+    var E = [[1,10],
+	     [2,20],
+	     [3,30]];
 
-/*var H = [[1,0,0],
-	 [0,2,0]];*/
+    /*var H = [[1,0,0],
+      [0,2,0]];*/
 
-var H = function(x) { return [x[0],2*x[1]]; };
-var yo = [-1,-2];
-var R = [[1,.1],
-	 [.1,2]];
+    var H = function(x) { return [x[0],2*x[1]]; };
+    var yo = [-1,-2];
+    var R = [[1,.1],
+	     [.1,2]];
 
 
-var Ea = EnsembleAnalysis(E,H,R,yo);
-//console.log('Ea',Ea)
+    var Ea = EnsembleAnalysis(E,H,R,yo);
+    //console.log('Ea',Ea)
 
-var Ea_ref = [[ -0.769462603828705, -0.289112526075811],
-	  [ -1.538925207657411, -0.578225052151622],
-	  [ -2.308387811486116, -0.867337578227433]];
+    var Ea_ref = [[ -0.769462603828705, -0.289112526075811],
+		  [ -1.538925207657411, -0.578225052151622],
+		  [ -2.308387811486116, -0.867337578227433]];
 
-console.log('Ea diff',pp(nu.sub(Ea,Ea_ref)));
+    console.log('Ea diff',pp(nu.sub(Ea,Ea_ref)));
 
 }
 
