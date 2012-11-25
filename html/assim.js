@@ -461,7 +461,7 @@ function EnsembleKalmanFilter(xi,Pi,Q,M,nmax,no,yo,R,H,x,time,options) {
         if (n === no[obsindex]) {
             // analysis
 
-            E = nu.transpose(x[n]);
+            E = nu.transpose(x[i-1]);
             Ea = EnsembleAnalysis(E,Hn,R,yo[obsindex]);
 
             x[i] = nu.transpose(Ea);
