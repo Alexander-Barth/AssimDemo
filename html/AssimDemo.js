@@ -396,6 +396,10 @@ AssimDemo.prototype.run = function () {
     n = model.n;
     Pi = model.Pi;
     Q = model.Q;
+    
+    // square-root matrices
+    var QS = covarDecomp(Q);
+    var PiS = covarDecomp(Pi);
 
     // seed for random numbers
     nu.seedrandom.seedrandom(parseFloat($('#randseed').val()));
@@ -469,7 +473,11 @@ AssimDemo.prototype.run = function () {
     //xi = xit;
     xfree = [];
     Pfree = [];
-    FreeRun(xi,Pi,nmax,no,M,Q,H,xfree,Pfree,yt,timet);
+
+    var startTime=new Date();
+    FreeRun(xi,Pi,nmax,no,M,QS,H,xfree,Pfree,yt,timet);
+    var endTime=new Date();
+    console.log('free run in ',endTime-startTime,' ms');
 
     //console.log('yo ',yo[1]);
     x = [];
@@ -477,10 +485,8 @@ AssimDemo.prototype.run = function () {
     time = [];
     options = {method: this.method};
     
-    var QS = covarDecomp(Q);
-    var PiS = covarDecomp(Pi);
 
-    var startTime=new Date() ;
+    startTime=new Date() ;
 
     if (options.method === 'Nudging') {
         tau = parseFloat($('#nudging_ts').val());
@@ -508,8 +514,8 @@ AssimDemo.prototype.run = function () {
         console.log('x ',x[x.length-1][0] === 1.3043300264354254,x[x.length-1][0]);
     }
 
-    var endTime=new Date();
-    console.log('run in ',endTime-startTime,' ms');
+    endTime=new Date();
+    console.log('assimilation run in ',endTime-startTime,' ms');
     
     this.result = {x: x, yo: yo, time: time, timet: timet, 
                    xfree: xfree, Pfree: Pfree,
