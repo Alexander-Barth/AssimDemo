@@ -229,9 +229,9 @@ function AssimDemo() {
 
     $('#model').append($('<option />').attr({'value': 'myfun'}).text('My function in JavaScript'));
 
-    $('#method').val(qs['method'] || 'KF');
+    $('#method').val(qs.method || 'KF');
     // default model
-    $('#model').val(qs['model'] || 'advection');
+    $('#model').val(qs.model || 'advection');
 
     // install event handlers
 
@@ -242,12 +242,12 @@ function AssimDemo() {
     $('#method').change(function() {
 	that.method = $('#method').val();
 
-	if (that.method === 'Nudging') {
-	    $('.Nudging').show();
-	}
-	else {
-	    $('.Nudging').hide();
-	}
+	$('.Nudging').hide();
+	$('.4DVar').hide();
+	$('.EnKF').hide();
+	
+	// method is also CSS class name
+	$('.' + that.method).show();
     });
    
     $('.plot_param').find('input, select').change(function() {
@@ -318,6 +318,10 @@ AssimDemo.prototype.resetModel = function() {
     this.xit.val(m.xit);
 
     $('#nmax').val(qs.nmax || 40);
+    $('#Nens').val(qs.Nens || 100);
+    $('#inflation').val(qs.inflation || 1);
+    $('#maxit').val(qs.maxit || 1);
+
     $('#obs_xsteps').val(2);
     $('#obs_tsteps').val(5);
     $('#obs_var').val(0.2);
@@ -474,18 +478,21 @@ AssimDemo.prototype.run = function () {
     options = {method: this.method};
 
     if (options.method === 'Nudging') {
-	tau = $('#nudging_ts').val();
+	tau = parseFloat($('#nudging_ts').val());
 	Nudging(xi,Q,M,nmax,no,yo,io,tau,x,time);
     }
     else if (options.method === '4DVar') {
+	var maxit = parseFloat($('#maxit').val());
 	MT = model.fun_adj;	
 	var lambda = [];
-	FourDVar(xi,Pi,Q,M,MT,nmax,no,yo,R,H,HT,x,lambda,time);
+	FourDVar(xi,Pi,Q,M,MT,nmax,no,yo,R,H,HT,x,lambda,time,{maxit: maxit});
     }
     else if (options.method === 'EnKF') {
 	var E = []; // ensemble
-	var Nens = 3;
-	EnsembleKalmanFilter(xi,Pi,Q,M,nmax,no,yo,R,H,E,time,{Nens: Nens});
+	var Nens = parseInt($('#Nens').val(),10);
+	var inflation = parseFloat($('#inflation').val());
+
+	EnsembleKalmanFilter(xi,Pi,Q,M,nmax,no,yo,R,H,E,time,{Nens: Nens, inflation: inflation});
 	
 	// mean operator
 	var M = nu.mul(nu.sub(nu.identity(Nens), nu.rep([Nens,Nens],1/Nens)),1./Math.sqrt(Nens-1));

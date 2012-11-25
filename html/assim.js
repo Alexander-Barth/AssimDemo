@@ -291,8 +291,8 @@ function Nudging(xi,Q,M,nmax,no,yo,io,tau,x,time) {
     }
 }
 
-function FourDVar(xi,Pi,Q,M,MT,nmax,no,yo,R,H,HT,x,lambda,time) {
-    var n, res, b, fun, x0;
+function FourDVar(xi,Pi,Q,M,MT,nmax,no,yo,R,H,HT,x,lambda,time,options) {
+    var n, res, b, fun, x0, maxit = options.maxit || 100, tol = options.tol; 
 
     function gradient(x0) {
 	var x=[], grad, obsindex;
@@ -338,7 +338,7 @@ function FourDVar(xi,Pi,Q,M,MT,nmax,no,yo,R,H,HT,x,lambda,time) {
     b = gradient(nu.rep([xi.length],0));
     fun = function(x) { return nu.sub(b,gradient(x)); };
 
-    x[0] = conjugategradient(fun,b,{tol: 1e-6, maxit: 20, x0: xi});
+    x[0] = conjugategradient(fun,b,{tol: tol, maxit: maxit, x0: xi});
     time[0] = 0;
 
     // foreward run with corrected IC
@@ -348,8 +348,9 @@ function FourDVar(xi,Pi,Q,M,MT,nmax,no,yo,R,H,HT,x,lambda,time) {
     }
 }
 
-function EnsembleAnalysis(E,H,R,yo) {
+function EnsembleAnalysis(E,H,R,yo,inflation) {
     var n, Mn, i, Hn, res, Nens, HET, B, U, Lambda, ampl;
+    inflation = inflation || 1;
 
     Nens = E[0].length;
     var scale = 1/Math.sqrt(Nens-1);
@@ -408,10 +409,11 @@ function EnsembleAnalysis(E,H,R,yo) {
 
     // A2 = (eye(r) - M) * (U * sqrt(inv(eye(r) + Lambda)) * U'  )
     // E*A2 = Sa * scale
-    var A2 = nu.dot(nu.sub(I,M),
-		    nu.dot(U,
-			   nu.dot(nu.diag(nu.div(1,nu.sqrt(nu.add(1,Lambda)))),
-				  nu.transpose(U))));
+    var A2 = nu.mul(inflation,
+		    nu.dot(nu.sub(I,M),
+			   nu.dot(U,
+				  nu.dot(nu.diag(nu.div(1,nu.sqrt(nu.add(1,Lambda)))),
+					 nu.transpose(U)))));
 
     var XA = nu.dot(nu.transpose([xa]),nu.rep([1,Nens],1));
 
@@ -425,6 +427,7 @@ function EnsembleKalmanFilter(xi,Pi,Q,M,nmax,no,yo,R,H,x,time,options) {
     var obsindex = 0, n, Mn, i, Hn, res, Nens, E, Ea;
     options = options || {};
     Nens = options.Nens || 100;
+    inflation = options.inflation || 1;
 
     // obs index
     i = 0;
@@ -452,14 +455,14 @@ function EnsembleKalmanFilter(xi,Pi,Q,M,nmax,no,yo,R,H,x,time,options) {
 	    }
 	}
 
-        time[i] = i;
+        time[i] = n;
         i = i+1;
 
         if (n === no[obsindex]) {
 	    // analysis
 
 	    E = nu.transpose(x[n]);
-	    Ea = EnsembleAnalysis(E,Hn,R,yo);
+	    Ea = EnsembleAnalysis(E,Hn,R,yo[obsindex]);
 
 	    x[i] = nu.transpose(Ea);
             time[i] = n;
