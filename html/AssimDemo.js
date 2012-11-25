@@ -510,7 +510,7 @@ AssimDemo.prototype.run = function () {
 
     }
     else {
-        KalmanFilter(xi,Pi,Q,M,nmax,no,yo,R,H,x,P,time,options);
+        KalmanFilter(xi,Pi,QS,M,nmax,no,yo,R,H,x,P,time,options);
         console.log('x ',x[x.length-1][0] === 1.3043300264354254,x[x.length-1][0]);
     }
 

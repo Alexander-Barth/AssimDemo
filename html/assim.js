@@ -225,8 +225,8 @@ function analysis(xf,Pf,yo,R,Hn) {
     return {xa: xa, Pa: Pa};
 }
 
-function KalmanFilter(xi,Pi,Q,M,nmax,no,yo,R,H,x,P,time,options) {
-    var obsindex = 0, n, Mn, i, Hn, res;
+function KalmanFilter(xi,Pi,QS,M,nmax,no,yo,R,H,x,P,time,options) {
+    var obsindex = 0, n, Mn, i, Hn, res, Q;
     options = options || {method: 'KF'};
 
     x[0] = xi;
@@ -234,6 +234,8 @@ function KalmanFilter(xi,Pi,Q,M,nmax,no,yo,R,H,x,P,time,options) {
     time[0] = 0;
     // obs index
     i = 1;
+    Q = nu.dot(QS,nu.transpose(QS));
+
     // n time index
     // i index of x with forecast and analysis
 
@@ -241,7 +243,8 @@ function KalmanFilter(xi,Pi,Q,M,nmax,no,yo,R,H,x,P,time,options) {
     Hn = function (x) { return H(obsindex,x); };
 
     for (n = 1; n <= nmax; n++) {
-        x[i] = nu.add(Mn(x[i-1]),randnCovar(Q));
+        //x[i] = nu.add(Mn(x[i-1]),randnCovar(Q));
+        x[i] = nu.add(Mn(x[i-1]),randnCovarS(QS));
 
         if (options.method === 'KF') {
             P[i] = nu.add(nu.transpose(P[i-1].map(Mn)).map(Mn),
