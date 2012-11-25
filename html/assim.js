@@ -1,3 +1,24 @@
+/*
+  Copyright (C) 2012 Alexander Barth <a.barth at ulg.ac.be>.      
+  
+  This program is free software: you can redistribute it and/or modify      
+  it under the terms of the GNU Affero General Public License as published  
+  by the Free Software Foundation, either version 3 of the License, or      
+  (at your option) any later version.                                       
+  
+  This program is distributed in the hope that it will be useful,           
+  but WITHOUT ANY WARRANTY; without even the implied warranty of            
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             
+  GNU Affero General Public License for more details.                       
+  
+  You should have received a copy of the GNU Affero General Public License  
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.     
+*/
+
+/*jslint browse: true, continue : true, devel : true, indent : 4, maxerr : 50, newcap : false, nomen : true, plusplus : false, regexp : true, sloppy : true, vars : true, white : false */
+/*global jQuery: false, $: false, numeric: false, MathJax */
+
+
 var nu = numeric;
 var pp = numeric.prettyPrint;
 
@@ -76,7 +97,7 @@ function range(start,end,step) {
 
 function conjugategradient(fun,b,options) {
     "use strict";
-    var n,tol2,k,alpha,beta,delta,gamma,x,r,z,p,zr_new,zr_old,r_old,Ap,r,tol,maxit,pc,pc2,x0;
+    var n,tol2,k,alpha,beta,delta,gamma,x,r,z,p,zr_new,zr_old,r_old,Ap,tol,maxit,pc,pc2,x0;
 
     tol = options.tol || 1e-6;
     maxit = options.maxit || 100;
@@ -148,7 +169,7 @@ function conjugategradient(fun,b,options) {
         if (nu.dot(r,r) < tol2) {
             //k,maxit,r'*r
             //k
-            break    
+            break;
         }
         
         //Fletcher-Reeves
@@ -398,7 +419,7 @@ function EnsembleAnalysis(E,H,R,yo,inflation) {
     // B = (HSf)' inv(R) (HSf)
     var AM = nu.dot(A,M);
     // (A - A*M - M*A + M*A*M)*scale^2;
-    var B = nu.mul(nu.add(nu.sub(nu.sub(A,AM),nu.transpose(AM)),nu.dot(M,AM)),scale*scale);
+    B = nu.mul(nu.add(nu.sub(nu.sub(A,AM),nu.transpose(AM)),nu.dot(M,AM)),scale*scale);
 
     res = nu.svd(B);
     U = res.U; 
@@ -447,7 +468,7 @@ function EnsembleAnalysis(E,H,R,yo,inflation) {
 }
 
 function EnsembleKalmanFilter(xi,PiS,QS,M,nmax,no,yo,R,H,x,time,options) {
-    var obsindex = 0, n, Mn, i, Hn, res, Nens, E, Ea;
+    var obsindex = 0, n, Mn, i, j, Hn, res, Nens, E, Ea;
     options = options || {};
     Nens = options.Nens || 100;
     inflation = options.inflation || 1;
@@ -498,13 +519,13 @@ function EnsembleKalmanFilter(xi,PiS,QS,M,nmax,no,yo,R,H,x,time,options) {
 }
 
 function EnsembleDiag(E,x,P) {
-    var Ens, M, Mm, i;
+    var Nens, M, Mm, i;
 
     Nens = E[0].length;
     // mean operator
-    var M = nu.mul(nu.sub(nu.identity(Nens), nu.rep([Nens,Nens],1/Nens)),1./Math.sqrt(Nens-1));
+    M = nu.mul(nu.sub(nu.identity(Nens), nu.rep([Nens,Nens],1/Nens)),1/Math.sqrt(Nens-1));
     M = nu.dot(M,M);
-    var Mm = nu.rep([Nens],1/Nens);
+    Mm = nu.rep([Nens],1/Nens);
 
     // ensemble statistics
     for (i = 0; i < E.length; i++) {
@@ -520,7 +541,7 @@ function test_conjugategradient(){
 
     var xa = conjugategradient(fun,b,{tol: 1e-6, maxit: 20, x0: [1,1]});
 
-    console.log('conjugategradient',nu.sub(fun(xa),b))
+    console.log('conjugategradient',nu.sub(fun(xa),b));
 }
 
 function test_fourDVar(){
