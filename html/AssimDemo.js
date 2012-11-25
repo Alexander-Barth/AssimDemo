@@ -317,7 +317,7 @@ AssimDemo.prototype.resetModel = function() {
     this.Q.val(m.Q);
     this.xit.val(m.xit);
 
-    $('#nmax').val(40);
+    $('#nmax').val(qs.nmax || 40);
     $('#obs_xsteps').val(2);
     $('#obs_tsteps').val(5);
     $('#obs_var').val(0.2);
@@ -482,6 +482,22 @@ AssimDemo.prototype.run = function () {
 	var lambda = [];
 	FourDVar(xi,Pi,Q,M,MT,nmax,no,yo,R,H,HT,x,lambda,time);
     }
+    else if (options.method === 'EnKF') {
+	var E = []; // ensemble
+	var Nens = 3;
+	EnsembleKalmanFilter(xi,Pi,Q,M,nmax,no,yo,R,H,E,time,{Nens: Nens});
+	
+	// mean operator
+	var M = nu.mul(nu.sub(nu.identity(Nens), nu.rep([Nens,Nens],1/Nens)),1./Math.sqrt(Nens-1));
+	M = nu.dot(M,M);
+	var Mm = nu.rep([Nens],1/Nens);
+
+	// ensemble statistics
+	for (i = 0; i < E.length; i++) {
+	    x[i] = nu.dot(nu.transpose(E[i]),Mm);	    
+	    P[i] = nu.dot(nu.dot(nu.transpose(E[i]),M),E[i]);
+	} 
+    }
     else {
         KalmanFilter(xi,Pi,Q,M,nmax,no,yo,R,H,x,P,time,options);
 	console.log('x ',x[x.length-1][0] === 1.3043300264354254,x[x.length-1][0]);
@@ -573,7 +589,7 @@ AssimDemo.prototype.plot = function () {
         }
     }
 
-    if (this.method === 'KF' || this.method === 'OI') {
+    if (this.method === 'KF' || this.method === 'OI' || this.method === 'EnKF') {
 	// covariance plot
 	$('#error_covariance').parent('fieldset').show();
 
@@ -606,9 +622,13 @@ $(document).ready(function() {
     demo.run();   
 
 
+
+    if (qs.test) {
+	test_conjugategradient();
+	test_fourDVar();
+	test_EnsembleAnalysis();
+    };
     
 });
 
-/*
-test_conjugategradient();
-test_fourDVar();*/
+

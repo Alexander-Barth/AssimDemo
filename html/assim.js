@@ -193,6 +193,7 @@ function FreeRun(xi,Pi,nmax,no,M,Q,H,x,P,yo,time) {
     }
 }
 
+// yo is just a vector (not a matrix with one column)
 function analysis(xf,Pf,yo,R,Hn) {
     var PH, HPH, K, xa, Pa;
 
@@ -420,12 +421,10 @@ function EnsembleAnalysis(E,H,R,yo) {
     return Ea;
 }
 
-function EnsembleKalmanFilter(xi,Pi,Q,M,nmax,no,yo,R,H,x,P,time,options) {
-    var obsindex = 0, n, Mn, i, Hn, res, Nens = 10, HET, B, U, Lambda, ampl;
-    options = options || {method: 'KF'};
-
-    x[0] = xi;
-    P[0] = Pi;
+function EnsembleKalmanFilter(xi,Pi,Q,M,nmax,no,yo,R,H,x,time,options) {
+    var obsindex = 0, n, Mn, i, Hn, res, Nens, E, Ea;
+    options = options || {};
+    Nens = options.Nens || 100;
 
     // obs index
     i = 0;
@@ -438,6 +437,7 @@ function EnsembleKalmanFilter(xi,Pi,Q,M,nmax,no,yo,R,H,x,P,time,options) {
 
     // x[time index][ensemble index][space index]
     for (n = 0; n <= nmax; n++) {
+	x[i] = [];
 
 	if (n === 0) {
 	    // initialize ensemble
@@ -458,17 +458,10 @@ function EnsembleKalmanFilter(xi,Pi,Q,M,nmax,no,yo,R,H,x,P,time,options) {
         if (n === no[obsindex]) {
 	    // analysis
 
+	    E = nu.transpose(x[n]);
+	    Ea = EnsembleAnalysis(E,Hn,R,yo);
 
-	    // Hxa = Hxf + (HE * ampl - Hxf*sum(ampl)) * scale;
-
-	    var E = nu.transpose(x[n]);
-
-
-
-            //console.log('assim ',n);
-	    res = analysis(x[i-1],P[i-1],yo[obsindex],R,Hn);
-	    x[i] = res.xa;
-	    P[i] = res.Pa;
+	    x[i] = nu.transpose(Ea);
             time[i] = n;
             i = i+1;
 
@@ -512,16 +505,17 @@ x = [];
 time = [];
 
 FourDVar(xi,Pi,Q,model,modelT,nmax,no,yo,R,obsoper,obsoperT,x,lambda,time);
-//    3.618040483830431  -0.311337252414055 (matlab)
-console.log('FourDVar ',x[0])
-console.log('FourDVar ',x[x.length-1])
+    var x0_ref = [    3.618040483830431,  -0.311337252414055]; // (matlab)
+
+    console.log('FourDVar diff ',nu.sub(x[0],x0_ref));
+//console.log('FourDVar ',x[x.length-1])
 
 var x_kf = [];
 var P = [];
 
 KalmanFilter(xi,Pi,Q,model,nmax,no,yo,R,obsoper,x_kf,P,time);
 
-    console.log('KF ',x_kf[x_kf.length-1]);
+//    console.log('KF ',x_kf[x_kf.length-1]);
 
 // should be ~0
     console.log('diff KF 4Dvar ',nu.sub(x_kf[x_kf.length-1], x[x.length-1]));
@@ -529,7 +523,7 @@ KalmanFilter(xi,Pi,Q,model,nmax,no,yo,R,obsoper,x_kf,P,time);
 
 
 
-//function test_EnsembleAnalysis() 
+function test_EnsembleAnalysis()  {
 
 var E = [[1,10],
 	 [2,20],
@@ -539,18 +533,19 @@ var E = [[1,10],
 	 [0,2,0]];*/
 
 var H = function(x) { return [x[0],2*x[1]]; };
-var yo = [[-1],
-	  [-2]];
-
+var yo = [-1,-2];
 var R = [[1,.1],
 	 [.1,2]];
 
 
 var Ea = EnsembleAnalysis(E,H,R,yo);
-console.log('Ea',Ea)
+//console.log('Ea',Ea)
 
 var Ea_ref = [[ -0.769462603828705, -0.289112526075811],
 	  [ -1.538925207657411, -0.578225052151622],
 	  [ -2.308387811486116, -0.867337578227433]];
 
 console.log('Ea diff',pp(nu.sub(Ea,Ea_ref)));
+
+}
+
