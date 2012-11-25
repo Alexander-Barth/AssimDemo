@@ -169,18 +169,18 @@ function AssimDemo() {
          'Q': nu.rep([4,4],0),
          'formula': 
          '\\begin{equation}     ' +
-	 '\\mathbf x^{(n+1)} =  ' +
-	 '\\left(               ' +
-	 '\\begin{array}{cccc}  ' +
-	 '0 & 1 & 0 & 0 \\\\    ' +
-	 '0 & 0 & 1 & 0 \\\\    ' +
-	 '0 & 0 & 0 & 1 \\\\    ' +
-	 '1 & 0 & 0 & 0         ' +
-	 '\\end{array}          ' +
-	 '\\right)              ' +
-	 '\\mathbf x^{(n)}      ' +
-	 '\\end{equation}       ' 
-	 },
+         '\\mathbf x^{(n+1)} =  ' +
+         '\\left(               ' +
+         '\\begin{array}{cccc}  ' +
+         '0 & 1 & 0 & 0 \\\\    ' +
+         '0 & 0 & 1 & 0 \\\\    ' +
+         '0 & 0 & 0 & 1 \\\\    ' +
+         '1 & 0 & 0 & 0         ' +
+         '\\end{array}          ' +
+         '\\right)              ' +
+         '\\mathbf x^{(n)}      ' +
+         '\\end{equation}       ' 
+        },
 
         {'title': 'oscillation',
          'name': 'oscillation',
@@ -213,18 +213,18 @@ function AssimDemo() {
          'Pi': nu.identity(2),
          'Q': nu.rep([2,2],0),
          'formula': 
-	 '\\begin{eqnarray} ' +
-	 '\\frac{dx_1}{dt}  &=& f x_2 \\\\ ' +
-	 '\\frac{dx_2}{dt}  &=& -f x_1 ' +
-	 '\\end{eqnarray}'}
+         '\\begin{eqnarray} ' +
+         '\\frac{dx_1}{dt}  &=& f x_2 \\\\ ' +
+         '\\frac{dx_2}{dt}  &=& -f x_1 ' +
+         '\\end{eqnarray}'}
 
     ];   
 
 
     for (m in this.models)  {
-	if (this.models.hasOwnProperty(m)) {
+        if (this.models.hasOwnProperty(m)) {
             $('#model').append($('<option />').attr({'value': this.models[m].name}).html(this.models[m].title));
-	}
+        }
     }
 
     $('#model').append($('<option />').attr({'value': 'myfun'}).text('My function in JavaScript'));
@@ -240,16 +240,16 @@ function AssimDemo() {
     });
 
     $('#method').change(function() {
-	that.method = $('#method').val();
+        that.method = $('#method').val();
 
-	$('.Nudging').hide();
-	$('.4DVar').hide();
-	$('.EnKF').hide();
-	
-	// method is also CSS class name
-	$('.' + that.method).show();
+        $('.Nudging').hide();
+        $('.4DVar').hide();
+        $('.EnKF').hide();
+        
+        // method is also CSS class name
+        $('.' + that.method).show();
     });
-   
+    
     $('.plot_param').find('input, select').change(function() {
         that.plot();
     });
@@ -271,8 +271,8 @@ AssimDemo.prototype.updateModel = function() {
     var m, i;
     
     if ($('#model').val() === 'myfun') {
-        $("#statevector_size").removeAttr('disabled');	
-	$('#statevector_size').val(2);
+        $("#statevector_size").removeAttr('disabled'); 
+        $('#statevector_size').val(2);
         $(".predefined_model").hide();
         $('.custom_model').show();
     }
@@ -352,13 +352,13 @@ AssimDemo.prototype.selectedModel = function() {
         }
 
         return {'title': 'myfun',
-		'name': 'myfun',
-		'fun': fun,
-		'n': n,
-		'xit': nu.rep([n],0),
-		'Pi': nu.identity(n),
-		'Q': nu.rep([n,n],0),
-		'formula': ''};
+                'name': 'myfun',
+                'fun': fun,
+                'n': n,
+                'xit': nu.rep([n],0),
+                'Pi': nu.identity(n),
+                'Q': nu.rep([n,n],0),
+                'formula': ''};
     }
     else {
         return this.models.filter(function (m)  { return m.name === modelname; })[0];
@@ -427,9 +427,9 @@ AssimDemo.prototype.run = function () {
     H = function(t,x) {
         var hx = [], i;
         for (i in io) {
-	    if (io.hasOwnProperty(i)) {
-		hx.push(x[io[i]]);
-	    }
+            if (io.hasOwnProperty(i)) {
+                hx.push(x[io[i]]);
+            }
         }
         return hx;
     };
@@ -437,11 +437,11 @@ AssimDemo.prototype.run = function () {
     // adjoint of observation operator
     HT = function(t,y) {
         var x = [], j;
-	x = nu.rep([n],0);
+        x = nu.rep([n],0);
 
-	// loop over all "observations"
+        // loop over all "observations"
         for (j = 0; j < y.length; j += 1) {
-	    x[io[j]] = y[j];
+            x[io[j]] = y[j];
         }
         return x;
     };
@@ -478,36 +478,36 @@ AssimDemo.prototype.run = function () {
     options = {method: this.method};
 
     if (options.method === 'Nudging') {
-	tau = parseFloat($('#nudging_ts').val());
-	Nudging(xi,Q,M,nmax,no,yo,io,tau,x,time);
+        tau = parseFloat($('#nudging_ts').val());
+        Nudging(xi,Q,M,nmax,no,yo,io,tau,x,time);
     }
     else if (options.method === '4DVar') {
-	var maxit = parseFloat($('#maxit').val());
-	MT = model.fun_adj;	
-	var lambda = [];
-	FourDVar(xi,Pi,Q,M,MT,nmax,no,yo,R,H,HT,x,lambda,time,{maxit: maxit});
+        var maxit = parseFloat($('#maxit').val());
+        MT = model.fun_adj; 
+        var lambda = [];
+        FourDVar(xi,Pi,Q,M,MT,nmax,no,yo,R,H,HT,x,lambda,time,{maxit: maxit});
     }
     else if (options.method === 'EnKF') {
-	var E = []; // ensemble
-	var Nens = parseInt($('#Nens').val(),10);
-	var inflation = parseFloat($('#inflation').val());
+        var E = []; // ensemble
+        var Nens = parseInt($('#Nens').val(),10);
+        var inflation = parseFloat($('#inflation').val());
 
-	EnsembleKalmanFilter(xi,Pi,Q,M,nmax,no,yo,R,H,E,time,{Nens: Nens, inflation: inflation});
-	
-	// mean operator
-	var M = nu.mul(nu.sub(nu.identity(Nens), nu.rep([Nens,Nens],1/Nens)),1./Math.sqrt(Nens-1));
-	M = nu.dot(M,M);
-	var Mm = nu.rep([Nens],1/Nens);
+        EnsembleKalmanFilter(xi,Pi,Q,M,nmax,no,yo,R,H,E,time,{Nens: Nens, inflation: inflation});
+        
+        // mean operator
+        var M = nu.mul(nu.sub(nu.identity(Nens), nu.rep([Nens,Nens],1/Nens)),1./Math.sqrt(Nens-1));
+        M = nu.dot(M,M);
+        var Mm = nu.rep([Nens],1/Nens);
 
-	// ensemble statistics
-	for (i = 0; i < E.length; i++) {
-	    x[i] = nu.dot(nu.transpose(E[i]),Mm);	    
-	    P[i] = nu.dot(nu.dot(nu.transpose(E[i]),M),E[i]);
-	} 
+        // ensemble statistics
+        for (i = 0; i < E.length; i++) {
+            x[i] = nu.dot(nu.transpose(E[i]),Mm);     
+            P[i] = nu.dot(nu.dot(nu.transpose(E[i]),M),E[i]);
+        } 
     }
     else {
         KalmanFilter(xi,Pi,Q,M,nmax,no,yo,R,H,x,P,time,options);
-	console.log('x ',x[x.length-1][0] === 1.3043300264354254,x[x.length-1][0]);
+        console.log('x ',x[x.length-1][0] === 1.3043300264354254,x[x.length-1][0]);
     }
     
     this.result = {x: x, yo: yo, time: time, timet: timet, 
@@ -586,41 +586,41 @@ AssimDemo.prototype.plot = function () {
 
     function covartimeseries(time,P,checked,s) {
         var errvar = [], n;
-	    
+        
         if (checked) {
-	    for (n=0; n<time.length; n++) {
+            for (n=0; n<time.length; n++) {
                 errvar.push([time[n], P[n][covar_index_i][covar_index_j]]);
-	    }
-	    s.data = errvar;
-	    plot_covar.push(s);
+            }
+            s.data = errvar;
+            plot_covar.push(s);
         }
     }
 
     if (this.method === 'KF' || this.method === 'OI' || this.method === 'EnKF') {
-	// covariance plot
-	$('#error_covariance').parent('fieldset').show();
+        // covariance plot
+        $('#error_covariance').parent('fieldset').show();
 
-	
-	covartimeseries(timet,Pfree,$('#show_covar_freerun').attr('checked'),{label: 'Free run', color: 1});
-	covartimeseries(time,P,$('#show_covar_assimilation').attr('checked'),{label: 'Assimilation', color: 2});
-	$.plot($("#error_covariance"),plot_covar);
+        
+        covartimeseries(timet,Pfree,$('#show_covar_freerun').attr('checked'),{label: 'Free run', color: 1});
+        covartimeseries(time,P,$('#show_covar_assimilation').attr('checked'),{label: 'Assimilation', color: 2});
+        $.plot($("#error_covariance"),plot_covar);
     }
     else {
-	$('#error_covariance').parent('fieldset').hide();
+        $('#error_covariance').parent('fieldset').hide();
     }
 
     if (this.method === '4DVar-xx') {
-	$('#adjoint_sensitivity').parent('fieldset').show();
+        $('#adjoint_sensitivity').parent('fieldset').show();
 
-	plot_data = [];	
-	xtimeseries(time,lambda,true, {label: 'Sens',color: 2});
-	$.plot($("#adjoint_sensitivity"),plot_data);
+        plot_data = []; 
+        xtimeseries(time,lambda,true, {label: 'Sens',color: 2});
+        $.plot($("#adjoint_sensitivity"),plot_data);
     }
     else {
-	$('#adjoint_sensitivity').parent('fieldset').hide();
+        $('#adjoint_sensitivity').parent('fieldset').hide();
     }
 
-//lambda_index_i
+    //lambda_index_i
 
 };
 
@@ -631,9 +631,9 @@ $(document).ready(function() {
 
 
     if (qs.test) {
-	test_conjugategradient();
-	test_fourDVar();
-	test_EnsembleAnalysis();
+        test_conjugategradient();
+        test_fourDVar();
+        test_EnsembleAnalysis();
     };
     
 });

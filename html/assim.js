@@ -9,9 +9,9 @@ function randn(size) {
     V = nu.random(size);
 
     X = nu.mul(nu.sqrt(nu.mul(-2,
-			      nu.log(U))),
+                              nu.log(U))),
                nu.cos(nu.mul(2*Math.PI,
-			     V)));
+                             V)));
 
     return X;
 }
@@ -112,51 +112,51 @@ function conjugategradient(fun,b,options) {
     r_old = r;
 
     for (k = 1; k <= maxit; k++) {
-	// compute A*p
-	Ap = fun(p);
-	//maxdiff(A*p,Ap)
-	
-	// how far do we need to go in direction p?
-	// alpha is determined by linesearch
-	
-	// alpha z'*r / (p' * A * p)
-	alpha[k] = zr_old / nu.dot(p,Ap); 
+        // compute A*p
+        Ap = fun(p);
+        //maxdiff(A*p,Ap)
+        
+        // how far do we need to go in direction p?
+        // alpha is determined by linesearch
+        
+        // alpha z'*r / (p' * A * p)
+        alpha[k] = zr_old / nu.dot(p,Ap); 
 
-	// get new estimate of x
-	x = nu.add(x, nu.mul(alpha[k],p));
+        // get new estimate of x
+        x = nu.add(x, nu.mul(alpha[k],p));
 
-	// recompute gradient at new x. Could be done by
-	// r = b-fun(x);
-	// but this does require an new call to fun
-	r = nu.sub(r, nu.mul(alpha[k],Ap));
-	
-	//maxdiff(r,b-fun(x))
-	
-	// apply pre-conditionner
-	z = pc(r);
+        // recompute gradient at new x. Could be done by
+        // r = b-fun(x);
+        // but this does require an new call to fun
+        r = nu.sub(r, nu.mul(alpha[k],Ap));
+        
+        //maxdiff(r,b-fun(x))
+        
+        // apply pre-conditionner
+        z = pc(r);
 
-	
-	zr_new = nu.dot(r,z);
+        
+        zr_new = nu.dot(r,z);
 
-	if (nu.dot(r,r) < tol2) {
-	    //k,maxit,r'*r
-	    //k
-	    break    
-	}
-	
-	//Fletcher-Reeves
-	beta[k+1] = zr_new / zr_old;
-	//Polak-Ribiere
-	//beta(k+1) = r'*(r-r_old) / zr_old;
-	//Hestenes-Stiefel
-	//beta(k+1) = r'*(r-r_old) / (p'*(r-r_old));
-	//beta(k+1) = r'*(r-r_old) / (r_old'*r_old);
-	
-	
-	// norm(p)
-	p = nu.add(z, nu.mul(beta[k+1],p));
-	zr_old = zr_new;  
-	r_old = r;
+        if (nu.dot(r,r) < tol2) {
+            //k,maxit,r'*r
+            //k
+            break    
+        }
+        
+        //Fletcher-Reeves
+        beta[k+1] = zr_new / zr_old;
+        //Polak-Ribiere
+        //beta(k+1) = r'*(r-r_old) / zr_old;
+        //Hestenes-Stiefel
+        //beta(k+1) = r'*(r-r_old) / (p'*(r-r_old));
+        //beta(k+1) = r'*(r-r_old) / (r_old'*r_old);
+        
+        
+        // norm(p)
+        p = nu.add(z, nu.mul(beta[k+1],p));
+        zr_old = zr_new;  
+        r_old = r;
     }
 
     return x;
@@ -235,22 +235,22 @@ function KalmanFilter(xi,Pi,Q,M,nmax,no,yo,R,H,x,P,time,options) {
     for (n = 1; n <= nmax; n++) {
         x[i] = nu.add(Mn(x[i-1]),randnCovar(Q));
 
-	if (options.method === 'KF') {
+        if (options.method === 'KF') {
             P[i] = nu.add(nu.transpose(P[i-1].map(Mn)).map(Mn),
-			  Q);
-	}
+                          Q);
+        }
         else {
             P[i] = Pi;
-	}
+        }
 
         time[i] = n;
         i = i+1;
 
         if (n === no[obsindex]) {
             //console.log('assim ',n);
-	    res = analysis(x[i-1],P[i-1],yo[obsindex],R,Hn);
-	    x[i] = res.xa;
-	    P[i] = res.Pa;
+            res = analysis(x[i-1],P[i-1],yo[obsindex],R,Hn);
+            x[i] = res.xa;
+            P[i] = res.Pa;
             time[i] = n;
             i = i+1;
 
@@ -276,16 +276,16 @@ function Nudging(xi,Q,M,nmax,no,yo,io,tau,x,time) {
 
         x[n] = nu.add(Mn(x[n-1]),randnCovar(Q));        
         time[n] = n;
-	
-	// loop over all observations
+        
+        // loop over all observations
         for (j = 0; j < yo[obsindex].length; j += 1) {
-	    // nudging toward observations
-	    x[n][io[j]] += (yo[obsindex][j] - x[n][io[j]])/tau;
+            // nudging toward observations
+            x[n][io[j]] += (yo[obsindex][j] - x[n][io[j]])/tau;
         }
 
         if (n === no[obsindex]) {
             //console.log('assim ',n);
-	    // use next observation
+            // use next observation
             obsindex = obsindex+1;
         }
     }
@@ -295,43 +295,43 @@ function FourDVar(xi,Pi,Q,M,MT,nmax,no,yo,R,H,HT,x,lambda,time,options) {
     var n, res, b, fun, x0, maxit = options.maxit || 100, tol = options.tol; 
 
     function gradient(x0) {
-	var x=[], grad, obsindex;
-	
-	x[0] = x0;
+        var x=[], grad, obsindex;
+        
+        x[0] = x0;
 
-	// foreward integration
-	for (n = 0; n <= nmax-1; n++) {
+        // foreward integration
+        for (n = 0; n <= nmax-1; n++) {
             x[n+1] = nu.add(M(n,x[n]),randnCovar(Q));
-	}
+        }
 
-	// backward integration
-	lambda[nmax+1] = nu.rep([xi.length],0);
-	obsindex = no.length-1; // start with last obs.
+        // backward integration
+        lambda[nmax+1] = nu.rep([xi.length],0);
+        obsindex = no.length-1; // start with last obs.
 
-	for (n = nmax; n >= 0; n--) {
-	    lambda[n] = MT(n,lambda[n+1]);
-	    
+        for (n = nmax; n >= 0; n--) {
+            lambda[n] = MT(n,lambda[n+1]);
+            
             if (n === no[obsindex]) {
-		//console.log('assim ',n);
-		
-		lambda[n] = nu.add(
-		    lambda[n],
-		    HT(obsindex,nu.dot(nu.inv(R),
-				       nu.sub(yo[obsindex],
-					      H(obsindex,x[n])))));
-		
-		obsindex = obsindex-1;
-		
-	    }
-	}
+                //console.log('assim ',n);
+                
+                lambda[n] = nu.add(
+                    lambda[n],
+                    HT(obsindex,nu.dot(nu.inv(R),
+                                       nu.sub(yo[obsindex],
+                                              H(obsindex,x[n])))));
+                
+                obsindex = obsindex-1;
+                
+            }
+        }
 
-	grad = nu.add(
+        grad = nu.add(
             nu.dot(
-		nu.inv(Pi),
-		nu.sub(xi,x0)),
+                nu.inv(Pi),
+                nu.sub(xi,x0)),
             lambda[0]);
 
-	return nu.mul(-2,grad);
+        return nu.mul(-2,grad);
 
     }
 
@@ -344,7 +344,7 @@ function FourDVar(xi,Pi,Q,M,MT,nmax,no,yo,R,H,HT,x,lambda,time,options) {
     // foreward run with corrected IC
     for (n = 1; n <= nmax; n++) {
         x[n] = nu.add(M(n,x[n-1]),randnCovar(Q));
-	time[n] = n;
+        time[n] = n;
     }
 }
 
@@ -393,14 +393,14 @@ function EnsembleAnalysis(E,H,R,yo,inflation) {
     // ampl = U*inv(eye(r) + Lambda)* (U' * tmp) ;
 
     ampl = nu.dot(U,
-		  nu.dot(nu.diag(nu.div(1,nu.add(1,Lambda))),
-			 nu.dot(nu.transpose(U),tmp)));
+                  nu.dot(nu.diag(nu.div(1,nu.add(1,Lambda))),
+                         nu.dot(nu.transpose(U),tmp)));
 
     // inc = Sf * ampl = E * (I-M) * ampl * scale;
     
     var inc = nu.dot(E,
-		     nu.dot(nu.sub(I,M),
-			    nu.mul(ampl,scale)));
+                     nu.dot(nu.sub(I,M),
+                            nu.mul(ampl,scale)));
 
     var xf = nu.dot(E,Mm);
     var xa = nu.add(xf,inc);
@@ -410,15 +410,15 @@ function EnsembleAnalysis(E,H,R,yo,inflation) {
     // A2 = (eye(r) - M) * (U * sqrt(inv(eye(r) + Lambda)) * U'  )
     // E*A2 = Sa * scale
     var A2 = nu.mul(inflation,
-		    nu.dot(nu.sub(I,M),
-			   nu.dot(U,
-				  nu.dot(nu.diag(nu.div(1,nu.sqrt(nu.add(1,Lambda)))),
-					 nu.transpose(U)))));
+                    nu.dot(nu.sub(I,M),
+                           nu.dot(U,
+                                  nu.dot(nu.diag(nu.div(1,nu.sqrt(nu.add(1,Lambda)))),
+                                         nu.transpose(U)))));
 
     var XA = nu.dot(nu.transpose([xa]),nu.rep([1,Nens],1));
 
     var Ea = nu.add(XA,
-		    nu.dot(E,A2));
+                    nu.dot(E,A2));
 
     return Ea;
 }
@@ -440,31 +440,31 @@ function EnsembleKalmanFilter(xi,Pi,Q,M,nmax,no,yo,R,H,x,time,options) {
 
     // x[time index][ensemble index][space index]
     for (n = 0; n <= nmax; n++) {
-	x[i] = [];
+        x[i] = [];
 
-	if (n === 0) {
-	    // initialize ensemble
-	    for (j = 0; j < Nens; j++) {
-		x[i][j] = nu.add(xi,randnCovar(Pi));
-	    }
-	}
-	else {
-	    // ensemble run
-	    for (j = 0; j < Nens; j++) {
-		x[i][j] = nu.add(Mn(x[i-1][j]),randnCovar(Q));
-	    }
-	}
+        if (n === 0) {
+            // initialize ensemble
+            for (j = 0; j < Nens; j++) {
+                x[i][j] = nu.add(xi,randnCovar(Pi));
+            }
+        }
+        else {
+            // ensemble run
+            for (j = 0; j < Nens; j++) {
+                x[i][j] = nu.add(Mn(x[i-1][j]),randnCovar(Q));
+            }
+        }
 
         time[i] = n;
         i = i+1;
 
         if (n === no[obsindex]) {
-	    // analysis
+            // analysis
 
-	    E = nu.transpose(x[n]);
-	    Ea = EnsembleAnalysis(E,Hn,R,yo[obsindex]);
+            E = nu.transpose(x[n]);
+            Ea = EnsembleAnalysis(E,Hn,R,yo[obsindex]);
 
-	    x[i] = nu.transpose(Ea);
+            x[i] = nu.transpose(Ea);
             time[i] = n;
             i = i+1;
 
@@ -529,8 +529,8 @@ function test_fourDVar(){
 function test_EnsembleAnalysis()  {
 
     var E = [[1,10],
-	     [2,20],
-	     [3,30]];
+             [2,20],
+             [3,30]];
 
     /*var H = [[1,0,0],
       [0,2,0]];*/
@@ -538,15 +538,15 @@ function test_EnsembleAnalysis()  {
     var H = function(x) { return [x[0],2*x[1]]; };
     var yo = [-1,-2];
     var R = [[1,.1],
-	     [.1,2]];
+             [.1,2]];
 
 
     var Ea = EnsembleAnalysis(E,H,R,yo);
     //console.log('Ea',Ea)
 
     var Ea_ref = [[ -0.769462603828705, -0.289112526075811],
-		  [ -1.538925207657411, -0.578225052151622],
-		  [ -2.308387811486116, -0.867337578227433]];
+                  [ -1.538925207657411, -0.578225052151622],
+                  [ -2.308387811486116, -0.867337578227433]];
 
     console.log('Ea diff',pp(nu.sub(Ea,Ea_ref)));
 
