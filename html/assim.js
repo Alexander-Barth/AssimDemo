@@ -348,6 +348,18 @@ function FourDVar(xi,Pi,Q,M,MT,nmax,no,yo,R,H,HT,x,lambda,time,options) {
     }
 }
 
+// analysis based on an ensemble of model states
+//
+// Input:
+// E: initial ensemble (forecast), Matrix of size n x Nens
+// H: observation operator: R^n -> R^m
+// R: error covariance of observations, Matrix of size m x m
+// yo: observation, vector with m elements
+// inflation: scalar
+//
+// Output:
+// Ea: analysis ensemble, matrix of size n x Nens
+
 function EnsembleAnalysis(E,H,R,yo,inflation) {
     var n, Mn, i, Hn, res, Nens, HET, B, U, Lambda, ampl;
     inflation = inflation || 1;
