@@ -395,7 +395,7 @@ AssimDemo.prototype.run = function () {
     }
 
     M = model.fun;
-    Mtgl = model.fun_tgl || M;
+    Mtgl = model.fun_tgl || function (n,x,dx) { return M(n,dx); };
     n = model.n;
     Pi = model.Pi;
     Q = model.Q;
@@ -513,7 +513,7 @@ AssimDemo.prototype.run = function () {
 
     }
     else {
-        KalmanFilter(xi,Pi,QS,M,nmax,no,yo,R,H,x,P,time,options);
+        KalmanFilter(xi,Pi,QS,M,Mtgl,nmax,no,yo,R,H,x,P,time,options);
         console.log('x ',x[x.length-1][0] === 1.3043300264354254,x[x.length-1][0]);
     }
 

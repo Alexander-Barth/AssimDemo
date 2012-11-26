@@ -246,7 +246,7 @@ function analysis(xf,Pf,yo,R,Hn) {
     return {xa: xa, Pa: Pa};
 }
 
-function KalmanFilter(xi,Pi,QS,M,nmax,no,yo,R,H,x,P,time,options) {
+function KalmanFilter(xi,Pi,QS,M,Mtgl,nmax,no,yo,R,H,x,P,time,options) {
     var obsindex = 0, n, Mn, i, Hn, res, Q;
     options = options || {method: 'KF'};
 
@@ -265,7 +265,7 @@ function KalmanFilter(xi,Pi,QS,M,nmax,no,yo,R,H,x,P,time,options) {
 
     for (n = 1; n <= nmax; n++) {
         //x[i] = nu.add(Mn(x[i-1]),randnCovar(Q));
-        x[i] = nu.add(Mn(x[i-1]),randnCovarS(QS));
+        x[i] = nu.add(M(n,x[i-1]),randnCovarS(QS));
 
         if (options.method === 'KF') {
             P[i] = nu.add(nu.transpose(P[i-1].map(Mn)).map(Mn),
@@ -575,7 +575,7 @@ function test_fourDVar(){
     var x_kf = [];
     var P = [];
 
-    KalmanFilter(xi,Pi,Q,model,nmax,no,yo,R,obsoper,x_kf,P,time);
+    KalmanFilter(xi,Pi,Q,model,model,nmax,no,yo,R,obsoper,x_kf,P,time);
 
     //    console.log('KF ',x_kf[x_kf.length-1]);
 
