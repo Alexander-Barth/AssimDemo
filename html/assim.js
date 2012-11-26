@@ -260,7 +260,8 @@ function KalmanFilter(xi,Pi,QS,M,Mtgl,nmax,no,yo,R,H,x,P,time,options) {
     // n time index
     // i index of x with forecast and analysis
 
-    Mn = function (x) { return M(n,x); };
+    //Mn = function (dx) { return Mtgl(n,x[i-1],dx); };
+    Mn = function (dx) { return M(n,dx); };
     Hn = function (x) { return H(obsindex,x); };
 
     for (n = 1; n <= nmax; n++) {
