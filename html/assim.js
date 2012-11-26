@@ -260,8 +260,8 @@ function KalmanFilter(xi,Pi,QS,M,Mtgl,nmax,no,yo,R,H,x,P,time,options) {
     // n time index
     // i index of x with forecast and analysis
 
-    //Mn = function (dx) { return Mtgl(n,x[i-1],dx); };
-    Mn = function (dx) { return M(n,dx); };
+    Mn = function (dx) { return Mtgl(n,x[i-1],dx); };
+    //Mn = function (dx) { return M(n,dx); };
     Hn = function (x) { return H(obsindex,x); };
 
     for (n = 1; n <= nmax; n++) {
@@ -559,6 +559,7 @@ function test_fourDVar(){
     yo = [[3],[7]];
 
     model = function(n,x) { return nu.dot(M,x); };
+    model_tgl = function(n,x,dx) { return nu.dot(M,dx); };
     modelT = function(n,x,dx) { return nu.dot(nu.transpose(M),dx); };
     obsoper = function(n,x) { return nu.dot(H,x); };
     obsoperT = function(n,x) { return nu.dot(nu.transpose(H),x); };
@@ -567,7 +568,7 @@ function test_fourDVar(){
     x = [];
     time = [];
 
-    FourDVar(xi,Pi,Q,model,model,modelT,nmax,no,yo,R,obsoper,obsoperT,x,lambda,time);
+    FourDVar(xi,Pi,Q,model,model_tgl,modelT,nmax,no,yo,R,obsoper,obsoperT,x,lambda,time);
     var x0_ref = [    3.618040483830431,  -0.311337252414055]; // (matlab)
 
     console.log('FourDVar diff ',nu.sub(x[0],x0_ref));
@@ -576,12 +577,14 @@ function test_fourDVar(){
     var x_kf = [];
     var P = [];
 
-    KalmanFilter(xi,Pi,Q,model,model,nmax,no,yo,R,obsoper,x_kf,P,time);
+    KalmanFilter(xi,Pi,Q,model,model_tgl,nmax,no,yo,R,obsoper,x_kf,P,time);
 
     //    console.log('KF ',x_kf[x_kf.length-1]);
 
     // should be ~0
-    console.log('diff KF 4Dvar ',nu.sub(x_kf[x_kf.length-1], x[x.length-1]));
+
+    var diff_norm = nu.norm2(nu.sub(x_kf[x_kf.length-1], x[x.length-1]));
+    console.assert(diff_norm < 1e-10,'diff KF 4Dvar',diff_norm,x_kf[x_kf.length-1], x[x.length-1]);
 }
 
 
