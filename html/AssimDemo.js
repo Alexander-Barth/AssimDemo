@@ -387,7 +387,7 @@ function integrate(model,x,t0,t1) {
 
 AssimDemo.prototype.run = function () {
     var model = this.selectedModel(),
-    M, MT, n, Pi, Q, R, xit, no, io,
+    M, Mtgl, MT, n, Pi, Q, R, xit, no, io,
     H, HT, yt, xt, timet, yo, xi, xfree, x, P, time, m, obs_var, obs_xsteps, obs_tsteps, i, nmax, Pfree, options, tau;
 
     if (model === null) {
@@ -395,6 +395,7 @@ AssimDemo.prototype.run = function () {
     }
 
     M = model.fun;
+    Mtgl = model.fun_tgl || M;
     n = model.n;
     Pi = model.Pi;
     Q = model.Q;
@@ -498,7 +499,7 @@ AssimDemo.prototype.run = function () {
         var maxit = parseFloat($('#maxit').val());
         MT = model.fun_adj; 
         var lambda = [];
-        FourDVar(xi,Pi,Q,M,MT,nmax,no,yo,R,H,HT,x,lambda,time,{maxit: maxit});
+        FourDVar(xi,Pi,Q,M,Mtgl,MT,nmax,no,yo,R,H,HT,x,lambda,time,{maxit: maxit});
     }
     else if (options.method === 'EnKF') {
         var E = []; // ensemble

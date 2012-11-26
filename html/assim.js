@@ -323,7 +323,7 @@ function Nudging(xi,Q,M,nmax,no,yo,io,tau,x,time) {
     }
 }
 
-function FourDVar(xi,Pi,Q,M,MT,nmax,no,yo,R,H,HT,x,lambda,time,options) {
+function FourDVar(xi,Pi,Q,M,Mtgl,MT,nmax,no,yo,R,H,HT,x,lambda,time,options) {
     var n, res, b, fun, x0, options = options || {}, maxit = options.maxit || 100, tol = options.tol; 
 
     function gradient(x0) {
@@ -566,7 +566,7 @@ function test_fourDVar(){
     x = [];
     time = [];
 
-    FourDVar(xi,Pi,Q,model,modelT,nmax,no,yo,R,obsoper,obsoperT,x,lambda,time);
+    FourDVar(xi,Pi,Q,model,model,modelT,nmax,no,yo,R,obsoper,obsoperT,x,lambda,time);
     var x0_ref = [    3.618040483830431,  -0.311337252414055]; // (matlab)
 
     console.log('FourDVar diff ',nu.sub(x[0],x0_ref));
