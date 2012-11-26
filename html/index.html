@@ -116,8 +116,8 @@ return [x[1],x[0]];
 	  <td><label>Method</label></td>
 	  <td>
 	    <select id="method">
-	      <option value="KF">Kalman Filter</option>
-	      <option value="EnKF">Ensemble Kalman Filter/SEIK analysis</option>
+	      <option value="KF">(Extended) Kalman Filter</option>
+	      <option value="EnKF">Ensemble Kalman Filter</option>
 	      <option value="OI">Optimal Interpolation</option>
 	      <option value="Nudging">Nudging</option>
 	      <option value="4DVar">4DVar</option>
@@ -170,6 +170,7 @@ return [x[1],x[0]];
     </table>
       <input id="update" type="submit" value="Run assimilation">
       <input id="reset" type="button" value="Reset to defaults">
+      <img id="loading" src="loading.gif" alt="loading"/>
     </fieldset>
     </form>
 

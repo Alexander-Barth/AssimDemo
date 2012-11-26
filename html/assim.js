@@ -215,7 +215,7 @@ function conjugategradient(fun,b,options) {
 }
 
 // x,yo and time should be empty arrays on entry
-function FreeRun(xi,Pi,nmax,no,M,QS,H,x,P,yo,time) {
+function FreeRun(xi,Pi,nmax,no,M,Mtgl,QS,H,x,P,yo,time) {
     // free run
     var obsindex = 0, n, Mn, Q;
 
@@ -226,10 +226,11 @@ function FreeRun(xi,Pi,nmax,no,M,QS,H,x,P,yo,time) {
     }
     time[0] = 0;
 
-    Mn = function (x) { return M(n,x); };
+    //Mn = function (x) { return M(n,x); };
+    Mn = function (dx) { return Mtgl(n,x[n-1],dx); };
     
     for (n = 1; n <= nmax; n++) {        
-        x[n] = Mn(x[n-1]);
+        x[n] = M(n,x[n-1]);
         if (QS !== null) {
             x[n] = nu.add(x[n],randnCovarS(QS));
             P[n] = nu.add(nu.transpose(P[n-1].map(Mn)).map(Mn),

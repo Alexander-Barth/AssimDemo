@@ -220,6 +220,65 @@ function AssimDemo() {
          '\\frac{dx_2}{dt}  &=& -f x_1 ' +
          '\\end{eqnarray}'}
 
+        ,
+        {'title': 'Lorenz (1963)',
+         'name': 'Lorenz63',
+         'fun': function(n,x) {             
+             var sigma=10, beta = 8/3, rho = 28, dt=0.1;
+             return rungekutta4(0,x,dt,
+                                function(t,x) {
+                                    return [sigma*(x[1]-x[0]),
+                                            x[0]*(rho-x[2]) - x[1],
+                                            x[0]*x[1] - beta * x[2]];                                                   
+                                });
+         },
+
+/*         'fun_tgl': function(n,x,dx) {
+             var sigma=10, beta = 8/3, rho = 28, dt=0.1;
+             return rungekutta4(0,dx,dt,
+                                function(t,dx) {
+                                    return [sigma*(dx[1]-dx[0]),
+                                            dx[0]*(rho-x[2]) - x[0]*dx[2] - dx[1],
+                                            dx[0]*x[1] + x[0]*dx[1] - beta * dx[2]];                                                   
+                                });
+         },*/
+
+         'fun_tgl': function(n,x,dx) {
+             var sigma=10, beta = 8/3, rho = 28, dt=0.1, 
+               M = [[  -sigma, sigma,      0],
+                    [rho-x[2],    -1,  -x[0]],
+                    [    x[1],  x[0],  -beta]];
+
+             return rungekutta4(0,dx,dt,
+                                function(t,dx) {
+                                    return nu.dot(M,dx);
+                                });
+         },
+
+         'fun_adj': function(n,x,dx) {
+             var sigma=10, beta = 8/3, rho = 28, dt=0.1, 
+               M = [[  -sigma, sigma,      0],
+                    [rho-x[2],    -1,  -x[0]],
+                    [    x[1],  x[0],  -beta]];
+
+             return rungekutta4(0,dx,dt,
+                                function(t,dx) {
+                                    return nu.dot(nu.transpose(M),dx);
+                                });
+         },
+
+         'n': 3,
+         'xit': [1,0,0],
+         'Pi': nu.identity(3),
+         'Q': nu.rep([3,3],0),
+         'formula': 
+         '\\begin{align} ' +
+         '\\frac{dx}{dt} &= \\sigma (y - x) \\\\' +
+         '\\frac{dy}{dt} &= x (\\rho - z) - y \\\\' +
+         '\\frac{dz}{dt} &= x y - \\beta z' +
+         '\\end{align} '
+        }
+
     ];   
 
 
@@ -257,8 +316,9 @@ function AssimDemo() {
     });
 
     $('form').submit(function(e) {
-        that.run();
         e.preventDefault();
+        that.run();
+        return false;
     });
 
     $('#reset').click(function() {
@@ -394,6 +454,8 @@ AssimDemo.prototype.run = function () {
         return;
     }
 
+    $('#loading').show();
+
     M = model.fun;
     Mtgl = model.fun_tgl || function (n,x,dx) { return M(n,dx); };
     n = model.n;
@@ -459,7 +521,7 @@ AssimDemo.prototype.run = function () {
     xt = [];
     timet = [];
 
-    FreeRun(xit,null,nmax,no,M,null,H,xt,null,yt,timet);
+    FreeRun(xit,null,nmax,no,M,Mtgl,null,H,xt,null,yt,timet);
 
     // add perturbations to IC   
     xi = nu.add(xit, randnCovar(Pi));
@@ -472,13 +534,29 @@ AssimDemo.prototype.run = function () {
         yo[i] = nu.add(yt[i], randnCovar(R));
     }
 
+    var E = []; // ensemble
+    var Nens = parseInt($('#Nens').val(),10);
+
     // free run
     //xi = xit;
     xfree = [];
     Pfree = [];
 
+
     var startTime=new Date();
-    FreeRun(xi,Pi,nmax,no,M,QS,H,xfree,Pfree,yt,timet);
+
+    FreeRun(xi,Pi,nmax,no,M,Mtgl,QS,H,xfree,Pfree,yt,timet);
+
+
+    /*
+      var Ef = [];
+      var xfreeEns = [];
+      var PfreeEns = [];
+      // run without observations to get ensemble spread of free run
+      EnsembleKalmanFilter(xi,PiS,QS,M,nmax,[],yo,R,H,Ef,timet,{Nens: Nens});
+      EnsembleDiag(Ef,xfreeEns,PfreeEns);
+    */
+
     var endTime=new Date();
     console.log('free run in ',endTime-startTime,' ms');
 
@@ -499,11 +577,14 @@ AssimDemo.prototype.run = function () {
         var maxit = parseFloat($('#maxit').val());
         MT = model.fun_adj; 
         var lambda = [];
-        FourDVar(xi,Pi,Q,M,Mtgl,MT,nmax,no,yo,R,H,HT,x,lambda,time,{maxit: maxit});
+        if (MT) {
+            FourDVar(xi,Pi,Q,M,Mtgl,MT,nmax,no,yo,R,H,HT,x,lambda,time,{maxit: maxit});
+        }
+        else {
+            alert('There is currently no adjoint for the selected model. Sorry');
+        }
     }
     else if (options.method === 'EnKF') {
-        var E = []; // ensemble
-        var Nens = parseInt($('#Nens').val(),10);
         var inflation = parseFloat($('#inflation').val());
 
         EnsembleKalmanFilter(xi,PiS,QS,M,nmax,no,yo,R,H,E,time,{Nens: Nens, inflation: inflation});        
@@ -524,6 +605,7 @@ AssimDemo.prototype.run = function () {
                    xfree: xfree, Pfree: Pfree,
                    xt: xt, no: no, P: P, obs_xsteps: obs_xsteps, lambda: lambda};
 
+    $('#loading').hide();
     this.plot();
 };
 
@@ -570,7 +652,7 @@ AssimDemo.prototype.plot = function () {
 
         // observations to plot
         j = 0;
-        for (i = 0; i < x[0].length; i+=obs_xsteps) {
+        for (i = 0; i < xfree[0].length; i+=obs_xsteps) {
             // this condition will be true only once (at most)
 
             if (i === statevector_index) {
