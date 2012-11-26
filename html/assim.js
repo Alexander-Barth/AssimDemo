@@ -74,6 +74,30 @@ function range(start,end,step) {
     return r;
 }
 
+/*
+% xn = rungekutta4(t,x,dt,f)
+% solve a system of the type
+% dx/dt = f(t,x)
+% with runge kutta of order 4
+% input: 
+%   t: time (may be empty)
+%   x: initial condition
+%   dt: time step
+% output:
+%   xn: state at t+dt
+*/
+
+function rungekutta4(t,x,dt,f) {
+    var k1,k2,k3,k4;
+
+    k1 = nu.mul(dt,f(t,x));
+    k2 = nu.mul(dt,f(t + dt/2, nu.add(x,nu.mul(1/2,k1))));
+    k3 = nu.mul(dt,f(t + dt/2, nu.add(x,nu.mul(1/2,k2))));
+    k4 = nu.mul(dt,f(t +   dt, nu.add(x,nu.mul(1/2,k3))));
+
+    xn = nu.add(x, nu.mul(1/6,k), nu.mul(1/3,k2), nu.mul(1/3,k3), nu.mul(1/6,k4));
+    return xn;
+}
 
 /*
   % [x] = conjugategradient(fun,b,tol,maxit,pc,pc2,x0);
