@@ -146,8 +146,8 @@ function AssimDemo() {
          'fun': function(t,x) {
              return x;
          },
-         'fun_adj': function(t,x) {
-             return x;
+         'fun_adj': function(t,x,dx) {
+             return dx;
          },
          'n': 2,
          'xit': [1,1],
@@ -161,8 +161,9 @@ function AssimDemo() {
          'fun': function(t,x) {
              return nu.dot([[0,1,0,0],[0,0,1,0],[0,0,0,1],[1,0,0,0]],x);
          },
-         'fun_adj': function(t,x) {
-             return nu.dot(nu.transpose([[0,1,0,0],[0,0,1,0],[0,0,0,1],[1,0,0,0]]),x);
+
+         'fun_adj': function(t,x,dx) {
+             return nu.dot(nu.transpose([[0,1,0,0],[0,0,1,0],[0,0,0,1],[1,0,0,0]]),dx);
          },
          'n': 4,
          'xit': [1.5,2,3,4],
@@ -206,7 +207,7 @@ function AssimDemo() {
              nu.add(nu.identity(2),nu.mul(Dt/2,L)));
              */
              M = [[Math.cos(f*Dt), Math.sin(f*Dt)], [-Math.sin(f*Dt), Math.cos(f*Dt)]];
-             return function(t,x) { return nu.dot(nu.transpose(M),x); };
+             return function(t,x,dx) { return nu.dot(nu.transpose(M),dx); };
          }()),
 
          'n': 2,

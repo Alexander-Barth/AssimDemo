@@ -324,7 +324,7 @@ function Nudging(xi,Q,M,nmax,no,yo,io,tau,x,time) {
 }
 
 function FourDVar(xi,Pi,Q,M,MT,nmax,no,yo,R,H,HT,x,lambda,time,options) {
-    var n, res, b, fun, x0, maxit = options.maxit || 100, tol = options.tol; 
+    var n, res, b, fun, x0, options = options || {}, maxit = options.maxit || 100, tol = options.tol; 
 
     function gradient(x0) {
         var x=[], grad, obsindex;
@@ -341,7 +341,7 @@ function FourDVar(xi,Pi,Q,M,MT,nmax,no,yo,R,H,HT,x,lambda,time,options) {
         obsindex = no.length-1; // start with last obs.
 
         for (n = nmax; n >= 0; n--) {
-            lambda[n] = MT(n,lambda[n+1]);
+            lambda[n] = MT(n,x[n],lambda[n+1]);
             
             if (n === no[obsindex]) {
                 //console.log('assim ',n);
@@ -558,7 +558,7 @@ function test_fourDVar(){
     yo = [[3],[7]];
 
     model = function(n,x) { return nu.dot(M,x); };
-    modelT = function(n,x) { return nu.dot(nu.transpose(M),x); };
+    modelT = function(n,x,dx) { return nu.dot(nu.transpose(M),dx); };
     obsoper = function(n,x) { return nu.dot(H,x); };
     obsoperT = function(n,x) { return nu.dot(nu.transpose(H),x); };
 
