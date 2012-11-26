@@ -322,7 +322,7 @@ AssimDemo.prototype.resetModel = function() {
     $('#nmax').val(qs.nmax || 40);
     $('#Nens').val(qs.Nens || 100);
     $('#inflation').val(qs.inflation || 1);
-    $('#maxit').val(qs.maxit || 1);
+    $('#maxit').val(qs.maxit || 30);
 
     $('#obs_xsteps').val(2);
     $('#obs_tsteps').val(5);

@@ -88,14 +88,14 @@ function range(start,end,step) {
 */
 
 function rungekutta4(t,x,dt,f) {
-    var k1,k2,k3,k4;
+    var k1,k2,k3,k4,xn;
 
     k1 = nu.mul(dt,f(t,x));
     k2 = nu.mul(dt,f(t + dt/2, nu.add(x,nu.mul(1/2,k1))));
     k3 = nu.mul(dt,f(t + dt/2, nu.add(x,nu.mul(1/2,k2))));
     k4 = nu.mul(dt,f(t +   dt, nu.add(x,nu.mul(1/2,k3))));
 
-    xn = nu.add(x, nu.mul(1/6,k), nu.mul(1/3,k2), nu.mul(1/3,k3), nu.mul(1/6,k4));
+    xn = nu.add(x, nu.mul(1/6,k1), nu.mul(1/3,k2), nu.mul(1/3,k3), nu.mul(1/6,k4));
     return xn;
 }
 
@@ -349,7 +349,11 @@ function Nudging(xi,Q,M,nmax,no,yo,io,tau,x,time) {
 }
 
 function FourDVar(xi,Pi,Q,M,Mtgl,MT,nmax,no,yo,R,H,HT,x,lambda,time,options) {
-    var n, res, b, fun, x0, options = options || {}, maxit = options.maxit || 100, tol = options.tol; 
+    var n, res, b, fun, x0, maxit, tol; 
+
+    options = options || {};
+    maxit = options.maxit || 100;
+    tol = options.tol || 1e-6;
 
     function gradient(x0) {
         var x=[], grad, obsindex;
@@ -493,7 +497,7 @@ function EnsembleAnalysis(E,H,R,yo,inflation) {
 }
 
 function EnsembleKalmanFilter(xi,PiS,QS,M,nmax,no,yo,R,H,x,time,options) {
-    var obsindex = 0, n, Mn, i, j, Hn, res, Nens, E, Ea;
+    var obsindex = 0, n, Mn, i, j, Hn, res, Nens, E, Ea,inflation;
     options = options || {};
     Nens = options.Nens || 100;
     inflation = options.inflation || 1;
@@ -571,13 +575,13 @@ function test_conjugategradient(){
 
 function test_fourDVar(){
 
-    var H,R,xi,Pi,M,no,nmax,model,modelT,obsoper,obsoperT,Q,yo,lambda,x,time;
+    var H,R,xi,Pi,M,no,nmax,model,model_tgl,modelT,obsoper,obsoperT,Q,yo,lambda,x,time;
     xi = [1,1];
     H = [[1,0]];
     R = [[1]];
     Pi = nu.identity(2);
     Q = nu.rep([2,2],0);
-    M =  [[1, -.1],[ 0.1, 1]];
+    M =  [[1, -0.01],[ 0.1, 1]];
     no = [1,4];
     nmax = 10;
     yo = [[3],[7]];
@@ -624,8 +628,8 @@ function test_EnsembleAnalysis()  {
 
     var H = function(x) { return [x[0],2*x[1]]; };
     var yo = [-1,-2];
-    var R = [[1,.1],
-             [.1,2]];
+    var R = [[1  ,0.1],
+             [0.1,2]];
 
 
     var Ea = EnsembleAnalysis(E,H,R,yo);
