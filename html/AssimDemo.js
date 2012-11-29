@@ -383,11 +383,12 @@ AssimDemo.prototype.resetModel = function() {
     $('#Nens').val(qs.Nens || 100);
     $('#inflation').val(qs.inflation || 1);
     $('#maxit').val(qs.maxit || 30);
+    $('#outerloops').val(qs.outerloops || 30);
 
-    $('#obs_xsteps').val(2);
-    $('#obs_tsteps').val(5);
-    $('#obs_var').val(0.2);
-    $('#randseed').val(3);
+    $('#obs_xsteps').val(qs.obs_xsteps || 2);
+    $('#obs_tsteps').val(qs.obs_tsteps || 5);
+    $('#obs_var').val(qs.obs_var || 0.2);
+    $('#randseed').val(qs.randseed || 3);
 
     $('#statevector_index').empty();
     $('#covar_index_i').empty();
@@ -574,10 +575,11 @@ AssimDemo.prototype.run = function () {
     }
     else if (options.method === '4DVar') {
         var maxit = parseFloat($('#maxit').val());
+        var outerloops = parseFloat($('#outerloops').val());
         MT = model.fun_adj; 
         var lambda = [];
         if (MT) {
-            FourDVar(xi,Pi,Q,M,Mtgl,MT,nmax,no,yo,R,H,HT,x,lambda,time,{maxit: maxit});
+            FourDVar(xi,Pi,Q,M,Mtgl,MT,nmax,no,yo,R,H,HT,x,lambda,time,{maxit: maxit, outerloops: outerloops});
         }
         else {
             alert('There is currently no adjoint for the selected model. Sorry');

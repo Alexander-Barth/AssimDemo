@@ -97,7 +97,7 @@ return [x[1],x[0]];
 	  <td><label for="model">State vector size</label></td><td><input id="statevector_size" type="text" disabled="disabled"></td>
 	</tr>
 	<tr>
-	  <td><label for="nmax">Number of time steps</label></td><td><input type="text" id="nmax" value="40" pattern="[0-9]+" title="Postive number"></td>
+	  <td><label for="nmax">Number of time steps</label></td><td><input type="number" id="nmax" value="40" pattern="[0-9]+" title="Postive number"></td>
 	</tr>
 	<tr>
 	  <td><label>True initial condition x<sup>i</sup></label></td><td id="statevector_xi"></td>
@@ -148,21 +148,23 @@ return [x[1],x[0]];
 	  <td>
 	    <label class="Nudging" for="nudging_ts">Relaxation time-scale for nuding</label>
 	    <label class="EnKF" for="Nens">Number of ensemble members</label>
-	    <label class="4DVar" for="maxit">Max. number iterations</label>
+	    <label class="4DVar" for="maxit">Max. number of inner loops</label>
 	  </td>
 	  <td>
 	    <input class="Nudging" type="text" id="nudging_ts" value="40" pattern="[0-9.]+" title="Postive number"> 
 	    <input class="EnKF" type="text" id="Nens" value="100" pattern="[0-9.]+" title="Postive number" >
-	    <input class="4DVar" type="text" id="maxit" value="100" pattern="[0-9.]+" title="Postive number" >
+	    <input class="4DVar" type="number" id="maxit" value="100" pattern="[0-9.]+" title="Postive number" >
 	  </td>
 	</tr>
 
 	<tr>
 	  <td>
 	    <label class="EnKF" for="inflation">Variance inflation</label>
+	    <label class="4DVar" for="outerloops">Max. number of outer loops</label>
 	  </td>
 	  <td>
 	    <input class="EnKF" type="text" id="inflation" value="1" pattern="[0-9.]+" title="Postive number" >
+	    <input class="4DVar" type="number" id="outerloops" value="100" pattern="[0-9.]+" title="Postive number" >
 	  </td>
 	</tr>
 
