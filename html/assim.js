@@ -354,10 +354,10 @@ function Nudging(xi,Q,M,nmax,no,yo,io,tau,x,time) {
 }
 
 function FourDVar(xi,Pi,Q,M,Mtgl,MT,nmax,no,yo,R,H,HT,x,lambda,time,options) {
-    var i, n, res, b, fun, x0, maxit, tol, outerloops, dxa; 
+    var i, n, res, b, fun, x0, innerloops, tol, outerloops, dxa; 
 
     options = options || {};
-    maxit = options.maxit || 100;
+    innerloops = options.innerloops || 100;
     outerloops = options.outerloops || 10;
     tol = options.tol || 1e-6;
 
@@ -419,7 +419,7 @@ function FourDVar(xi,Pi,Q,M,Mtgl,MT,nmax,no,yo,R,H,HT,x,lambda,time,options) {
         // dx increment relative to xi
         b = gradient(zeros);
 
-        dxa = conjugategradient(fun,b,{tol: tol, maxit: maxit, x0: zeros});
+        dxa = conjugategradient(fun,b,{tol: tol, maxit: innerloops, x0: zeros});
 
         // add increment dxa to xa
         xa = nu.add(xa,dxa);

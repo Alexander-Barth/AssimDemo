@@ -382,7 +382,7 @@ AssimDemo.prototype.resetModel = function() {
     $('#nmax').val(qs.nmax || 40);
     $('#Nens').val(qs.Nens || 100);
     $('#inflation').val(qs.inflation || 1);
-    $('#maxit').val(qs.maxit || 30);
+    $('#innerloops').val(qs.innerloops || 30);
     $('#outerloops').val(qs.outerloops || 30);
 
     $('#obs_xsteps').val(qs.obs_xsteps || 2);
@@ -574,12 +574,12 @@ AssimDemo.prototype.run = function () {
         Nudging(xi,Q,M,nmax,no,yo,io,tau,x,time);
     }
     else if (options.method === '4DVar') {
-        var maxit = parseFloat($('#maxit').val());
+        var innerloops = parseFloat($('#innerloops').val());
         var outerloops = parseFloat($('#outerloops').val());
         MT = model.fun_adj; 
         var lambda = [];
         if (MT) {
-            FourDVar(xi,Pi,Q,M,Mtgl,MT,nmax,no,yo,R,H,HT,x,lambda,time,{maxit: maxit, outerloops: outerloops});
+            FourDVar(xi,Pi,Q,M,Mtgl,MT,nmax,no,yo,R,H,HT,x,lambda,time,{innerloops: innerloops, outerloops: outerloops});
         }
         else {
             alert('There is currently no adjoint for the selected model. Sorry');
