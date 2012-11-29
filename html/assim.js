@@ -339,16 +339,18 @@ function Nudging(xi,Q,M,nmax,no,yo,io,tau,x,time) {
         x[n] = nu.add(Mn(x[n-1]),randnCovar(Q));        
         time[n] = n;
         
-        // loop over all observations
-        for (j = 0; j < yo[obsindex].length; j += 1) {
-            // nudging toward observations
-            x[n][io[j]] += (yo[obsindex][j] - x[n][io[j]])/tau;
-        }
+        if (obsindex < no.length) { 
+            // loop over all observations
+            for (j = 0; j < yo[obsindex].length; j += 1) {
+                // nudging toward observations
+                x[n][io[j]] += (yo[obsindex][j] - x[n][io[j]])/tau;
+            }
 
-        if (n === no[obsindex]) {
-            //console.log('assim ',n);
-            // use next observation
-            obsindex = obsindex+1;
+            if (n === no[obsindex]) {
+                //console.log('assim ',n);
+                // use next observation
+                obsindex = obsindex+1;
+            }
         }
     }
 }
