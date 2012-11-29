@@ -149,6 +149,10 @@ function conjugategradient(fun,b,options) {
     // gradient at initial guess
     r = nu.sub(b, fun(x));
 
+    if (nu.dot(r,r) < tol2) {
+        return x;
+    }
+    
     // apply preconditioner
     z = pc(r);
 
@@ -350,20 +354,21 @@ function Nudging(xi,Q,M,nmax,no,yo,io,tau,x,time) {
 }
 
 function FourDVar(xi,Pi,Q,M,Mtgl,MT,nmax,no,yo,R,H,HT,x,lambda,time,options) {
-    var n, res, b, fun, x0, maxit, tol; 
+    var i, n, res, b, fun, x0, maxit, tol; 
 
     options = options || {};
     maxit = options.maxit || 100;
+    outerloops = options.outerloops || 10;
     tol = options.tol || 1e-6;
 
-    function gradient(x0) {
-        var x=[], grad, obsindex;
+    function gradient(dx0) {
+        var dx=[], grad, obsindex;
         
-        x[0] = x0;
+        dx[0] = dx0;
 
         // foreward integration
         for (n = 0; n <= nmax-1; n++) {
-            x[n+1] = nu.add(M(n,x[n]),randnCovar(Q));
+            dx[n+1] = nu.add(Mtgl(n,x[n],dx[n]),randnCovar(Q));
         }
 
         // backward integration
@@ -380,7 +385,8 @@ function FourDVar(xi,Pi,Q,M,Mtgl,MT,nmax,no,yo,R,H,HT,x,lambda,time,options) {
                     lambda[n],
                     HT(obsindex,nu.dot(nu.inv(R),
                                        nu.sub(yo[obsindex],
-                                              H(obsindex,x[n])))));
+                                              H(obsindex,
+                                                nu.add(x[n],dx[n]))))));
                 
                 obsindex = obsindex-1;
                 
@@ -390,19 +396,37 @@ function FourDVar(xi,Pi,Q,M,Mtgl,MT,nmax,no,yo,R,H,HT,x,lambda,time,options) {
         grad = nu.add(
             nu.dot(
                 nu.inv(Pi),
-                nu.sub(xi,x0)),
+                nu.sub(xi,nu.add(x[0],dx0))),
             lambda[0]);
 
         return nu.mul(-2,grad);
 
     }
 
-    b = gradient(nu.rep([xi.length],0));
+    var xa = xi;
+
+    for (i = 0; i < outerloops; i++) {
+    // run with non-linear model
+    x[0] = xa;
+    for (n = 1; n <= nmax; n++) {
+        x[n] = nu.add(M(n,x[n-1]),randnCovar(Q));
+        time[n] = n;
+    }
+    
+    // dx increment relative to xi
+    var zeros = nu.rep([xi.length],0);
+    b = gradient(zeros);
     fun = function(x) { return nu.sub(b,gradient(x)); };
 
-    x[0] = conjugategradient(fun,b,{tol: tol, maxit: maxit, x0: xi});
-    time[0] = 0;
+    dxa = conjugategradient(fun,b,{tol: tol, maxit: maxit, x0: zeros});
 
+    // add increment dxa to xa
+    xa = nu.add(xa,dxa);
+    }
+
+    x[0] = xa;
+
+    time[0] = 0;
     // foreward run with corrected IC
     for (n = 1; n <= nmax; n++) {
         x[n] = nu.add(M(n,x[n-1]),randnCovar(Q));
@@ -582,7 +606,7 @@ function test_fourDVar(){
     R = [[1]];
     Pi = nu.identity(2);
     Q = nu.rep([2,2],0);
-    M =  [[1, -0.01],[ 0.1, 1]];
+    M =  [[1, -0.1],[ 0.1, 1]];
     no = [1,4];
     nmax = 10;
     yo = [[3],[7]];
@@ -601,6 +625,10 @@ function test_fourDVar(){
     var x0_ref = [    3.618040483830431,  -0.311337252414055]; // (matlab)
 
     console.log('FourDVar diff ',nu.sub(x[0],x0_ref));
+    var diff_norm = nu.norm2(nu.sub(x[0],x0_ref));
+    console.assert(diff_norm < 1e-10,'diff versus matlab',x[0],x0_ref);
+
+
     //console.log('FourDVar ',x[x.length-1])
 
     var x_kf = [];
@@ -641,6 +669,7 @@ function test_EnsembleAnalysis()  {
                   [ -2.308387811486116, -0.867337578227433]];
 
     console.log('Ea diff',pp(nu.sub(Ea,Ea_ref)));
+    
 
 }
 

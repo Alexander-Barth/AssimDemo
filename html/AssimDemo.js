@@ -526,10 +526,9 @@ AssimDemo.prototype.run = function () {
     // add perturbations to IC   
     xi = nu.add(xit, randnCovar(Pi));
 
-    yo = [];
     
-    // add perturbations
-
+    // add perturbations to obs
+    yo = [];
     for (i = 0; i < no.length; i++) {
         yo[i] = nu.add(yt[i], randnCovar(R));
     }
