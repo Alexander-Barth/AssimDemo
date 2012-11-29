@@ -354,7 +354,7 @@ function Nudging(xi,Q,M,nmax,no,yo,io,tau,x,time) {
 }
 
 function FourDVar(xi,Pi,Q,M,Mtgl,MT,nmax,no,yo,R,H,HT,x,lambda,time,options) {
-    var i, n, res, b, fun, x0, maxit, tol; 
+    var i, n, res, b, fun, x0, maxit, tol, outerloops, dxa; 
 
     options = options || {};
     maxit = options.maxit || 100;
@@ -404,24 +404,25 @@ function FourDVar(xi,Pi,Q,M,Mtgl,MT,nmax,no,yo,R,H,HT,x,lambda,time,options) {
     }
 
     var xa = xi;
-
-    for (i = 0; i < outerloops; i++) {
-    // run with non-linear model
-    x[0] = xa;
-    for (n = 1; n <= nmax; n++) {
-        x[n] = nu.add(M(n,x[n-1]),randnCovar(Q));
-        time[n] = n;
-    }
-    
-    // dx increment relative to xi
     var zeros = nu.rep([xi.length],0);
-    b = gradient(zeros);
+    // b will have its latest value
     fun = function(x) { return nu.sub(b,gradient(x)); };
 
-    dxa = conjugategradient(fun,b,{tol: tol, maxit: maxit, x0: zeros});
+    for (i = 0; i < outerloops; i++) {
+        // run with non-linear model
+        x[0] = xa;
+        for (n = 1; n <= nmax; n++) {
+            x[n] = nu.add(M(n,x[n-1]),randnCovar(Q));
+            time[n] = n;
+        }
+        
+        // dx increment relative to xi
+        b = gradient(zeros);
 
-    // add increment dxa to xa
-    xa = nu.add(xa,dxa);
+        dxa = conjugategradient(fun,b,{tol: tol, maxit: maxit, x0: zeros});
+
+        // add increment dxa to xa
+        xa = nu.add(xa,dxa);
     }
 
     x[0] = xa;
@@ -600,7 +601,7 @@ function test_conjugategradient(){
 
 function test_fourDVar(){
 
-    var H,R,xi,Pi,M,no,nmax,model,model_tgl,modelT,obsoper,obsoperT,Q,yo,lambda,x,time;
+    var H,R,xi,Pi,M,no,nmax,model,model_tgl,modelT,obsoper,obsoperT,Q,yo,lambda,x,time, diff_norm;
     xi = [1,1];
     H = [[1,0]];
     R = [[1]];
@@ -625,7 +626,7 @@ function test_fourDVar(){
     var x0_ref = [    3.618040483830431,  -0.311337252414055]; // (matlab)
 
     console.log('FourDVar diff ',nu.sub(x[0],x0_ref));
-    var diff_norm = nu.norm2(nu.sub(x[0],x0_ref));
+    diff_norm = nu.norm2(nu.sub(x[0],x0_ref));
     console.assert(diff_norm < 1e-10,'diff versus matlab',x[0],x0_ref);
 
 
@@ -640,7 +641,7 @@ function test_fourDVar(){
 
     // should be ~0
 
-    var diff_norm = nu.norm2(nu.sub(x_kf[x_kf.length-1], x[x.length-1]));
+    diff_norm = nu.norm2(nu.sub(x_kf[x_kf.length-1], x[x.length-1]));
     console.assert(diff_norm < 1e-10,'diff KF 4Dvar',diff_norm,x_kf[x_kf.length-1], x[x.length-1]);
 }
 
