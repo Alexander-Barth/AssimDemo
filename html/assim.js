@@ -223,24 +223,29 @@ function FreeRun(xi,Pi,nmax,no,M,Mtgl,QS,H,x,P,yo,time) {
     // free run
     var obsindex = 0, n, Mn, Q;
 
-    x[0] = xi;
-    if (QS !== null) {
-        P[0] = Pi;
-        Q = nu.dot(QS,nu.transpose(QS));
-    }
-    time[0] = 0;
-
     //Mn = function (x) { return M(n,x); };
     Mn = function (dx) { return Mtgl(n,x[n-1],dx); };
     
-    for (n = 1; n <= nmax; n++) {        
-        x[n] = M(n,x[n-1]);
-        if (QS !== null) {
-            x[n] = nu.add(x[n],randnCovarS(QS));
-            P[n] = nu.add(nu.transpose(P[n-1].map(Mn)).map(Mn),
-                          Q);
+    for (n = 0; n <= nmax; n++) {        
+        if (n == 0) {
+            // initialize
+            x[0] = xi;
+            if (P !== null) {
+                P[0] = Pi;
+                Q = nu.dot(QS,nu.transpose(QS));
+            }
+            time[0] = 0;
         }
-
+        else {
+            x[n] = M(n,x[n-1]);
+            if (QS !== null) {
+                x[n] = nu.add(x[n],randnCovarS(QS));
+            }
+            if (P !== null) {
+                P[n] = nu.add(nu.transpose(P[n-1].map(Mn)).map(Mn),
+                              Q);
+            }
+        }
 
         time[n] = n;
         
@@ -355,8 +360,9 @@ function Nudging(xi,Q,M,nmax,no,yo,io,tau,x,time) {
     }
 }
 
+
 function FourDVar(xi,Pi,Q,M,Mtgl,MT,nmax,no,yo,R,H,HT,x,lambda,time,options) {
-    var i, n, res, b, fun, x0, innerloops, tol, outerloops, dxa; 
+    var i, n, res, b, fun, x0, innerloops, tol, outerloops, dxa, J; 
 
     options = options || {};
     innerloops = options.innerloops || 100;
@@ -411,13 +417,25 @@ function FourDVar(xi,Pi,Q,M,Mtgl,MT,nmax,no,yo,R,H,HT,x,lambda,time,options) {
     fun = function(x) { return nu.sub(b,gradient(x)); };
 
     for (i = 0; i < outerloops; i++) {
+        // cost function
+        //J[i] = nu.dot(nu.transpose(nu.sub(xa,xi)),nu.dot(nu.inv(Pi),nu.sub(xa,xi)));
+
         // run with non-linear model
-        x[0] = xa;
+
+/*        x[0] = xa;
         for (n = 1; n <= nmax; n++) {
             x[n] = nu.add(M(n,x[n-1]),randnCovar(Q));
             time[n] = n;
-        }
-        
+
+/*            if (n === no[obsindex]) {
+//                J[i] += nu.dot(nu.transpose(nu.sub(xa,xi)),nu.dot(nu.inv(Pi),nu.sub(xa,xi)));
+                
+            }*/
+           
+//        }
+        var y = [];
+        FreeRun(xa,null,nmax,no,M,null,covarDecomp(Q),H,x,null,y,time);
+
         // dx increment relative to xi
         b = gradient(zeros);
 
