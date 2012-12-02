@@ -449,7 +449,8 @@ function integrate(model,x,t0,t1) {
 AssimDemo.prototype.run = function () {
     var model = this.selectedModel(),
     M, Mtgl, MT, n, Pi, Q, R, xit, no, io,
-    H, HT, yt, xt, timet, yo, xi, xfree, x, P, time, m, obs_var, obs_xsteps, obs_tsteps, i, nmax, Pfree, options, tau;
+    H, HT, yt, xt, timet, yo, xi, xfree, x, P, time, m, obs_var, obs_xsteps, obs_tsteps, i, nmax, Pfree, options, tau,
+    lambda = [], J = [];
 
     if (model === null) {
         return;
@@ -577,9 +578,8 @@ AssimDemo.prototype.run = function () {
         var innerloops = parseFloat($('#innerloops').val());
         var outerloops = parseFloat($('#outerloops').val());
         MT = model.fun_adj; 
-        var lambda = [];
         if (MT) {
-            FourDVar(xi,Pi,Q,M,Mtgl,MT,nmax,no,yo,R,H,HT,x,lambda,time,{innerloops: innerloops, outerloops: outerloops});
+            FourDVar(xi,Pi,Q,M,Mtgl,MT,nmax,no,yo,R,H,HT,x,lambda,J,time,{innerloops: innerloops, outerloops: outerloops});
         }
         else {
             alert('There is currently no adjoint for the selected model. Sorry');
@@ -604,7 +604,7 @@ AssimDemo.prototype.run = function () {
     
     this.result = {x: x, yo: yo, time: time, timet: timet, 
                    xfree: xfree, Pfree: Pfree,
-                   xt: xt, no: no, P: P, obs_xsteps: obs_xsteps, lambda: lambda};
+                   xt: xt, no: no, P: P, obs_xsteps: obs_xsteps, lambda: lambda, J: J};
 
     $('#loading').hide();
     this.plot();
@@ -621,7 +621,8 @@ AssimDemo.prototype.plot = function () {
     P = this.result.P, 
     obs_xsteps = this.result.obs_xsteps,
     no = this.result.no,
-    lambda = this.result.lambda;
+    lambda = this.result.lambda,
+    J = this.result.J;
 
     var obs = [];
     var statevector_index = parseInt($('#statevector_index').val(),10);
@@ -700,6 +701,14 @@ AssimDemo.prototype.plot = function () {
     }
     else {
         $('#error_covariance').parent('fieldset').hide();
+    }
+
+    if (this.method === '4DVar') {
+        $('#cost_function').parent('fieldset').show();
+        $.plot($("#cost_function"),[{data: nu.transpose([range(0,J.length-1),J]) }]);
+    }
+    else {
+        $('#cost_function').parent('fieldset').hide();
     }
 
     if (this.method === '4DVar-xx') {

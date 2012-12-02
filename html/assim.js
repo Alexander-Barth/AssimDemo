@@ -99,6 +99,47 @@ function rungekutta4(t,x,dt,f) {
     return xn;
 }
 
+function rungekutta2(t,x,dt,f) {
+    var k1,k2,xn;
+
+    k1 = nu.mul(dt,f(t,x));
+    k2 = nu.mul(dt,f(t + dt/2, nu.add(x,nu.mul(1/2,k1))));
+    xn = nu.add(x, k2);
+    return xn;
+}
+
+function rungekutta2_tgl(t,x,dt,f,Dx,Df) {
+    var k1,Dk1,Dk2,Dxn;
+
+    k1 = nu.mul(dt,f(t,x));
+    Dk1 = nu.mul(dt,Df(t,x,Dx));
+
+    k2 = nu.mul(dt,f(t + dt/2, nu.add(x,nu.mul(1/2,k1))));
+    Dk2 = nu.mul(dt,f(t + dt/2, nu.add(x,nu.mul(1/2,k1)), nu.add(Dx,nu.mul(1/2,Dk1)) ));
+
+    Dxn = nu.add(Dx, Dk2);
+    return Dxn;
+}
+
+function rungekutta2_adj(t,x,dt,f,Dxn,Df_adj) {
+    var k1,Dk1,Dk2,Dx,Dtmp2;
+
+    k1 = nu.mul(dt,f(t,x));
+
+    Dx = Dxn;
+    Dk2 = Dxn;
+
+    Dtmp2 = Df_adj(t + dt/2, nu.add(x,nu.mul(1/2,k1)), nu.mul(dt,Dk2));
+
+    Dx = nu.add(Dx, Dtmp2);
+    Dk1 = nu.mul(1/2,Dtmp2);
+
+    Dx = nu.add(Dx, nu.mul(dt,Df_adj(t,x,Dk1)));
+
+    return Dx;
+}
+
+
 /*
   % [x] = conjugategradient(fun,b,tol,maxit,pc,pc2,x0);
   % [x,Q,T] = conjugategradient(fun,b,tol,maxit,pc,pc2,x0);
@@ -360,9 +401,13 @@ function Nudging(xi,Q,M,nmax,no,yo,io,tau,x,time) {
     }
 }
 
+function FoutDVarCost(xi,Pi,yo,R,H,x,yo) {
 
-function FourDVar(xi,Pi,Q,M,Mtgl,MT,nmax,no,yo,R,H,HT,x,lambda,time,options) {
-    var i, n, res, b, fun, x0, innerloops, tol, outerloops, dxa, J; 
+}
+
+
+function FourDVar(xi,Pi,Q,M,Mtgl,MT,nmax,no,yo,R,H,HT,x,lambda,J,time,options) {
+    var i, n, res, b, fun, x0, innerloops, tol, outerloops, dxa, tmp; 
 
     options = options || {};
     innerloops = options.innerloops || 100;
@@ -417,8 +462,6 @@ function FourDVar(xi,Pi,Q,M,Mtgl,MT,nmax,no,yo,R,H,HT,x,lambda,time,options) {
     fun = function(x) { return nu.sub(b,gradient(x)); };
 
     for (i = 0; i < outerloops; i++) {
-        // cost function
-        //J[i] = nu.dot(nu.transpose(nu.sub(xa,xi)),nu.dot(nu.inv(Pi),nu.sub(xa,xi)));
 
         // run with non-linear model
 
@@ -436,6 +479,13 @@ function FourDVar(xi,Pi,Q,M,Mtgl,MT,nmax,no,yo,R,H,HT,x,lambda,time,options) {
         var y = [];
         FreeRun(xa,null,nmax,no,M,null,covarDecomp(Q),H,x,null,y,time);
 
+        // cost function
+        tmp = nu.sub(xa,xi);
+        J[i] = nu.dot(tmp,nu.dot(nu.inv(Pi),tmp));
+        for (n = 0; n < yo.length; n++) {
+            tmp = nu.sub(yo[n],y[n]);
+            J[i] += nu.dot(tmp,nu.dot(nu.inv(R),tmp));
+        }
         // dx increment relative to xi
         b = gradient(zeros);
 
@@ -444,6 +494,8 @@ function FourDVar(xi,Pi,Q,M,Mtgl,MT,nmax,no,yo,R,H,HT,x,lambda,time,options) {
         // add increment dxa to xa
         xa = nu.add(xa,dxa);
     }
+
+        console.log('J',J);
 
     x[0] = xa;
 
@@ -641,8 +693,9 @@ function test_fourDVar(){
     lambda = [];
     x = [];
     time = [];
+    J = [];
 
-    FourDVar(xi,Pi,Q,model,model_tgl,modelT,nmax,no,yo,R,obsoper,obsoperT,x,lambda,time);
+    FourDVar(xi,Pi,Q,model,model_tgl,modelT,nmax,no,yo,R,obsoper,obsoperT,x,lambda,J,time);
     var x0_ref = [    3.618040483830431,  -0.311337252414055]; // (matlab)
 
     console.log('FourDVar diff ',nu.sub(x[0],x0_ref));
