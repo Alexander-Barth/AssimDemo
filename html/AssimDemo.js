@@ -335,7 +335,7 @@ function AssimDemo() {
     $('#method').val(qs.method || 'KF');
     // default model
     $('#model').val(qs.model || 'advection');
-    $('#nudging_ts').val(nudging_ts || 40);
+    $('#nudging_ts').val(qs.nudging_ts || '40');
 
     // install event handlers
 
