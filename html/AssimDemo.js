@@ -221,11 +221,63 @@ function AssimDemo() {
          '\\end{eqnarray}'}
 
         ,
-        {'title': 'Lorenz (1963)',
+        function() {
+            var sigma=10, beta = 8/3, rho = 28, dt=0.05;
+            var f = function(t,x) {
+                return [sigma*(x[1]-x[0]),
+                        x[0]*(rho-x[2]) - x[1],
+                        x[0]*x[1] - beta * x[2]];
+            };
+
+            var f_tgl = function(t,x,dx) {    
+                var M = [[  -sigma, sigma,      0],
+                         [rho-x[2],    -1,  -x[0]],
+                         [    x[1],  x[0],  -beta]];
+                var tmp = nu.dot(M,dx);
+                //return nu.transpose(tmp)[0];
+                return tmp;
+            };
+
+            var f_adj = function(t,x,dx) {    
+                var M = [[  -sigma, sigma,      0],
+                         [rho-x[2],    -1,  -x[0]],
+                         [    x[1],  x[0],  -beta]];
+                var tmp = nu.dot(nu.transpose(M),dx);
+                //return nu.transpose(tmp)[0];
+                return tmp;
+            };
+
+            return {'title': 'Lorenz (1963)',
+                    'name': 'Lorenz63',
+                    'fun': function(n,x) {
+                        return rungekutta2(0,x,dt,f);
+                    },
+                    'fun_tgl': function(n,x,dx) {
+                        return rungekutta2_tgl(0,x,dt,f,dx,f_tgl);
+                    },                  
+                    'fun_adj': function(n,x,dx) {
+                        return rungekutta2_adj(0,x,dt,f,dx,f_adj);
+                    },
+                    'n': 3,
+                    'xit': [1,0,0],
+                    'Pi': nu.identity(3),
+                    'Q': nu.rep([3,3],0),
+                    'formula': 
+                    '\\begin{align} ' +
+                    '\\frac{dx}{dt} &= \\sigma (y - x) \\\\' +
+                    '\\frac{dy}{dt} &= x (\\rho - z) - y \\\\' +
+                    '\\frac{dz}{dt} &= x y - \\beta z' +
+                    '\\end{align} '
+                   }
+        }()
+
+
+//        new Lorenz63(0.02)
+/*        {'title': 'Lorenz (1963)',
          'name': 'Lorenz63',
          'fun': function(n,x) {             
-             var sigma=10, beta = 8/3, rho = 28, dt=0.1;
-             return rungekutta4(0,x,dt,
+             var sigma=10, beta = 8/3, rho = 28, dt=0.03;
+             return rungekutta2(0,x,dt,
                                 function(t,x) {
                                     return [sigma*(x[1]-x[0]),
                                             x[0]*(rho-x[2]) - x[1],
@@ -233,23 +285,13 @@ function AssimDemo() {
                                 });
          },
 
-/*         'fun_tgl': function(n,x,dx) {
-             var sigma=10, beta = 8/3, rho = 28, dt=0.1;
-             return rungekutta4(0,dx,dt,
-                                function(t,dx) {
-                                    return [sigma*(dx[1]-dx[0]),
-                                            dx[0]*(rho-x[2]) - x[0]*dx[2] - dx[1],
-                                            dx[0]*x[1] + x[0]*dx[1] - beta * dx[2]];                                                   
-                                });
-         },*/
-
          'fun_tgl': function(n,x,dx) {
              var sigma=10, beta = 8/3, rho = 28, dt=0.1, 
                M = [[  -sigma, sigma,      0],
                     [rho-x[2],    -1,  -x[0]],
                     [    x[1],  x[0],  -beta]];
 
-             return rungekutta4(0,dx,dt,
+             return rungekutta2(0,dx,dt,
                                 function(t,dx) {
                                     return nu.dot(M,dx);
                                 });
@@ -277,7 +319,7 @@ function AssimDemo() {
          '\\frac{dy}{dt} &= x (\\rho - z) - y \\\\' +
          '\\frac{dz}{dt} &= x y - \\beta z' +
          '\\end{align} '
-        }
+        }*/
 
     ];   
 
@@ -293,6 +335,7 @@ function AssimDemo() {
     $('#method').val(qs.method || 'KF');
     // default model
     $('#model').val(qs.model || 'advection');
+    $('#nudging_ts').val(nudging_ts || 40);
 
     // install event handlers
 
@@ -734,6 +777,7 @@ $(document).ready(function() {
         test_conjugategradient();
         test_fourDVar();
         test_EnsembleAnalysis();
+        test_model(demo.models[3],0);
     }    
 });
 

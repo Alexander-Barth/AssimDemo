@@ -115,7 +115,7 @@ function rungekutta2_tgl(t,x,dt,f,Dx,Df) {
     Dk1 = nu.mul(dt,Df(t,x,Dx));
 
     k2 = nu.mul(dt,f(t + dt/2, nu.add(x,nu.mul(1/2,k1))));
-    Dk2 = nu.mul(dt,f(t + dt/2, nu.add(x,nu.mul(1/2,k1)), nu.add(Dx,nu.mul(1/2,Dk1)) ));
+    Dk2 = nu.mul(dt,Df(t + dt/2, nu.add(x,nu.mul(1/2,k1)), nu.add(Dx,nu.mul(1/2,Dk1)) ));
 
     Dxn = nu.add(Dx, Dk2);
     return Dxn;
@@ -662,6 +662,58 @@ function EnsembleDiag(E,x,P) {
 }
 
 
+function Lorenz63(dt) {
+    this.dt = dt;
+    this.sigma=10;
+    this.beta = 8/3;
+    this.rho = 28;
+    this.title = 'Lorenz (1963)';
+    this.name = 'Lorenz63';
+    this.n = 3;
+    this.xit = [1,0,0];
+    this.Pi = nu.identity(3);
+    this.Q = nu.rep([3,3],0);
+    this.formula = 
+        '\\begin{align} ' +
+        '\\frac{dx}{dt} &= \\sigma (y - x) \\\\' +
+        '\\frac{dy}{dt} &= x (\\rho - z) - y \\\\' +
+        '\\frac{dz}{dt} &= x y - \\beta z' +
+        '\\end{align} ';
+}
+
+Lorenz63.prototype.f = function(t,x) {
+    return [sigma*(x[1]-x[0]),
+            x[0]*(rho-x[2]) - x[1],
+            x[0]*x[1] - beta * x[2]];
+};
+
+Lorenz63.prototype.f_tgl = function(t,x,dx) {    
+    var M = [[  -sigma, sigma,      0],
+             [rho-x[2],    -1,  -x[0]],
+             [    x[1],  x[0],  -beta]];
+    return nu.dot(M,dx);
+};
+
+Lorenz63.prototype.f_adj = function(t,x,dx) {    
+    var M = [[  -sigma, sigma,      0],
+             [rho-x[2],    -1,  -x[0]],
+             [    x[1],  x[0],  -beta]];
+    return nu.dot(nu.transpose(M),dx);
+};
+
+Lorenz63.prototype.fun = function(t,x) {
+    return rungekutta2(0,x,dt,this.f);
+}
+
+Lorenz63.prototype.fun_tgl = function(t,x,dx) {    
+    return rungekutta2_tgl(0,x,dt,this.f,this.f_tgl);
+}
+
+Lorenz63.prototype.fun_adj = function(t,x,dx) {    
+    return rungekutta2_adj(0,x,dt,this.f,this.f_adj);
+}
+
+
 function test_conjugategradient(){
     var fun = function(x) { return nu.dot([[1,0.1],[0.1,1]],x); };
     var b = [1,2];
@@ -747,3 +799,56 @@ function test_EnsembleAnalysis()  {
 
 }
 
+function test_model(model,t) {
+    var eps, tol, ncheck, nok_tgl, nok_adj, i, x, dx, prod1, prod2;
+
+    var n = model.n;
+    
+    eps = 1e-6;
+    tol = 1e-8;
+    
+    ncheck = 1000;
+    nok_tgl = 0;
+    nok_adj = 0;
+
+    // dt = 0.05;
+    Mdx = model.fun_tgl(0,[-1.6209540576365293, -0.42288186544786927, 0.8055936796232636],[0.12707955057532583, -0.5761341813742155, -0.15754872078357282]);
+        
+    Mdx_ref = [-0.0352452156275531, -0.5488841583953140,  -0.1247423281071390];
+
+    Mdx = model.fun_adj(0,[1,2,3],[4,5,6]);
+    Mdx_ref = [6.98956, 6.6761975, 5.354745];
+
+    for (i=0; i < ncheck; i++) {
+
+        x = randn([n]);
+        dx = randn([n]);
+
+
+        Mdx = model.fun_tgl(t,x,dx);
+        Mdx_approx = nu.mul(1/(2*eps),
+                            nu.sub(model.fun(t,nu.add(x, nu.mul(eps,dx))),
+                                   model.fun(t,nu.add(x, nu.mul(-eps,dx)))));
+
+        diff_norm = nu.norm2(nu.sub(Mdx,Mdx_approx));
+        if (diff_norm < tol) {
+            nok_tgl += 1;
+        }
+
+
+        dxp = randn([n]);
+  
+
+        prod1 = nu.dot(Mdx,dxp);
+        prod2 = nu.dot(dx,model.fun_adj(t,x,dxp));
+
+        if (Math.abs(prod1 - prod2) < tol) {
+            nok_adj += 1;
+        }
+    }
+
+
+    console.log('tgl ',nok_tgl,' tests OK and ',ncheck-nok_tgl,' tests failed');
+    console.log('adj ',nok_adj,' tests OK and ',ncheck-nok_adj,' tests failed');
+
+}
