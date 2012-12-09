@@ -184,6 +184,8 @@ function AssimDemo() {
          '\\end{equation}       ' 
         },
 
+        //---------------------------------------------
+
         {'title': 'oscillation',
          'name': 'oscillation',
          'fun': (function() {             
@@ -221,6 +223,53 @@ function AssimDemo() {
          '\\end{eqnarray}'}
 
         ,
+
+
+        //---------------------------------------------
+
+        function() {
+             var a=2*Math.PI, b = Math.PI, Dt = 0.1, L, M;
+
+             // Crank-Nicolson
+             L = [[0,0,-a,-b],
+                  [0,0,-b,-a],
+                  [a,b,0,0],
+                  [b,a,0,0]];
+             M = nu.dot(nu.inv(nu.add(nu.identity(4),nu.mul(-Dt/2,L))),
+             nu.add(nu.identity(4),nu.mul(Dt/2,L)));
+
+            return      {'title': 'Two oscillations',
+         'name': 'oscillation2',
+         'fun': (function() {             
+
+             return function(t,x) { return nu.dot(M,x); };
+         }()),
+
+         'fun_adj': (function() {             
+             return function(t,x,dx) { return nu.dot(nu.transpose(M),dx); };
+         }()),
+
+                         'n': 4,
+                         'xit': [1,0,0,0],
+         'Pi': nu.identity(4),
+         'Q': nu.rep([4,4],0),
+                         'formula': 
+                         '\\frac{d \\mathbf{x}}{dt} = \\left(' +
+                         '\\begin{array}{c c c c}' +
+                         '  0 & 0 & -a & -b \\\\' +
+                         '  0 & 0 & -b & -a \\\\' +
+                         '  a & b & 0  & 0  \\\\' +
+                         '  b & a & 0  & 0  \\\\' +
+                         '\\end{array}' +
+                         '\\right)' +
+                         '\\mathbf x'
+                        };
+        }()
+        ,
+
+        //---------------------------------------------
+        // Lorenz
+
         function() {
             var sigma=10, beta = 8/3, rho = 28, dt=0.05;
             var f = function(t,x) {
@@ -777,7 +826,7 @@ $(document).ready(function() {
         test_conjugategradient();
         test_fourDVar();
         test_EnsembleAnalysis();
-        test_model(demo.models[3],0);
+        test_model(demo.models.filter(function(m) { return m.name === 'Lorenz63' })[0],0);
     }    
 });
 

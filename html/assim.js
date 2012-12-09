@@ -109,7 +109,7 @@ function rungekutta2(t,x,dt,f) {
 }
 
 function rungekutta2_tgl(t,x,dt,f,Dx,Df) {
-    var k1,Dk1,Dk2,Dxn;
+    var k1,k2,Dk1,Dk2,Dxn;
 
     k1 = nu.mul(dt,f(t,x));
     Dk1 = nu.mul(dt,Df(t,x,Dx));
@@ -268,7 +268,7 @@ function FreeRun(xi,Pi,nmax,no,M,Mtgl,QS,H,x,P,yo,time) {
     Mn = function (dx) { return Mtgl(n,x[n-1],dx); };
     
     for (n = 0; n <= nmax; n++) {        
-        if (n == 0) {
+        if (n === 0) {
             // initialize
             x[0] = xi;
             if (P !== null) {
@@ -401,9 +401,6 @@ function Nudging(xi,Q,M,nmax,no,yo,io,tau,x,time) {
     }
 }
 
-function FoutDVarCost(xi,Pi,yo,R,H,x,yo) {
-
-}
 
 
 function FourDVar(xi,Pi,Q,M,Mtgl,MT,nmax,no,yo,R,H,HT,x,lambda,J,time,options) {
@@ -465,17 +462,6 @@ function FourDVar(xi,Pi,Q,M,Mtgl,MT,nmax,no,yo,R,H,HT,x,lambda,J,time,options) {
 
         // run with non-linear model
 
-/*        x[0] = xa;
-        for (n = 1; n <= nmax; n++) {
-            x[n] = nu.add(M(n,x[n-1]),randnCovar(Q));
-            time[n] = n;
-
-/*            if (n === no[obsindex]) {
-//                J[i] += nu.dot(nu.transpose(nu.sub(xa,xi)),nu.dot(nu.inv(Pi),nu.sub(xa,xi)));
-                
-            }*/
-           
-//        }
         var y = [];
         FreeRun(xa,null,nmax,no,M,null,covarDecomp(Q),H,x,null,y,time);
 
@@ -662,58 +648,6 @@ function EnsembleDiag(E,x,P) {
 }
 
 
-function Lorenz63(dt) {
-    this.dt = dt;
-    this.sigma=10;
-    this.beta = 8/3;
-    this.rho = 28;
-    this.title = 'Lorenz (1963)';
-    this.name = 'Lorenz63';
-    this.n = 3;
-    this.xit = [1,0,0];
-    this.Pi = nu.identity(3);
-    this.Q = nu.rep([3,3],0);
-    this.formula = 
-        '\\begin{align} ' +
-        '\\frac{dx}{dt} &= \\sigma (y - x) \\\\' +
-        '\\frac{dy}{dt} &= x (\\rho - z) - y \\\\' +
-        '\\frac{dz}{dt} &= x y - \\beta z' +
-        '\\end{align} ';
-}
-
-Lorenz63.prototype.f = function(t,x) {
-    return [sigma*(x[1]-x[0]),
-            x[0]*(rho-x[2]) - x[1],
-            x[0]*x[1] - beta * x[2]];
-};
-
-Lorenz63.prototype.f_tgl = function(t,x,dx) {    
-    var M = [[  -sigma, sigma,      0],
-             [rho-x[2],    -1,  -x[0]],
-             [    x[1],  x[0],  -beta]];
-    return nu.dot(M,dx);
-};
-
-Lorenz63.prototype.f_adj = function(t,x,dx) {    
-    var M = [[  -sigma, sigma,      0],
-             [rho-x[2],    -1,  -x[0]],
-             [    x[1],  x[0],  -beta]];
-    return nu.dot(nu.transpose(M),dx);
-};
-
-Lorenz63.prototype.fun = function(t,x) {
-    return rungekutta2(0,x,dt,this.f);
-}
-
-Lorenz63.prototype.fun_tgl = function(t,x,dx) {    
-    return rungekutta2_tgl(0,x,dt,this.f,this.f_tgl);
-}
-
-Lorenz63.prototype.fun_adj = function(t,x,dx) {    
-    return rungekutta2_adj(0,x,dt,this.f,this.f_adj);
-}
-
-
 function test_conjugategradient(){
     var fun = function(x) { return nu.dot([[1,0.1],[0.1,1]],x); };
     var b = [1,2];
@@ -725,7 +659,7 @@ function test_conjugategradient(){
 
 function test_fourDVar(){
 
-    var H,R,xi,Pi,M,no,nmax,model,model_tgl,modelT,obsoper,obsoperT,Q,yo,lambda,x,time, diff_norm;
+    var H,R,xi,Pi,M,no,nmax,model,model_tgl,modelT,obsoper,obsoperT,Q,yo,lambda,x,time, diff_norm,J;
     xi = [1,1];
     H = [[1,0]];
     R = [[1]];
@@ -800,7 +734,7 @@ function test_EnsembleAnalysis()  {
 }
 
 function test_model(model,t) {
-    var eps, tol, ncheck, nok_tgl, nok_adj, i, x, dx, prod1, prod2;
+    var eps, tol, ncheck, nok_tgl, nok_adj, i, x, dx, prod1, prod2, Mdx, Mdx_ref, Mdx_approx, diff_norm, dxp;
 
     var n = model.n;
     
