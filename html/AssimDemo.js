@@ -317,58 +317,10 @@ function AssimDemo() {
                     '\\frac{dy}{dt} &= x (\\rho - z) - y \\\\' +
                     '\\frac{dz}{dt} &= x y - \\beta z' +
                     '\\end{align} '
-                   }
+                   };
         }()
 
 
-//        new Lorenz63(0.02)
-/*        {'title': 'Lorenz (1963)',
-         'name': 'Lorenz63',
-         'fun': function(n,x) {             
-             var sigma=10, beta = 8/3, rho = 28, dt=0.03;
-             return rungekutta2(0,x,dt,
-                                function(t,x) {
-                                    return [sigma*(x[1]-x[0]),
-                                            x[0]*(rho-x[2]) - x[1],
-                                            x[0]*x[1] - beta * x[2]];                                                   
-                                });
-         },
-
-         'fun_tgl': function(n,x,dx) {
-             var sigma=10, beta = 8/3, rho = 28, dt=0.1, 
-               M = [[  -sigma, sigma,      0],
-                    [rho-x[2],    -1,  -x[0]],
-                    [    x[1],  x[0],  -beta]];
-
-             return rungekutta2(0,dx,dt,
-                                function(t,dx) {
-                                    return nu.dot(M,dx);
-                                });
-         },
-
-         'fun_adj': function(n,x,dx) {
-             var sigma=10, beta = 8/3, rho = 28, dt=0.1, 
-               M = [[  -sigma, sigma,      0],
-                    [rho-x[2],    -1,  -x[0]],
-                    [    x[1],  x[0],  -beta]];
-
-             return rungekutta4(0,dx,dt,
-                                function(t,dx) {
-                                    return nu.dot(nu.transpose(M),dx);
-                                });
-         },
-
-         'n': 3,
-         'xit': [1,0,0],
-         'Pi': nu.identity(3),
-         'Q': nu.rep([3,3],0),
-         'formula': 
-         '\\begin{align} ' +
-         '\\frac{dx}{dt} &= \\sigma (y - x) \\\\' +
-         '\\frac{dy}{dt} &= x (\\rho - z) - y \\\\' +
-         '\\frac{dz}{dt} &= x y - \\beta z' +
-         '\\end{align} '
-        }*/
 
     ];   
 
@@ -826,7 +778,7 @@ $(document).ready(function() {
         test_conjugategradient();
         test_fourDVar();
         test_EnsembleAnalysis();
-        test_model(demo.models.filter(function(m) { return m.name === 'Lorenz63' })[0],0);
+        test_model(demo.models.filter(function(m) { return m.name === 'Lorenz63'; })[0],0);
     }    
 });
 
