@@ -1,6 +1,7 @@
 body {
   font-family: sans-serif, Verdana;
 /*font-family:'Lucida Casual', 'Comic Sans MS';*/
+  min-width: 480px;
 }
 
 h1 {
@@ -11,9 +12,14 @@ h1 {
 
 fieldset.sec {
   border: 1px solid #888;
-  float:left; 
+  float:left;
   margin: 7px;
-  padding: 15px;
+  padding: 15px;  
+}
+
+fieldset.plot {
+  clear: both;  
+  float: none;
 }
 
 .sec legend {
@@ -87,4 +93,11 @@ p.instructions {
 
 #loading {
     display: none;
+}
+
+.figure {
+/*  width:1200px;*/
+/*  width: 100%;*/
+
+  height:300px;
 }

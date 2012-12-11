@@ -139,6 +139,8 @@ MatInput.prototype.val = function(data) {
 
 function AssimDemo() {
     var m, that = this;
+    
+    this.plots = [];
 
     this.models = [
         {'title': 'Identity matrix',
@@ -367,6 +369,10 @@ function AssimDemo() {
 
     $('#reset').click(function() {
         that.resetModel();
+    });
+
+    $(window).resize(function() {
+        that.resize();
     });
 
     this.updateModel();
@@ -669,6 +675,40 @@ AssimDemo.prototype.run = function () {
     this.plot();
 };
 
+AssimDemo.prototype.resize = function () {
+    function parsePx(px) {
+        return parseInt(px.replace('px',''),10);
+    }
+    var i;
+
+    if (this.plots.length === 0) {
+        return;
+    }
+
+    var minWidth = parsePx($('body').css('min-width'));
+    var padding = parsePx($('.plot:first').css('padding-left')) +
+        parsePx($('.plot:first').css('padding-right'));
+    var margin = parsePx($('.plot:first').css('margin-left')) +
+        parsePx($('.plot:first').css('margin-right'));
+    var border = parsePx($('.plot:first').css('border-left-width')) +
+        parsePx($('.plot:first').css('border-right-width'));
+    var bmargin = parsePx($('body').css('margin-left')) +
+        parsePx($('body').css('margin-right'));
+
+
+    var windowWidth = Math.max($(window).width(),minWidth);
+
+    $('.plot .figure').css('width',windowWidth - padding - margin - border - bmargin);
+
+    for (i = 0; i < this.plots.length; i++) {
+        // call flots resize routines
+        this.plots[i].resize();
+        this.plots[i].setupGrid();
+        this.plots[i].draw();
+    }
+};
+
+
 AssimDemo.prototype.plot = function () {
     var i,j,n,x = this.result.x,
     yo = this.result.yo, 
@@ -690,6 +730,7 @@ AssimDemo.prototype.plot = function () {
     var plot_covar = [];
     var plot_data = [];
 
+    this.plots = [];
 
     // statevector and observation plot
 
@@ -735,7 +776,7 @@ AssimDemo.prototype.plot = function () {
 
     xtimeseries(time,x,$('#show_assimilation').attr('checked'), {label: 'Assimilation',color: 2});
 
-    var plot = $.plot($("#state_vector"),plot_data);
+    this.plots.push($.plot($("#state_vector"),plot_data));
 
     function covartimeseries(time,P,checked,s) {
         var errvar = [], n;
@@ -756,7 +797,7 @@ AssimDemo.prototype.plot = function () {
         
         covartimeseries(timet,Pfree,$('#show_covar_freerun').attr('checked'),{label: 'Free run', color: 1});
         covartimeseries(time,P,$('#show_covar_assimilation').attr('checked'),{label: 'Assimilation', color: 2});
-        $.plot($("#error_covariance"),plot_covar);
+        this.plots.push($.plot($("#error_covariance"),plot_covar));
     }
     else {
         $('#error_covariance').parent('fieldset').hide();
@@ -764,7 +805,7 @@ AssimDemo.prototype.plot = function () {
 
     if (this.method === '4DVar') {
         $('#cost_function').parent('fieldset').show();
-        $.plot($("#cost_function"),[{data: nu.transpose([range(0,J.length-1),J]) }]);
+        this.plots.push($.plot($("#cost_function"),[{data: nu.transpose([range(0,J.length-1),J]) }]));
     }
     else {
         $('#cost_function').parent('fieldset').hide();
@@ -775,7 +816,7 @@ AssimDemo.prototype.plot = function () {
 
         plot_data = []; 
         xtimeseries(time,lambda,true, {label: 'Sens',color: 2});
-        $.plot($("#adjoint_sensitivity"),plot_data);
+        this.plots.push($.plot($("#adjoint_sensitivity"),plot_data));
     }
     else {
         $('#adjoint_sensitivity').parent('fieldset').hide();
