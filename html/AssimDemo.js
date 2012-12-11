@@ -398,12 +398,25 @@ AssimDemo.prototype.updateModel = function() {
     //console.log(m.title);
     $('#statevector_size').val(m.n);
 
+    
     $('#model_eqn').empty();
+
+    // check if MathJax is loaded
     if (typeof MathJax !== "undefined") {
-        //$('#model_eqn').append($('<script/>').attr({'type': 'math/tex; mode=display'}).html(m.formula));
-        $('#model_eqn').append($('<script/>').attr({'type': 'math/tex; mode=display'}).text(m.formula));    
-        MathJax.Hub.Typeset();
+      // works in all browsers expect IE8-
+      //$('#model_eqn').append($('<script/>').attr({'type': 'math/tex; mode=display'}).text(m.formula));
+
+      // try to make it work in IE8
+      var scriptTag = document.createElement('script');
+      scriptTag.text = m.formula;
+      //scriptTag.text = 'a+b';
+      scriptTag.type = 'math/tex; mode=display';
+      document.getElementById('model_eqn').appendChild(scriptTag);
+
+      MathJax.Hub.Typeset();
     }
+    
+
 
     this.Pi = new MatInput([m.n,m.n],'covar_Pi');
     this.Q = new MatInput([m.n,m.n],'covar_Q');
