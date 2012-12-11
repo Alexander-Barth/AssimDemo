@@ -399,9 +399,11 @@ AssimDemo.prototype.updateModel = function() {
     $('#statevector_size').val(m.n);
 
     $('#model_eqn').empty();
-    //$('#model_eqn').append($('<script/>').attr({'type': 'math/tex; mode=display'}).html(m.formula));
-    $('#model_eqn').append($('<script/>').attr({'type': 'math/tex; mode=display'}).text(m.formula));
-    MathJax.Hub.Typeset();
+    if (typeof MathJax !== "undefined") {
+        //$('#model_eqn').append($('<script/>').attr({'type': 'math/tex; mode=display'}).html(m.formula));
+        $('#model_eqn').append($('<script/>').attr({'type': 'math/tex; mode=display'}).text(m.formula));    
+        MathJax.Hub.Typeset();
+    }
 
     this.Pi = new MatInput([m.n,m.n],'covar_Pi');
     this.Q = new MatInput([m.n,m.n],'covar_Q');
@@ -508,10 +510,6 @@ AssimDemo.prototype.run = function () {
     Pi = model.Pi;
     Q = model.Q;
     
-    // square-root matrices
-    var QS = covarDecomp(Q);
-    var PiS = covarDecomp(Pi);
-
     // seed for random numbers
     nu.seedrandom.seedrandom(parseFloat($('#randseed').val()));
     Math.random = nu.seedrandom.random;
@@ -519,6 +517,10 @@ AssimDemo.prototype.run = function () {
     Pi = this.Pi.val();
     Q = this.Q.val();
     xit = this.xit.val();
+
+    // square-root matrices
+    var QS = covarDecomp(Q);
+    var PiS = covarDecomp(Pi);
 
     nmax = parseInt($('#nmax').val(),10);
     obs_var = parseFloat($('#obs_var').val());
