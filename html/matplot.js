@@ -182,11 +182,24 @@ function SVGCanvas(id,width,height) {
            [this.axis = mk('g')]));              
 }
 
-SVGCanvas.prototype.rect = function(x,y,width,height,fill,stroke) {
+SVGCanvas.prototype.rect = function(x,y,width,height,fill,stroke,info) {
+    var rect, attrib;
     stroke = stroke || fill;
+    info = info || '';
+
+    attrib = {x: x, y: y, width: width, height: height, fill: fill, 
+              'stroke': stroke};
+
+    if (info) {
+        attrib.title = info;
+    }
     
     this.axis.appendChild(
-        mk('rect',{x: x, y: y, width: width, height: height, fill: fill, 'stroke': stroke}));
+        rect = mk('rect',attrib));
+
+    if (info) {
+        rect.onclick = function() { console.log('x',info); };
+    }
 };
 
 SVGCanvas.prototype.text = function(x,y,text,FontFamily,FontSize,fill,HorizontalAlignment,VerticalAlignment) {
@@ -486,7 +499,7 @@ Axis.prototype.drawYTicks = function() {
 };
 
 Axis.prototype.rect = function(x,y,v) {
-    var color;
+    var color, info = null;
     var ll = this.project(x[0],y[1]);
     var up = this.project(x[1],y[0]);
 
@@ -495,11 +508,12 @@ Axis.prototype.rect = function(x,y,v) {
     }
     else {
         color = this.cmap.get(v);
+        info = v.toString();
     }
 
     this.fig.canvas.rect(ll.i,ll.j,
-                     up.i - ll.i,up.j - ll.j,
-                     color);
+                         up.i - ll.i,up.j - ll.j,
+                         color,color,info);
 };
 
 Axis.prototype.colorbar = function() {

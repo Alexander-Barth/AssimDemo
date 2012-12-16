@@ -108,7 +108,7 @@ var fig;
 
 function main() {
     var h = [], U = [], zeta=[], dt = 0.003, dx=0.1, n=100, g=9.81, j, omega=[], p=[], i=[];
-    var nmax = 200;
+    var nmax = 100;
     var x = {zeta: [], U: []};
 
     for (j=0; j<n; j++) {
@@ -121,7 +121,7 @@ function main() {
     }
 
     id = 'canvas';
-    width="500";
+    width="700";
     height="500";
     fig = new Figure(id,width,height);
 
