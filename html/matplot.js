@@ -171,9 +171,12 @@ Axis.prototype.project = function(x,y) {
     var i = this.x + (x-this.xlim[0])/(this.xlim[1]-this.xlim[0]) * this.w;
     var j = this.y + (y-this.ylim[0])/(this.ylim[1]-this.ylim[0]) * this.h;
 
-    // i,j in figure space
-    var i = i * this.fig.canvas.width;
-    var j = j * this.fig.canvas.height;
+    // i,j in figure space (pixels)
+    i = i * this.fig.canvas.width;
+    j = j * this.fig.canvas.height;
+
+    // reverse j axis
+    j = this.fig.canvas.height-j;
 
     return {i:i,j:j};
 
@@ -237,8 +240,8 @@ Axis.prototype.draw = function() {
 
 Axis.prototype.rect = function(x,y,v) {
     var color;
-    var ll = this.project(x[0],y[0]);
-    var up = this.project(x[1],y[1]);
+    var ll = this.project(x[0],y[1]);
+    var up = this.project(x[1],y[0]);
 
     if (typeof v === 'string') {
         color = v;
