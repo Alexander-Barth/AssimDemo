@@ -69,6 +69,64 @@ colormaps = {'jet':
 
 
 
+// Propose about n ticks for range (min,max)
+// Code taken from yapso
+
+function ticks(min,max,n) {
+    var nt, range, dt, base, sdt, t0;
+
+    // a least 2 ticks
+    if (n<2) n = 2;
+
+    range = max-min;
+    dt = range/n;
+ 
+    // transform dt in "scientific notation"
+    // dt = sdt * 10^(log10(base))
+
+    base = Math.pow(10.0,Math.floor(Math.log(dt)/Math.LN10) );
+    sdt = dt/base;
+
+    // pefered increments
+
+    if (sdt <= 1.5) 
+	sdt = 1;
+    else if (sdt < 2.5) 
+	sdt = 2;
+    else if (sdt <= 4)
+	sdt = 3;
+    else if (sdt <= 7)
+	sdt = 5;
+    else
+	sdt = 10;
+
+    
+    dt = sdt * base;
+
+    // the first label will be:  ceil(min/dt)*dt
+    // the last label will be: floor(max/dt)*dt
+
+    t0 = Math.ceil(min/dt)*dt;
+
+    // the difference between first and last label 
+    // gives the number of labels
+
+    nt = Math.round(Math.floor(max/dt) - Math.ceil(min/dt) +1);
+
+    var t = new Array(nt);
+
+    for(var i=0;i<nt;i++) {
+	t[i] = t0 + i*dt;
+
+	// attempt to remove spurious decimals
+	var eps = dt;
+	t[i] = Math.round(t[i]/eps)*eps;
+	if (Math.abs(t[i])<1e-14) t[i]=0;
+    }
+
+    return t;
+  
+}
 
 function Surface(x,y,z,c) {
     this.x = x;
@@ -161,9 +219,17 @@ function Axis(fig,x,y,w,h) {
     this.w = w;
     this.h = h;
     this.cmap = new ColorMap([-1,1]);
-
+    this.FontFamily = "Verdana";
+    this.FontSize = 15;
+    this.color = 'black';
     this.children = [];
-
+    this.xTickLen = 10;
+    this.xTickMode = 'auto';
+    this.xTick = [];
+    this.xTickLabelMode = 'auto';
+    this.xTickLabel = [];
+    this.xAxisLocation = 'bottom';
+//    this.xAxisLocation = 'top';
 }
 
 Axis.prototype.project = function(x,y) {
@@ -230,16 +296,54 @@ Axis.prototype.draw = function() {
     this.xlim = this.lim('x');
     this.ylim = this.lim('y');
     this.cmap.clim = this.lim('c');
-
+/*
     for (i = 0; i<this.children.length; i++) {
         this.children[i].draw(this);
     };
-
+*/
     this.fig.canvas.rect(this.fig.canvas.width*this.x,
                          this.fig.canvas.height*this.y,
                          this.fig.canvas.width*this.w,
                          this.fig.canvas.height*this.h,
                          'none','black');
+
+    this.labels();
+};
+
+Axis.prototype.labels = function() {
+    var i, y, pos, VerticalAlignmen, offset;
+
+    if (this.xTickMode === 'auto') {
+        this.xTick = ticks(this.xlim[0],this.xlim[1],5);
+    }
+
+    if (this.xTickLabelMode === 'auto') {
+        this.xTickLabel = this.xTick.map(function(x) {return x.toString()});
+    }
+
+    if (this.xAxisLocation === 'bottom') {
+        VerticalAlignment = 'top';
+        offset = this.xTickLen/2;        
+        y = this.ylim[0];
+    }
+    else {
+        VerticalAlignment = 'bottom';
+        offset = -this.xTickLen/2;        
+        y = this.ylim[1];
+    }
+
+    for (i = 0; i < this.xTick.length; i++) {
+        pos = this.project(this.xTick[i],y);
+
+        this.fig.canvas.line([pos.i,pos.i],
+                             [pos.j-this.xTickLen/2,pos.j+this.xTickLen/2],
+                             'black');
+        this.fig.canvas.text(pos.i,pos.j+offset,
+                             this.xTickLabel[i],this.FontFamily,
+                             this.FontSize,this.color,
+                             'center',VerticalAlignment
+                            );
+    }
 
 };
 
@@ -273,15 +377,22 @@ function mk(tag,attribs,children) {
     attribs = attribs || {}; 
     children = children || [];
     xmlns = "http://www.w3.org/2000/svg";
+    
+    var elem = document.createElementNS(xmlns, tag), child, a, c;
 
-    var elem = document.createElementNS(xmlns, tag);
-
-    for (var a in attribs) {
+    for (a in attribs) {
         elem.setAttributeNS(null, a, attribs[a]);
     }
 
-    for (var c in children) {
-        elem.appendChild(children[c]);
+    for (c in children) {
+        if (typeof children[c] === 'string') {
+            child = document.createTextNode(children[c]);
+        }
+        else {
+            child = children[c];
+        }
+        
+        elem.appendChild(child);
     }
     return elem;
 }
@@ -296,12 +407,61 @@ function SVGCanvas(id,width,height) {
     this.container.appendChild(
         this.svg = mk('svg',{width: width, height: height, 'style': 'border: 1px solid black'},
            [this.axis = mk('g')]));              
-};
+}
 
 SVGCanvas.prototype.rect = function(x,y,width,height,fill,stroke) {
     stroke = stroke || fill;
     
     this.axis.appendChild(
         mk('rect',{x: x, y: y, width: width, height: height, fill: fill, 'stroke': stroke}));
-}
+};
+
+SVGCanvas.prototype.text = function(x,y,text,FontFamily,FontSize,fill,HorizontalAlignment,VerticalAlignment) {
+
+    var TextAnchor, dy = 0;
+    
+    if (HorizontalAlignment === 'left') {
+        TextAnchor = 'start';
+    }
+    else if (HorizontalAlignment === 'center') {
+        TextAnchor = 'middle';
+    }
+    else if (HorizontalAlignment === 'right') {
+        TextAnchor = 'end';
+    }
+    else {
+        console.error(HorizontalAlignment);
+    }
+
+    if (VerticalAlignment === 'top') {
+        dy = FontSize;
+    }
+    else if (VerticalAlignment === 'middle') {
+        dy = FontSize/2;
+    }
+
+    this.axis.appendChild(
+        mk('text',{'x': x,
+                   'y': y,
+                   'font-family': FontFamily,
+                   'font-size': FontSize,
+                   'text-anchor': TextAnchor,
+                   'dy': dy,
+                   'fill': fill},
+           [text] ));
+};
+
+SVGCanvas.prototype.line = function(x,y,color) {
+    var strokeWidth = 1;
+    var style="stroke:" + color + ";stroke-width:" + strokeWidth;
+
+    this.axis.appendChild(
+        mk('line',{'x1': x[0],
+                   'x2': x[1],
+                   'y1': y[0],
+                   'y2': y[1],
+                   'style': style}));
+};
+
+
 
