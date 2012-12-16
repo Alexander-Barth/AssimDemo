@@ -318,6 +318,15 @@ function Axis(fig,x,y,w,h) {
     this.xTickLabel = [];
     this.xAxisLocation = 'bottom';
 //    this.xAxisLocation = 'top';
+
+    this.yTickLen = 10;
+    this.yTickMode = 'auto';
+    this.yTick = [];
+    this.yTickLabelMode = 'auto';
+    this.yTickLabel = [];
+    this.yAxisLocation = 'left';
+//    this.xAxisLocation = 'right';
+
 }
 
 Axis.prototype.project = function(x,y) {
@@ -397,10 +406,11 @@ Axis.prototype.draw = function() {
                          this.fig.canvas.height*this.h,
                          'none','black');
 
-    this.labels();
+    this.drawXTicks();
+    this.drawYTicks();
 };
 
-Axis.prototype.labels = function() {
+Axis.prototype.drawXTicks = function() {
     var i, y, pos, VerticalAlignment, offset;
 
     if (this.xTickMode === 'auto') {
@@ -432,6 +442,44 @@ Axis.prototype.labels = function() {
                              this.xTickLabel[i],this.FontFamily,
                              this.FontSize,this.color,
                              'center',VerticalAlignment
+                            );
+    }
+
+};
+
+Axis.prototype.drawYTicks = function() {
+    var i, x, pos, HorizontalAlignment, offset;
+
+    if (this.yTickMode === 'auto') {
+        this.yTick = ticks(this.ylim[0],this.ylim[1],5);
+    }
+
+    if (this.yTickLabelMode === 'auto') {
+        this.yTickLabel = this.yTick.map(function(y) {return y.toString();});
+    }
+
+    if (this.yAxisLocation === 'left') {
+        HorizontalAlignment = 'right';
+        offset = -this.yTickLen/2;        
+        x = this.xlim[0];
+    }
+    else {
+        HorizontalAlignment = 'left';
+        offset = -this.yTickLen/2;        
+        x = this.xlim[1];
+    }
+
+    for (i = 0; i < this.yTick.length; i++) {
+        pos = this.project(x,this.yTick[i]);
+
+        this.fig.canvas.line([pos.i-this.yTickLen/2,pos.i+this.yTickLen/2],
+                             [pos.j,pos.j],
+                             'black');
+
+        this.fig.canvas.text(pos.i+offset,pos.j,
+                             this.yTickLabel[i],this.FontFamily,
+                             this.FontSize,this.color,
+                             HorizontalAlignment,'middle'
                             );
     }
 
