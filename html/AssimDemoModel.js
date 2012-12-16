@@ -150,11 +150,7 @@ function main() {
     }
 
     ax.pcolor(datax,datat,zeta);
-
-    cax = fig.axes(0.75,0.1,.1,.8);
-    var cmap = [range(0,63),range(0,63)];
-    cax.cmap = new ColorMap([0,63],'jet');
-    cax.pcolor(cmap);
+    ax.colorbar();
 
     fig.draw();
 }        

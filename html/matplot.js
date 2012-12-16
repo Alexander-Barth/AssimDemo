@@ -231,11 +231,16 @@ Axis.prototype.draw = function() {
     this.ylim = this.lim('y');
     this.cmap.clim = this.lim('c');
 
-    this.rect(this.xlim,this.ylim,'black');
-
     for (i = 0; i<this.children.length; i++) {
         this.children[i].draw(this);
     };
+
+    this.fig.canvas.rect(this.fig.canvas.width*this.x,
+                         this.fig.canvas.height*this.y,
+                         this.fig.canvas.width*this.w,
+                         this.fig.canvas.height*this.h,
+                         'none','black');
+
 };
 
 Axis.prototype.rect = function(x,y,v) {
@@ -253,7 +258,16 @@ Axis.prototype.rect = function(x,y,v) {
     this.fig.canvas.rect(ll.i,ll.j,
                      up.i - ll.i,up.j - ll.j,
                      color);
-}
+};
+
+Axis.prototype.colorbar = function() {
+    cax = this.fig.axes(0.75,0.1,.1,.8);
+
+    var cmap = [range(0,63),range(0,63)];
+    cax.cmap = new ColorMap([0,63],this.cmap.type);
+    cax.pcolor(cmap);
+    return cax;
+};
 
 function mk(tag,attribs,children) {
     attribs = attribs || {}; 
@@ -284,8 +298,10 @@ function SVGCanvas(id,width,height) {
            [this.axis = mk('g')]));              
 };
 
-SVGCanvas.prototype.rect = function(x,y,width,height,color) {
+SVGCanvas.prototype.rect = function(x,y,width,height,fill,stroke) {
+    stroke = stroke || fill;
+    
     this.axis.appendChild(
-        mk('rect',{x: x, y: y, width: width, height: height, fill: color, 'stroke': color}));
+        mk('rect',{x: x, y: y, width: width, height: height, fill: fill, 'stroke': stroke}));
 }
 
