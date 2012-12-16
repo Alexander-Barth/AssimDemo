@@ -503,7 +503,8 @@ Axis.prototype.rect = function(x,y,v) {
 };
 
 Axis.prototype.colorbar = function() {
-    var cax, cmap, clim, i, x, y;
+    var cax, cmap, clim, i, x, y,
+        n = 64, tmp;
 
     cax = this.fig.axes(0.85,0.1,0.05,0.8);
     cax.yAxisLocation = 'right';
@@ -511,10 +512,7 @@ Axis.prototype.colorbar = function() {
     cax.xTick = [];
 
     clim = this.cmap.clim;
-/*    cmap = [range(0,63),range(0,63)];
-    cax.cmap = new ColorMap([0,63],this.cmap.type);*/
 
-    var n = 64, tmp;
     tmp = range(clim[0],clim[1],(clim[1]-clim[0])/(n-1));
     cmap = [tmp,tmp];
 
@@ -528,7 +526,6 @@ Axis.prototype.colorbar = function() {
         x[1][i] = 1;
     }
            
-    //cax.cmap = new ColorMap(clim,this.cmap.type);
     cax.pcolor(x,y,y);
     return cax;
 };
