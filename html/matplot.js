@@ -395,11 +395,11 @@ Axis.prototype.draw = function() {
     this.xlim = this.lim('x');
     this.ylim = this.lim('y');
     this.cmap.clim = this.lim('c');
-/*
+
     for (i = 0; i<this.children.length; i++) {
         this.children[i].draw(this);
     };
-*/
+
     this.fig.canvas.rect(this.fig.canvas.width*this.x,
                          this.fig.canvas.height*this.y,
                          this.fig.canvas.width*this.w,
@@ -465,7 +465,7 @@ Axis.prototype.drawYTicks = function() {
     }
     else {
         HorizontalAlignment = 'left';
-        offset = -this.yTickLen/2;        
+        offset = this.yTickLen/2;        
         x = this.xlim[1];
     }
 
@@ -505,7 +505,11 @@ Axis.prototype.rect = function(x,y,v) {
 Axis.prototype.colorbar = function() {
     var cax, cmap;
 
-    cax = this.fig.axes(0.75,0.1,0.1,0.8);
+    cax = this.fig.axes(0.85,0.1,0.05,0.8);
+    cax.yAxisLocation = 'right';
+    cax.xTickMode = 'manual';
+    cax.xTick = [];
+
     cmap = [range(0,63),range(0,63)];
     cax.cmap = new ColorMap([0,63],this.cmap.type);
     cax.pcolor(cmap);
