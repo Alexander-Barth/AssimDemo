@@ -1,5 +1,8 @@
+/*jslint browse: true, continue : true, devel : true, indent : 4, maxerr : 50, newcap : false, nomen : true, plusplus : false, regexp : true, sloppy : true, vars : true, white : false */
+/*global jQuery: false, $: false, numeric: false, MathJax, range */
 
-colormaps = {'jet':
+
+var colormaps = {'jet':
             [
    [0.000000000000000,0.000000000000000,0.500000000000000],
    [0.000000000000000,0.000000000000000,0.563492063492063],
@@ -73,10 +76,12 @@ colormaps = {'jet':
 // Code taken from yapso
 
 function ticks(min,max,n) {
-    var nt, range, dt, base, sdt, t0;
+    var nt, range, dt, base, sdt, t0, i;
 
     // a least 2 ticks
-    if (n<2) n = 2;
+    if (n<2) {
+        n = 2;
+    }
 
     range = max-min;
     dt = range/n;
@@ -89,17 +94,21 @@ function ticks(min,max,n) {
 
     // pefered increments
 
-    if (sdt <= 1.5) 
+    if (sdt <= 1.5) {
 	sdt = 1;
-    else if (sdt < 2.5) 
+    }
+    else if (sdt < 2.5) {
 	sdt = 2;
-    else if (sdt <= 4)
+    }
+    else if (sdt <= 4) {
 	sdt = 3;
-    else if (sdt <= 7)
+    }
+    else if (sdt <= 7) {
 	sdt = 5;
-    else
+    }
+    else {
 	sdt = 10;
-
+    }
     
     dt = sdt * base;
 
@@ -115,284 +124,48 @@ function ticks(min,max,n) {
 
     var t = new Array(nt);
 
-    for(var i=0;i<nt;i++) {
+    for(i=0;i<nt;i++) {
 	t[i] = t0 + i*dt;
 
 	// attempt to remove spurious decimals
 	var eps = dt;
 	t[i] = Math.round(t[i]/eps)*eps;
-	if (Math.abs(t[i])<1e-14) t[i]=0;
+	if (Math.abs(t[i])<1e-14) { 
+            t[i]=0;
+        }
     }
 
     return t;
   
 }
 
-function Surface(x,y,z,c) {
-    this.x = x;
-    this.y = y;
-    this.z = z;
-    this.c = c;
-}
-
-Surface.prototype.lim = function(what) {
-    var min, max, tmp = this[what];
-    min = max = tmp[0][0];
-
-    for (i=0; i<tmp.length; i++) {
-        for (j=0; j<tmp[0].length; j++) {
-            min = Math.min(min,tmp[i][j]);
-            max = Math.max(max,tmp[i][j]);
-        }
-    }    
-    return [min,max];
-};
-
-Surface.prototype.draw = function(fig) {
-    var i,j;
-
-    for (i=0; i<this.x.length-1; i++) {
-        for (j=0; j<this.x[0].length-1; j++) {
-            // does not work for curvilinear grid
-            fig.rect([this.x[i][j],this.x[i+1][j]],
-                     [this.y[i][j],this.y[i+1][j+1]],
-                     this.c[i][j]);
-            
-        }
-    }
-}
-
-
-function ColorMap(clim,type) {
-    this.clim = clim;
-    this.type = type || 'jet';
-    this.cm = colormaps[this.type];
-}
-
-ColorMap.prototype.get = function (v) {
-    var c=[];
-    var vs = (v-this.clim[0])/(this.clim[1]-this.clim[0]);
-    c[0] = vs;
-    c[1] = 1;
-    c[2] = 1;
-    
-    var index = Math.round(vs * this.cm.length);
-    index = Math.max(Math.min(index,this.cm.length-1),0);
-    c = this.cm[index];
-
-    return 'rgb(' + Math.round(255*c[0]) + ',' +  + Math.round(255*c[1]) + ',' +  + Math.round(255*c[2]) + ')';
-};
-
-// this class represent a figure on a screen
-// should not contain SVG specific stuff
-
-function Figure(id,width,height) {
-    this.canvas = new SVGCanvas(id,width,height);
-    this.xlim = [0,100];
-    this.ylim = [0,100];
-    this._axes = [];
-}
-
-Figure.prototype.axes = function(x,y,w,h) {
-    var ax = new Axis(this,x,y,w,h)
-    this._axes.push(ax);
-    return ax;
-};
-
-Figure.prototype.draw = function() {
-    var i;
-
-    for (i = 0; i<this._axes.length; i++) {
-        this._axes[i].draw();
-    };
-};
-
-// Axis(fig,x,y,w,h) 
-// create a new axes in figure fig
-// at location x,y and width w and height h
-// x,y,w,h are fraction of the total figure height and width
-
-function Axis(fig,x,y,w,h) {
-    this.fig = fig;
-    this.x = x;
-    this.y = y;
-    this.w = w;
-    this.h = h;
-    this.cmap = new ColorMap([-1,1]);
-    this.FontFamily = "Verdana";
-    this.FontSize = 15;
-    this.color = 'black';
-    this.children = [];
-    this.xTickLen = 10;
-    this.xTickMode = 'auto';
-    this.xTick = [];
-    this.xTickLabelMode = 'auto';
-    this.xTickLabel = [];
-    this.xAxisLocation = 'bottom';
-//    this.xAxisLocation = 'top';
-}
-
-Axis.prototype.project = function(x,y) {
-    // i,j in axis coordinate space
-    var i = this.x + (x-this.xlim[0])/(this.xlim[1]-this.xlim[0]) * this.w;
-    var j = this.y + (y-this.ylim[0])/(this.ylim[1]-this.ylim[0]) * this.h;
-
-    // i,j in figure space (pixels)
-    i = i * this.fig.canvas.width;
-    j = j * this.fig.canvas.height;
-
-    // reverse j axis
-    j = this.fig.canvas.height-j;
-
-    return {i:i,j:j};
-
-};
-
-Axis.prototype.lim = function(what) {
-    var i, min = +Infinity, max = -Infinity;
-
-    if (this.children.length > 0) {
-        for (i = 0; i<this.children.length; i++) {
-            range = this.children[i].lim(what);
-            min = Math.min(min,range[0]);
-            max = Math.max(max,range[1]);
-        };
-    }
-    else {
-        min = max = NaN;
-    }
-
-    if (min === max) {
-        min = min-1;
-        max = max+1;
-    }
-
-    return [min,max];
-};
-
-Axis.prototype.pcolor = function(x,y,v) {
-    if (arguments.length === 1) {
-        v = x;
-        x = [];
-        y = [];
-
-        for (i=0; i<v.length; i++) {
-            x[i] = [];
-            y[i] = [];
-
-            for (j=0; j<v[0].length; j++) {
-                x[i][j] = i;
-                y[i][j] = j;
-            }
-        }
-    }
-
-    this.children.push(new Surface(x,y,[],v));
-};
-
-Axis.prototype.draw = function() {
-    var i;
-
-    this.xlim = this.lim('x');
-    this.ylim = this.lim('y');
-    this.cmap.clim = this.lim('c');
-/*
-    for (i = 0; i<this.children.length; i++) {
-        this.children[i].draw(this);
-    };
-*/
-    this.fig.canvas.rect(this.fig.canvas.width*this.x,
-                         this.fig.canvas.height*this.y,
-                         this.fig.canvas.width*this.w,
-                         this.fig.canvas.height*this.h,
-                         'none','black');
-
-    this.labels();
-};
-
-Axis.prototype.labels = function() {
-    var i, y, pos, VerticalAlignmen, offset;
-
-    if (this.xTickMode === 'auto') {
-        this.xTick = ticks(this.xlim[0],this.xlim[1],5);
-    }
-
-    if (this.xTickLabelMode === 'auto') {
-        this.xTickLabel = this.xTick.map(function(x) {return x.toString()});
-    }
-
-    if (this.xAxisLocation === 'bottom') {
-        VerticalAlignment = 'top';
-        offset = this.xTickLen/2;        
-        y = this.ylim[0];
-    }
-    else {
-        VerticalAlignment = 'bottom';
-        offset = -this.xTickLen/2;        
-        y = this.ylim[1];
-    }
-
-    for (i = 0; i < this.xTick.length; i++) {
-        pos = this.project(this.xTick[i],y);
-
-        this.fig.canvas.line([pos.i,pos.i],
-                             [pos.j-this.xTickLen/2,pos.j+this.xTickLen/2],
-                             'black');
-        this.fig.canvas.text(pos.i,pos.j+offset,
-                             this.xTickLabel[i],this.FontFamily,
-                             this.FontSize,this.color,
-                             'center',VerticalAlignment
-                            );
-    }
-
-};
-
-Axis.prototype.rect = function(x,y,v) {
-    var color;
-    var ll = this.project(x[0],y[1]);
-    var up = this.project(x[1],y[0]);
-
-    if (typeof v === 'string') {
-        color = v;
-    }
-    else {
-        color = this.cmap.get(v);
-    }
-
-    this.fig.canvas.rect(ll.i,ll.j,
-                     up.i - ll.i,up.j - ll.j,
-                     color);
-};
-
-Axis.prototype.colorbar = function() {
-    cax = this.fig.axes(0.75,0.1,.1,.8);
-
-    var cmap = [range(0,63),range(0,63)];
-    cax.cmap = new ColorMap([0,63],this.cmap.type);
-    cax.pcolor(cmap);
-    return cax;
-};
 
 function mk(tag,attribs,children) {
+    var xmlns, elem, child, a, c;
+
     attribs = attribs || {}; 
     children = children || [];
     xmlns = "http://www.w3.org/2000/svg";
     
-    var elem = document.createElementNS(xmlns, tag), child, a, c;
+    elem = document.createElementNS(xmlns, tag);
 
     for (a in attribs) {
-        elem.setAttributeNS(null, a, attribs[a]);
+        if (attribs.hasOwnProperty(a)) {
+            elem.setAttributeNS(null, a, attribs[a]);
+        }
     }
 
     for (c in children) {
-        if (typeof children[c] === 'string') {
-            child = document.createTextNode(children[c]);
-        }
-        else {
-            child = children[c];
-        }
+        if (children.hasOwnProperty(c)) {
+            if (typeof children[c] === 'string') {
+                child = document.createTextNode(children[c]);
+            }
+            else {
+                child = children[c];
+            }
         
-        elem.appendChild(child);
+            elem.appendChild(child);
+        }
     }
     return elem;
 }
@@ -464,4 +237,256 @@ SVGCanvas.prototype.line = function(x,y,color) {
 };
 
 
+
+
+
+function Surface(x,y,z,c) {
+    this.x = x;
+    this.y = y;
+    this.z = z;
+    this.c = c;
+}
+
+Surface.prototype.lim = function(what) {
+    var i, j, min, max, tmp = this[what];
+    min = max = tmp[0][0];
+
+    for (i=0; i<tmp.length; i++) {
+        for (j=0; j<tmp[0].length; j++) {
+            min = Math.min(min,tmp[i][j]);
+            max = Math.max(max,tmp[i][j]);
+        }
+    }    
+    return [min,max];
+};
+
+Surface.prototype.draw = function(fig) {
+    var i,j;
+
+    for (i=0; i<this.x.length-1; i++) {
+        for (j=0; j<this.x[0].length-1; j++) {
+            // does not work for curvilinear grid
+            fig.rect([this.x[i][j],this.x[i+1][j]],
+                     [this.y[i][j],this.y[i+1][j+1]],
+                     this.c[i][j]);
+            
+        }
+    }
+};
+
+
+function ColorMap(clim,type) {
+    this.clim = clim;
+    this.type = type || 'jet';
+    this.cm = colormaps[this.type];
+}
+
+ColorMap.prototype.get = function (v) {
+    var c=[];
+    var vs = (v-this.clim[0])/(this.clim[1]-this.clim[0]);
+    c[0] = vs;
+    c[1] = 1;
+    c[2] = 1;
+    
+    var index = Math.round(vs * this.cm.length);
+    index = Math.max(Math.min(index,this.cm.length-1),0);
+    c = this.cm[index];
+
+    return 'rgb(' + Math.round(255*c[0]) + ',' + Math.round(255*c[1]) + ',' + Math.round(255*c[2]) + ')';
+};
+
+// Axis(fig,x,y,w,h) 
+// create a new axes in figure fig
+// at location x,y and width w and height h
+// x,y,w,h are fraction of the total figure height and width
+
+function Axis(fig,x,y,w,h) {
+    this.fig = fig;
+    this.x = x;
+    this.y = y;
+    this.w = w;
+    this.h = h;
+    this.cmap = new ColorMap([-1,1]);
+    this.FontFamily = "Verdana";
+    this.FontSize = 15;
+    this.color = 'black';
+    this.children = [];
+    this.xTickLen = 10;
+    this.xTickMode = 'auto';
+    this.xTick = [];
+    this.xTickLabelMode = 'auto';
+    this.xTickLabel = [];
+    this.xAxisLocation = 'bottom';
+//    this.xAxisLocation = 'top';
+}
+
+Axis.prototype.project = function(x,y) {
+    // i,j in axis coordinate space
+    var i = this.x + (x-this.xlim[0])/(this.xlim[1]-this.xlim[0]) * this.w;
+    var j = this.y + (y-this.ylim[0])/(this.ylim[1]-this.ylim[0]) * this.h;
+
+    // i,j in figure space (pixels)
+    i = i * this.fig.canvas.width;
+    j = j * this.fig.canvas.height;
+
+    // reverse j axis
+    j = this.fig.canvas.height-j;
+
+    return {i:i,j:j};
+
+};
+
+Axis.prototype.lim = function(what) {
+    var i, min = +Infinity, max = -Infinity, range;
+
+    if (this.children.length > 0) {
+        for (i = 0; i<this.children.length; i++) {
+            range = this.children[i].lim(what);
+            min = Math.min(min,range[0]);
+            max = Math.max(max,range[1]);
+        }
+    }
+    else {
+        min = max = NaN;
+    }
+
+    if (min === max) {
+        min = min-1;
+        max = max+1;
+    }
+
+    return [min,max];
+};
+
+Axis.prototype.pcolor = function(x,y,v) {
+    var i, j;
+
+    if (arguments.length === 1) {
+        v = x;
+        x = [];
+        y = [];
+
+        for (i=0; i<v.length; i++) {
+            x[i] = [];
+            y[i] = [];
+
+            for (j=0; j<v[0].length; j++) {
+                x[i][j] = i;
+                y[i][j] = j;
+            }
+        }
+    }
+
+    this.children.push(new Surface(x,y,[],v));
+};
+
+Axis.prototype.draw = function() {
+    var i;
+
+    this.xlim = this.lim('x');
+    this.ylim = this.lim('y');
+    this.cmap.clim = this.lim('c');
+/*
+    for (i = 0; i<this.children.length; i++) {
+        this.children[i].draw(this);
+    };
+*/
+    this.fig.canvas.rect(this.fig.canvas.width*this.x,
+                         this.fig.canvas.height*this.y,
+                         this.fig.canvas.width*this.w,
+                         this.fig.canvas.height*this.h,
+                         'none','black');
+
+    this.labels();
+};
+
+Axis.prototype.labels = function() {
+    var i, y, pos, VerticalAlignment, offset;
+
+    if (this.xTickMode === 'auto') {
+        this.xTick = ticks(this.xlim[0],this.xlim[1],5);
+    }
+
+    if (this.xTickLabelMode === 'auto') {
+        this.xTickLabel = this.xTick.map(function(x) {return x.toString();});
+    }
+
+    if (this.xAxisLocation === 'bottom') {
+        VerticalAlignment = 'top';
+        offset = this.xTickLen/2;        
+        y = this.ylim[0];
+    }
+    else {
+        VerticalAlignment = 'bottom';
+        offset = -this.xTickLen/2;        
+        y = this.ylim[1];
+    }
+
+    for (i = 0; i < this.xTick.length; i++) {
+        pos = this.project(this.xTick[i],y);
+
+        this.fig.canvas.line([pos.i,pos.i],
+                             [pos.j-this.xTickLen/2,pos.j+this.xTickLen/2],
+                             'black');
+        this.fig.canvas.text(pos.i,pos.j+offset,
+                             this.xTickLabel[i],this.FontFamily,
+                             this.FontSize,this.color,
+                             'center',VerticalAlignment
+                            );
+    }
+
+};
+
+Axis.prototype.rect = function(x,y,v) {
+    var color;
+    var ll = this.project(x[0],y[1]);
+    var up = this.project(x[1],y[0]);
+
+    if (typeof v === 'string') {
+        color = v;
+    }
+    else {
+        color = this.cmap.get(v);
+    }
+
+    this.fig.canvas.rect(ll.i,ll.j,
+                     up.i - ll.i,up.j - ll.j,
+                     color);
+};
+
+Axis.prototype.colorbar = function() {
+    var cax, cmap;
+
+    cax = this.fig.axes(0.75,0.1,0.1,0.8);
+    cmap = [range(0,63),range(0,63)];
+    cax.cmap = new ColorMap([0,63],this.cmap.type);
+    cax.pcolor(cmap);
+    return cax;
+};
+
+
+
+// this class represent a figure on a screen
+// should not contain SVG specific stuff
+
+function Figure(id,width,height) {
+    this.canvas = new SVGCanvas(id,width,height);
+    this.xlim = [0,100];
+    this.ylim = [0,100];
+    this._axes = [];
+}
+
+Figure.prototype.axes = function(x,y,w,h) {
+    var ax = new Axis(this,x,y,w,h);
+    this._axes.push(ax);
+    return ax;
+};
+
+Figure.prototype.draw = function() {
+    var i;
+
+    for (i = 0; i<this._axes.length; i++) {
+        this._axes[i].draw();
+    }
+};
 
