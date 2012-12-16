@@ -503,16 +503,33 @@ Axis.prototype.rect = function(x,y,v) {
 };
 
 Axis.prototype.colorbar = function() {
-    var cax, cmap;
+    var cax, cmap, clim, i, x, y;
 
     cax = this.fig.axes(0.85,0.1,0.05,0.8);
     cax.yAxisLocation = 'right';
     cax.xTickMode = 'manual';
     cax.xTick = [];
 
-    cmap = [range(0,63),range(0,63)];
-    cax.cmap = new ColorMap([0,63],this.cmap.type);
-    cax.pcolor(cmap);
+    clim = this.cmap.clim;
+/*    cmap = [range(0,63),range(0,63)];
+    cax.cmap = new ColorMap([0,63],this.cmap.type);*/
+
+    var n = 64, tmp;
+    tmp = range(clim[0],clim[1],(clim[1]-clim[0])/(n-1));
+    cmap = [tmp,tmp];
+
+    x = [[],[]];
+    y = [[],[]];
+    for (i = 0; i < n; i++) {
+        y[0][i] = clim[0] + i * (clim[1]-clim[0])/(n-1);
+        y[1][i] = y[0][i];
+
+        x[0][i] = 0;
+        x[1][i] = 1;
+    }
+           
+    //cax.cmap = new ColorMap(clim,this.cmap.type);
+    cax.pcolor(x,y,y);
     return cax;
 };
 
