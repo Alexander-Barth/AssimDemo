@@ -19,7 +19,9 @@
 /*global jQuery: false, $: false, numeric: false, MathJax, range */
 
 
-var colormaps = {'jet':
+var matplot = {};
+
+matplot.colormaps = {'jet':
             [
    [0.000000000000000,0.000000000000000,0.500000000000000],
    [0.000000000000000,0.000000000000000,0.563492063492063],
@@ -92,7 +94,7 @@ var colormaps = {'jet':
 // Propose about n ticks for range (min,max)
 // Code taken from yapso
 
-function ticks(min,max,n) {
+matplot.ticks = function ticks(min,max,n) {
     var nt, range, dt, base, sdt, t0, i;
 
     // a least 2 ticks
@@ -154,10 +156,10 @@ function ticks(min,max,n) {
 
     return t;
   
-}
+};
 
 
-function mk(tag,attribs,children) {
+matplot.mk = function mk(tag,attribs,children) {
     var xmlns, elem, child, a, c;
 
     attribs = attribs || {}; 
@@ -185,9 +187,9 @@ function mk(tag,attribs,children) {
         }
     }
     return elem;
-}
+};
 
-function SVGCanvas(id,width,height) {
+matplot.SVGCanvas = function SVGCanvas(id,width,height) {
     this.xmlns = "http://www.w3.org/2000/svg";
     this.id = id;
     this.width = width;
@@ -195,11 +197,11 @@ function SVGCanvas(id,width,height) {
 
     this.container = document.getElementById(id);
     this.container.appendChild(
-        this.svg = mk('svg',{width: width, height: height, 'style': 'border: 1px solid black'},
-           [this.axis = mk('g')]));              
-}
+        this.svg = matplot.mk('svg',{width: width, height: height, 'style': 'border: 1px solid black'},
+           [this.axis = matplot.mk('g')]));              
+};
 
-SVGCanvas.prototype.rect = function(x,y,width,height,fill,stroke,info) {
+matplot.SVGCanvas.prototype.rect = function(x,y,width,height,fill,stroke,info) {
     var rect, attrib;
     stroke = stroke || fill;
     info = info || '';
@@ -212,14 +214,14 @@ SVGCanvas.prototype.rect = function(x,y,width,height,fill,stroke,info) {
     }
     
     this.axis.appendChild(
-        rect = mk('rect',attrib));
+        rect = matplot.mk('rect',attrib));
 
     if (info) {
         rect.onclick = function() { console.log('x',info); };
     }
 };
 
-SVGCanvas.prototype.text = function(x,y,text,FontFamily,FontSize,fill,HorizontalAlignment,VerticalAlignment) {
+matplot.SVGCanvas.prototype.text = function(x,y,text,FontFamily,FontSize,fill,HorizontalAlignment,VerticalAlignment) {
 
     var TextAnchor, dy = 0;
     
@@ -244,7 +246,7 @@ SVGCanvas.prototype.text = function(x,y,text,FontFamily,FontSize,fill,Horizontal
     }
 
     this.axis.appendChild(
-        mk('text',{'x': x,
+        matplot.mk('text',{'x': x,
                    'y': y,
                    'font-family': FontFamily,
                    'font-size': FontSize,
@@ -254,12 +256,12 @@ SVGCanvas.prototype.text = function(x,y,text,FontFamily,FontSize,fill,Horizontal
            [text] ));
 };
 
-SVGCanvas.prototype.line = function(x,y,color) {
+matplot.SVGCanvas.prototype.line = function(x,y,color) {
     var strokeWidth = 1;
     var style="stroke:" + color + ";stroke-width:" + strokeWidth;
 
     this.axis.appendChild(
-        mk('line',{'x1': x[0],
+        matplot.mk('line',{'x1': x[0],
                    'x2': x[1],
                    'y1': y[0],
                    'y2': y[1],
@@ -270,14 +272,14 @@ SVGCanvas.prototype.line = function(x,y,color) {
 
 
 
-function Surface(x,y,z,c) {
+matplot.Surface = function Surface(x,y,z,c) {
     this.x = x;
     this.y = y;
     this.z = z;
     this.c = c;
 }
 
-Surface.prototype.lim = function(what) {
+matplot.Surface.prototype.lim = function(what) {
     var i, j, min, max, tmp = this[what];
     min = max = tmp[0][0];
 
@@ -290,7 +292,7 @@ Surface.prototype.lim = function(what) {
     return [min,max];
 };
 
-Surface.prototype.draw = function(fig) {
+matplot.Surface.prototype.draw = function(fig) {
     var i,j;
 
     for (i=0; i<this.x.length-1; i++) {
@@ -305,13 +307,13 @@ Surface.prototype.draw = function(fig) {
 };
 
 
-function ColorMap(clim,type) {
+matplot.ColorMap = function ColorMap(clim,type) {
     this.clim = clim;
     this.type = type || 'jet';
-    this.cm = colormaps[this.type];
+    this.cm = matplot.colormaps[this.type];
 }
 
-ColorMap.prototype.get = function (v) {
+matplot.ColorMap.prototype.get = function (v) {
     var c=[];
     var vs = (v-this.clim[0])/(this.clim[1]-this.clim[0]);
     c[0] = vs;
@@ -330,13 +332,13 @@ ColorMap.prototype.get = function (v) {
 // at location x,y and width w and height h
 // x,y,w,h are fraction of the total figure height and width
 
-function Axis(fig,x,y,w,h) {
+matplot.Axis = function Axis(fig,x,y,w,h) {
     this.fig = fig;
     this.x = x;
     this.y = y;
     this.w = w;
     this.h = h;
-    this.cmap = new ColorMap([-1,1]);
+    this.cmap = new matplot.ColorMap([-1,1]);
     this.FontFamily = "Verdana";
     this.FontSize = 15;
     this.color = 'black';
@@ -359,7 +361,7 @@ function Axis(fig,x,y,w,h) {
 
 }
 
-Axis.prototype.project = function(x,y) {
+matplot.Axis.prototype.project = function(x,y) {
     // i,j in axis coordinate space
     var i = this.x + (x-this.xlim[0])/(this.xlim[1]-this.xlim[0]) * this.w;
     var j = this.y + (y-this.ylim[0])/(this.ylim[1]-this.ylim[0]) * this.h;
@@ -375,7 +377,7 @@ Axis.prototype.project = function(x,y) {
 
 };
 
-Axis.prototype.lim = function(what) {
+matplot.Axis.prototype.lim = function(what) {
     var i, min = +Infinity, max = -Infinity, range;
 
     if (this.children.length > 0) {
@@ -397,7 +399,7 @@ Axis.prototype.lim = function(what) {
     return [min,max];
 };
 
-Axis.prototype.pcolor = function(x,y,v) {
+matplot.Axis.prototype.pcolor = function(x,y,v) {
     var i, j;
 
     if (arguments.length === 1) {
@@ -416,10 +418,10 @@ Axis.prototype.pcolor = function(x,y,v) {
         }
     }
 
-    this.children.push(new Surface(x,y,[],v));
+    this.children.push(new matplot.Surface(x,y,[],v));
 };
 
-Axis.prototype.draw = function() {
+matplot.Axis.prototype.draw = function() {
     var i;
 
     this.xlim = this.lim('x');
@@ -440,11 +442,11 @@ Axis.prototype.draw = function() {
     this.drawYTicks();
 };
 
-Axis.prototype.drawXTicks = function() {
+matplot.Axis.prototype.drawXTicks = function() {
     var i, y, pos, VerticalAlignment, offset;
 
     if (this.xTickMode === 'auto') {
-        this.xTick = ticks(this.xlim[0],this.xlim[1],5);
+        this.xTick = matplot.ticks(this.xlim[0],this.xlim[1],5);
     }
 
     if (this.xTickLabelMode === 'auto') {
@@ -477,11 +479,11 @@ Axis.prototype.drawXTicks = function() {
 
 };
 
-Axis.prototype.drawYTicks = function() {
+matplot.Axis.prototype.drawYTicks = function() {
     var i, x, pos, HorizontalAlignment, offset;
 
     if (this.yTickMode === 'auto') {
-        this.yTick = ticks(this.ylim[0],this.ylim[1],5);
+        this.yTick = matplot.ticks(this.ylim[0],this.ylim[1],5);
     }
 
     if (this.yTickLabelMode === 'auto') {
@@ -515,7 +517,7 @@ Axis.prototype.drawYTicks = function() {
 
 };
 
-Axis.prototype.rect = function(x,y,v) {
+matplot.Axis.prototype.rect = function(x,y,v) {
     var color, info = null;
     var ll = this.project(x[0],y[1]);
     var up = this.project(x[1],y[0]);
@@ -533,7 +535,7 @@ Axis.prototype.rect = function(x,y,v) {
                          color,color,info);
 };
 
-Axis.prototype.colorbar = function() {
+matplot.Axis.prototype.colorbar = function() {
     var cax, cmap, clim, i, x, y,
         n = 64, tmp;
 
@@ -566,20 +568,20 @@ Axis.prototype.colorbar = function() {
 // this class represent a figure on a screen
 // should not contain SVG specific stuff
 
-function Figure(id,width,height) {
-    this.canvas = new SVGCanvas(id,width,height);
+matplot.Figure = function Figure(id,width,height) {
+    this.canvas = new matplot.SVGCanvas(id,width,height);
     this.xlim = [0,100];
     this.ylim = [0,100];
     this._axes = [];
-}
+};
 
-Figure.prototype.axes = function(x,y,w,h) {
-    var ax = new Axis(this,x,y,w,h);
+matplot.Figure.prototype.axes = function(x,y,w,h) {
+    var ax = new matplot.Axis(this,x,y,w,h);
     this._axes.push(ax);
     return ax;
 };
 
-Figure.prototype.draw = function() {
+matplot.Figure.prototype.draw = function() {
     var i;
 
     for (i = 0; i<this._axes.length; i++) {

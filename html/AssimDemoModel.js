@@ -123,10 +123,10 @@ function main() {
     id = 'canvas';
     width="700";
     height="500";
-    fig = new Figure(id,width,height);
+    fig = new matplot.Figure(id,width,height);
 
     ax = fig.axes(0.1,0.1,.72,.8);
-    ax.cmap = new ColorMap([0,5],'jet');
+    ax.cmap = new matplot.ColorMap([0,5],'jet');
 
 
 
