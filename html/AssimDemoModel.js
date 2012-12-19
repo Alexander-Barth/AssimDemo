@@ -103,6 +103,45 @@ ModelShallowWater1d.prototype.step = function (n,x) {
     return xn;
 }
 
+function StateVector(masks) {
+    var i;
+    this.masks = masks;   
+}
+
+StateVector.prototype.pack = function(as) {
+    var i,j,k,x = [], v;
+
+    for (k=0; k < as.length; k++) {    
+        v = as[k];
+        
+        for (i=0; i < v.length; i++) {
+            for (j=0; j < v[0].length; j++) {
+                x[x.length] = v[i][j];
+            }
+        }
+    }    
+
+    return x;
+};
+
+
+StateVector.prototype.unpack = function(x) {
+    var i,j,k,as = [], v, m, l=0;
+
+    for (k=0; k < this.masks.length; k++) {    
+        m = this.masks[v];
+        as[k] = nu.rep([m.length,m[0].length],0);
+        
+        for (i=0; i < v.length; i++) {
+            for (j=0; j < v[0].length; j++) {
+                as[k][i][j] = x(l++);
+            }
+        }
+    }    
+
+    return as;
+};
+
 
 var fig;
 
@@ -133,13 +172,26 @@ function main() {
     var data = []; datax=[],datat = [],zeta=[];
 
     var model = new ModelShallowWater1d(dx,dt,n,h);
+
+    var m = {fun: function(i,X) {
+        var x = {};
+        x.U = X.slice(0,n+1);
+        s.zeta = X.slice(n+1);
+
+        x = model.step(i,x);
+
+        X = x.U.concat(x.zeta);
+        return X;
+    }};
+
+
     for (i=0; i<nmax; i++) {
         x = model.step(i,x);
         //console.log(x.zeta[n-1],x.U[n]);
 
-        datax[i]= [];
-        datat[i]= [];
-        zeta[i]= [];
+        datax[i] = [];
+        datat[i] = [];
+        zeta[i] = [];
 
         for (j=0; j<n; j++) {
             datax[i][j] = i;
