@@ -90,6 +90,37 @@ matplot.colormaps = {'jet':
            };
 
 
+matplot.peaks = function() {
+    var i,j,x=[],y=[],z=[];
+    var f = function(x,y) { 
+        return 3*(1-x)*(1-x)*Math.exp(-x*x - (y+1)*(y+1))
+            - 10*(x/5 - x*x*x - Math.pow(y,5))*Math.exp(-x*x-y*y) 
+            - 1/3*Math.exp(-(x+1)*(x+1) - y*y); }
+
+    for (i=0; i < 49; i++) {
+        x[i] = [];
+        y[i] = [];
+        z[i] = [];
+
+        for (j=0; j < 49; j++) {
+            x[i][j] = -3 + i/8;
+            y[i][j] = -3 + j/8;
+            z[i][j] = f(x[i][j],y[i][j]);
+        }
+    }
+
+    return {x: x, y: y, z:z};
+};
+
+function range(start,end,step) {
+    var i, r = [];
+    step = step || 1;
+
+    for (i=start; i<=end; i+=step) {
+        r.push(i);
+    }
+    return r;
+}
 
 // Propose about n ticks for range (min,max)
 // Code taken from yapso
@@ -221,6 +252,23 @@ matplot.SVGCanvas.prototype.rect = function(x,y,width,height,fill,stroke,info) {
     }
 };
 
+
+matplot.SVGCanvas.prototype.polygon = function(x,y,style) {
+    var polygon, points = '', i, attrib, s = 'fill:' + style.fill + ';stroke:' + style.stroke;
+
+    //s = 'fill:' + style.fill + ';stroke:' + 'black';
+
+    for (i = 0; i < x.length; i++) {
+        points += x[i] + ',' + y[i] + ' ';
+    }
+    
+    attrib = {points: points, style: s};
+
+    this.axis.appendChild(
+        polygon = matplot.mk('polygon',attrib));
+
+};
+
 matplot.SVGCanvas.prototype.text = function(x,y,text,FontFamily,FontSize,fill,HorizontalAlignment,VerticalAlignment) {
 
     var TextAnchor, dy = 0;
@@ -277,7 +325,7 @@ matplot.Surface = function Surface(x,y,z,c) {
     this.y = y;
     this.z = z;
     this.c = c;
-}
+};
 
 matplot.Surface.prototype.lim = function(what) {
     var i, j, min, max, tmp = this[what];
@@ -292,15 +340,19 @@ matplot.Surface.prototype.lim = function(what) {
     return [min,max];
 };
 
-matplot.Surface.prototype.draw = function(fig) {
+matplot.Surface.prototype.draw = function(axis) {
     var i,j;
 
     for (i=0; i<this.x.length-1; i++) {
         for (j=0; j<this.x[0].length-1; j++) {
             // does not work for curvilinear grid
-            fig.rect([this.x[i][j],this.x[i+1][j]],
+            /*axis.rect([this.x[i][j],this.x[i+1][j]],
                      [this.y[i][j],this.y[i+1][j+1]],
-                     this.c[i][j]);
+                     this.c[i][j]);*/
+
+            axis.polygon([this.x[i][j],this.x[i+1][j],this.x[i+1][j+1],this.x[i][j+1]],
+                         [this.y[i][j],this.y[i+1][j],this.y[i+1][j+1],this.y[i][j+1]],
+                         this.c[i][j]);
             
         }
     }
@@ -311,7 +363,7 @@ matplot.ColorMap = function ColorMap(clim,type) {
     this.clim = clim;
     this.type = type || 'jet';
     this.cm = matplot.colormaps[this.type];
-}
+};
 
 matplot.ColorMap.prototype.get = function (v) {
     var c=[];
@@ -343,6 +395,17 @@ matplot.Axis = function Axis(fig,x,y,w,h) {
     this.FontSize = 15;
     this.color = 'black';
     this.children = [];
+
+    // default properties of the x-axis
+    this._xLim = [];
+    this._xLimMode = 'auto';
+    this.xLabel = '';
+    this.xGrid = 'on';
+    this.xDir = 'normal';    
+    this.xScale = 'linear';    
+    this.xMinorGrid = 'off';
+    this.xMinorTick = 'off';
+    this.xColor = [0,0,0];
     this.xTickLen = 10;
     this.xTickMode = 'auto';
     this.xTick = [];
@@ -351,6 +414,15 @@ matplot.Axis = function Axis(fig,x,y,w,h) {
     this.xAxisLocation = 'bottom';
 //    this.xAxisLocation = 'top';
 
+    this._yLim = [];
+    this._yLimMode = 'auto';
+    this.yLabel = '';
+    this.yGrid = 'on';
+    this.yDir = 'normal';    
+    this.yScale = 'linear';    
+    this.yMinorGrid = 'off';
+    this.yMinorTick = 'off';
+    this.yColor = [0,0,0];
     this.yTickLen = 10;
     this.yTickMode = 'auto';
     this.yTick = [];
@@ -359,7 +431,58 @@ matplot.Axis = function Axis(fig,x,y,w,h) {
     this.yAxisLocation = 'left';
 //    this.xAxisLocation = 'right';
 
+    this._cLim = [];
+    this._cLimMode = 'auto';
+};
+
+function getterSetterMode(func,prop,mode) {
+    return function (data) {
+        if (arguments.length === 0) {
+            // get
+            if (this[mode] === 'auto') {
+                return func.call(this);
+            }
+            else {
+                return this[prop];
+            }
+        }
+        else {
+            // set
+            this[prop] = data;
+            this[mode] = 'manual';
+        }
+    }
 }
+
+function getterSetterVal(prop,vals) {
+    return function (data) {
+        if (arguments.length === 0) {
+            // get
+            return this[prop];
+        }
+        else {
+            // set
+            if (vals.indexOf(data) === -1) {
+                throw 'Error: value of property ' + prop + ' should be one of ' + 
+                    vals.join(', ') + ' but got ' + data + '.';
+            }
+            else {
+                this[prop] = data;
+            }
+        }
+    }
+}
+
+matplot.Axis.prototype.xLim = getterSetterMode(function() { return this.lim('x'); },'_xLim','_xLimMode');
+matplot.Axis.prototype.yLim = getterSetterMode(function() { return this.lim('y'); },'_yLim','_yLimMode');
+matplot.Axis.prototype.zLim = getterSetterMode(function() { return this.lim('z'); },'_zLim','_zLimMode');
+matplot.Axis.prototype.cLim = getterSetterMode(function() { return this.lim('c'); },'_cLim','_cLimMode');
+
+matplot.Axis.prototype.xLimMode = getterSetterVal('_xLimMode',['auto','manual']);
+matplot.Axis.prototype.yLimMode = getterSetterVal('_yLimMode',['auto','manual']);
+matplot.Axis.prototype.zLimMode = getterSetterVal('_zLimMode',['auto','manual']);
+matplot.Axis.prototype.cLimMode = getterSetterVal('_cLimMode',['auto','manual']);
+
 
 matplot.Axis.prototype.project = function(x,y) {
     // i,j in axis coordinate space
@@ -424,13 +547,13 @@ matplot.Axis.prototype.pcolor = function(x,y,v) {
 matplot.Axis.prototype.draw = function() {
     var i;
 
-    this.xlim = this.lim('x');
-    this.ylim = this.lim('y');
-    this.cmap.clim = this.lim('c');
+    this.xlim = this.xLim();
+    this.ylim = this.yLim();
+    this.cmap.clim = this.cLim();
 
     for (i = 0; i<this.children.length; i++) {
         this.children[i].draw(this);
-    };
+    }
 
     this.fig.canvas.rect(this.fig.canvas.width*this.x,
                          this.fig.canvas.height*this.y,
@@ -535,6 +658,20 @@ matplot.Axis.prototype.rect = function(x,y,v) {
                          color,color,info);
 };
 
+
+matplot.Axis.prototype.polygon = function(x,y,v) {
+    var p, i=[], j=[], l, color;
+
+    for (l = 0; l < x.length; l++) {
+        p = this.project(x[l],y[l]);
+        i.push(p.i);
+        j.push(p.j);
+    }
+    color = this.cmap.get(v);
+
+    this.fig.canvas.polygon(i,j,{fill: color, stroke: color});
+};
+
 matplot.Axis.prototype.colorbar = function() {
     var cax, cmap, clim, i, x, y,
         n = 64, tmp;
@@ -544,7 +681,7 @@ matplot.Axis.prototype.colorbar = function() {
     cax.xTickMode = 'manual';
     cax.xTick = [];
 
-    clim = this.cmap.clim;
+    clim = this.cLim();
 
     tmp = range(clim[0],clim[1],(clim[1]-clim[0])/(n-1));
     cmap = [tmp,tmp];

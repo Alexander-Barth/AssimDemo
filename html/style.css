@@ -101,3 +101,9 @@ p.instructions {
 
   height:300px;
 }
+
+
+ @media only screen and (max-width: 4800px){
+    /* rules defined inside here are only applied to browsers that support CSS media queries and the browser window is 480px or smaller */
+      color: red;
+ }
