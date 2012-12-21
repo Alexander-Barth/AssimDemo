@@ -352,6 +352,7 @@ matplot.Surface.prototype.draw = function(axis) {
 
             axis.polygon([this.x[i][j],this.x[i+1][j],this.x[i+1][j+1],this.x[i][j+1]],
                          [this.y[i][j],this.y[i+1][j],this.y[i+1][j+1],this.y[i][j+1]],
+                         [this.z[i][j],this.z[i+1][j],this.z[i+1][j+1],this.z[i][j+1]],
                          this.c[i][j]);
             
         }
@@ -395,6 +396,9 @@ matplot.Axis = function Axis(fig,x,y,w,h) {
     this.FontSize = 15;
     this.color = 'black';
     this.children = [];
+
+    this._projection = 'orthographic';
+    this._projection = 'perspective';
 
     // default properties of the x-axis
     this._xLim = [];
@@ -478,16 +482,116 @@ matplot.Axis.prototype.yLim = getterSetterMode(function() { return this.lim('y')
 matplot.Axis.prototype.zLim = getterSetterMode(function() { return this.lim('z'); },'_zLim','_zLimMode');
 matplot.Axis.prototype.cLim = getterSetterMode(function() { return this.lim('c'); },'_cLim','_cLimMode');
 
+matplot.Axis.prototype.projection = getterSetterVal('_projection',['orthographic', 'perspective']);
+
 matplot.Axis.prototype.xLimMode = getterSetterVal('_xLimMode',['auto','manual']);
 matplot.Axis.prototype.yLimMode = getterSetterVal('_yLimMode',['auto','manual']);
 matplot.Axis.prototype.zLimMode = getterSetterVal('_zLimMode',['auto','manual']);
 matplot.Axis.prototype.cLimMode = getterSetterVal('_cLimMode',['auto','manual']);
 
 
-matplot.Axis.prototype.project = function(x,y) {
-    // i,j in axis coordinate space
-    var i = this.x + (x-this.xlim[0])/(this.xlim[1]-this.xlim[0]) * this.w;
-    var j = this.y + (y-this.ylim[0])/(this.ylim[1]-this.ylim[0]) * this.h;
+// http://publib.boulder.ibm.com/infocenter/pseries/v5r3/index.jsp?topic=/com.ibm.aix.opengl/doc/openglrf/gluLookAt.htm
+/*
+Let E be the 3d column vector (eyeX, eyeY, eyeZ).
+Let C be the 3d column vector (centerX, centerY, centerZ).
+Let U be the 3d column vector (upX, upY, upZ).
+
+*/
+
+function cross(a,b) {
+    var c = [];
+    c[0] = a[1] * b[2] - a[2] * b[1];
+    c[1] = a[2] * b[0] - a[0] * b[2];
+    c[2] = a[0] * b[1] - a[1] * b[0];
+    return c;
+}
+
+// http://publib.boulder.ibm.com/infocenter/pseries/v5r3/index.jsp?topic=/com.ibm.aix.opengl/doc/openglrf/gluProject.htm
+
+function Perspective(fovy, aspect, zNear, zFar) {
+    var f = 1/Math.tan(fovy/2), z = zNear-zFar;
+/*
+
+                   (     f                                  )
+                   |  ------   0       0            0       |
+                   |  aspect                                |
+                   |                                        |
+                   |                                        |
+                   |     0     f       0            0       |
+                   |                                        |
+                   |                                        |
+                   |               zFar+zNear  2*zFar*zNear |
+                   |     0     0   ----------  ------------ |
+                   |               zNear-zFar   zNear-zFar  |
+                   |                                        |
+                   |                                        |
+                   |     0     0      -1            0       |
+                   (                                        )*/
+
+
+    return [[ f/aspect,    0,               0,                 0],
+            [        0,    f,               0,                 0],
+            [        0,    0,  (zFar+zNear)/z,  (2*zFar*zNear)/z],
+            [        0,    0,              -1,                 0]];
+
+
+}
+
+matplot.Axis.prototype.LookAt = function(E,C,U) {
+    var L, S, Up, M;
+/*
+Compute L = C - E.
+Normalize L.
+Compute S = L x U.
+Normalize S.
+Compute U' = S x L.
+*/
+    var nu = numeric;
+    L = nu.sub(C,E);
+    L = nu.mul(1/nu.norm2(L),L);
+    S = cross(L,U);
+    S = nu.mul(1/nu.norm2(S),S);
+    Up = cross(S,L);
+
+// M is the matrix whose columns are, in order:
+// (S, 0), (U', 0), (-L, 0), (-E, 1)  (all column vectors)
+    
+    M = [[S[0], Up[0], -L[0], -E[0]],
+         [S[1], Up[1], -L[1], -E[1]],
+         [S[2], Up[2], -L[2], -E[2]],
+         [   0,     0,     0,    -1]];
+
+    return M;
+};
+
+matplot.Axis.prototype.project = function(x,y,z) {
+    var i,j;
+
+    if (this._projection === 'orthographic') {
+        // i,j in axis coordinate space
+        i = this.x + (x-this.xlim[0])/(this.xlim[1]-this.xlim[0]) * this.w;
+        j = this.y + (y-this.ylim[0])/(this.ylim[1]-this.ylim[0]) * this.h;
+
+    }
+    else {
+        var CameraPosition, CameraTarget, CameraUpVector, CameraViewAngle, M, b;
+        CameraPosition = [-36.5257, -47.6012, 86.6025];
+	CameraTarget = [0, 0, 0];
+	CameraUpVector = [0, 0, 1];
+	CameraViewAngle = [10.3396];
+        var fovy  = Math.PI/20;
+        var aspect = 1.;
+        var zNear = -5;
+        var zFar = 10;
+
+        var modelView = this.LookAt(CameraPosition,CameraTarget,CameraUpVector);
+        var projection = Perspective(fovy, aspect, zNear, zFar);
+        M = numeric.dot(projection,modelView);
+
+        var b = numeric.dot(M,[x,y,z,0]);
+        i = b[0]/200+.3;
+        j = b[1]/200+.4;
+    }
 
     // i,j in figure space (pixels)
     i = i * this.fig.canvas.width;
@@ -523,7 +627,7 @@ matplot.Axis.prototype.lim = function(what) {
 };
 
 matplot.Axis.prototype.pcolor = function(x,y,v) {
-    var i, j;
+    var i, j, z = [];
 
     if (arguments.length === 1) {
         v = x;
@@ -541,7 +645,18 @@ matplot.Axis.prototype.pcolor = function(x,y,v) {
         }
     }
 
-    this.children.push(new matplot.Surface(x,y,[],v));
+    for (i=0; i<v.length; i++) {
+        z[i] = [];
+        for (j=0; j<v[0].length; j++) {
+            z[i][j] = 0;
+        }
+    }
+    
+    this.children.push(new matplot.Surface(x,y,z,v));
+};
+
+matplot.Axis.prototype.surf = function(x,y,z) {
+    this.children.push(new matplot.Surface(x,y,z,z));
 };
 
 matplot.Axis.prototype.draw = function() {
@@ -659,11 +774,11 @@ matplot.Axis.prototype.rect = function(x,y,v) {
 };
 
 
-matplot.Axis.prototype.polygon = function(x,y,v) {
+matplot.Axis.prototype.polygon = function(x,y,z,v) {
     var p, i=[], j=[], l, color;
 
     for (l = 0; l < x.length; l++) {
-        p = this.project(x[l],y[l]);
+        p = this.project(x[l],y[l],z[l]);
         i.push(p.i);
         j.push(p.j);
     }
