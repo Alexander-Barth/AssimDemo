@@ -317,6 +317,30 @@ matplot.SVGCanvas.prototype.line = function(x,y,color) {
 };
 
 
+matplot.SVGCanvas.prototype.polyline = function(x,y,style) {
+
+    var polyline, points = '', i, s;
+
+    linespec = style.linespec || '-';
+    if (linespec === '-') {
+        dasharray = 'none';
+    }
+    else if (linespec === '-.') {
+        dasharray = '5,3,2,5,3,2';
+    }
+
+    //s = 'fill:' + style.fill + ';stroke:' + 'black';
+    s = 'fill: none; stroke:' + (style.color || 'black') + '; stroke-width:' + (style.width || 1) + 
+        '; stroke-dasharray: ' +  dasharray;
+
+    for (i = 0; i < x.length; i++) {
+        points += x[i] + ',' + y[i] + ' ';
+    }
+
+    this.axis.appendChild(
+        polyline = matplot.mk('polyline',{points: points, style: s}));
+
+};
 
 
 
@@ -360,15 +384,43 @@ matplot.Surface.prototype.draw = function(axis) {
 };
 
 
-matplot.ColorMap = function ColorMap(clim,type) {
-    this.clim = clim;
+matplot.Line = function Line(x,y,z,style) {
+    this.x = x;
+    this.y = y;
+    this.z = z;
+    this.style = style || {};
+};
+
+matplot.Line.prototype.lim = function(what) {
+    var i, min, max, tmp = this[what];
+
+    if (what == 'c') {
+        return [NaN,NaN];
+    }
+    min = max = tmp[0];
+
+    for (i=0; i<tmp.length; i++) {
+        min = Math.min(min,tmp[i]);
+        max = Math.max(max,tmp[i]);
+    }    
+    return [min,max];
+};
+
+matplot.Line.prototype.draw = function(axis) {
+    var i,j;
+
+    axis.polyline(this.x,this.y,this.z,this.style);
+};
+
+matplot.ColorMap = function ColorMap(cLim,type) {
+    this.cLim = cLim;
     this.type = type || 'jet';
     this.cm = matplot.colormaps[this.type];
 };
 
 matplot.ColorMap.prototype.get = function (v) {
     var c=[];
-    var vs = (v-this.clim[0])/(this.clim[1]-this.clim[0]);
+    var vs = (v-this.cLim[0])/(this.cLim[1]-this.cLim[0]);
     c[0] = vs;
     c[1] = 1;
     c[2] = 1;
@@ -398,7 +450,6 @@ matplot.Axis = function Axis(fig,x,y,w,h) {
     this.children = [];
 
     this._projection = 'orthographic';
-    this._projection = 'perspective';
 
     // default properties of the x-axis
     this._xLim = [];
@@ -435,8 +486,18 @@ matplot.Axis = function Axis(fig,x,y,w,h) {
     this.yAxisLocation = 'left';
 //    this.xAxisLocation = 'right';
 
+    this._zLim = [];
+    this._zLimMode = 'auto';
+
     this._cLim = [];
     this._cLimMode = 'auto';
+
+
+    this._CameraPosition = [0,0,10];
+    this._CameraTarget = [0,0,0];
+    this._CameraUpVector = [0,1,0];
+    this._CameraViewAngle = 10.3396;
+
 };
 
 function getterSetterMode(func,prop,mode) {
@@ -490,13 +551,6 @@ matplot.Axis.prototype.zLimMode = getterSetterVal('_zLimMode',['auto','manual'])
 matplot.Axis.prototype.cLimMode = getterSetterVal('_cLimMode',['auto','manual']);
 
 
-// http://publib.boulder.ibm.com/infocenter/pseries/v5r3/index.jsp?topic=/com.ibm.aix.opengl/doc/openglrf/gluLookAt.htm
-/*
-Let E be the 3d column vector (eyeX, eyeY, eyeZ).
-Let C be the 3d column vector (centerX, centerY, centerZ).
-Let U be the 3d column vector (upX, upY, upZ).
-
-*/
 
 function cross(a,b) {
     var c = [];
@@ -529,6 +583,18 @@ function Perspective(fovy, aspect, zNear, zFar) {
                    (                                        )*/
 
 
+/*    return [[ 0.638,    0,               0,                 0],
+            [        0,    0.638,               0,                 0],
+            [        0,    0,  1,  0],
+            [        0,    0,              0,                 1]];
+*/
+/*    return [[ f/aspect,    0,               0,                 0],
+            [        0,    f,               0,                 0],
+            [        0,    0,  (zFar+zNear)/z,  (2*zFar*zNear)/z],
+            [        0,    0,              -1,                 1]];
+*/
+
+
     return [[ f/aspect,    0,               0,                 0],
             [        0,    f,               0,                 0],
             [        0,    0,  (zFar+zNear)/z,  (2*zFar*zNear)/z],
@@ -536,6 +602,14 @@ function Perspective(fovy, aspect, zNear, zFar) {
 
 
 }
+
+// http://publib.boulder.ibm.com/infocenter/pseries/v5r3/index.jsp?topic=/com.ibm.aix.opengl/doc/openglrf/gluLookAt.htm
+/*
+Let E be the 3d column vector (eyeX, eyeY, eyeZ).
+Let C be the 3d column vector (centerX, centerY, centerZ).
+Let U be the 3d column vector (upX, upY, upZ).
+
+*/
 
 matplot.Axis.prototype.LookAt = function(E,C,U) {
     var L, S, Up, M;
@@ -556,10 +630,21 @@ Compute U' = S x L.
 // M is the matrix whose columns are, in order:
 // (S, 0), (U', 0), (-L, 0), (-E, 1)  (all column vectors)
     
-    M = [[S[0], Up[0], -L[0], -E[0]],
-         [S[1], Up[1], -L[1], -E[1]],
-         [S[2], Up[2], -L[2], -E[2]],
-         [   0,     0,     0,    -1]];
+
+    M = [[ S[0],  S[1],  S[2],  0],
+         [Up[0], Up[1], Up[2],  0],
+         [-L[0], -L[1], -L[2],  0],
+         [-E[0], -E[1], -E[2], -1]];
+
+    M = [[ S[0],  S[1],  S[2],  0],
+         [Up[0], Up[1], Up[2],  0],
+         [-L[0], -L[1], -L[2],  0],
+         [-E[0], -E[1], -E[2],  1]];
+
+    M = [[ S[0],  S[1],  S[2],  0],
+         [Up[0], Up[1], Up[2],  0],
+         [ L[0],  L[1],  L[2],  0],
+         [0, 0, 0,  1]];
 
     return M;
 };
@@ -569,36 +654,22 @@ matplot.Axis.prototype.project = function(x,y,z) {
 
     if (this._projection === 'orthographic') {
         // i,j in axis coordinate space
-        i = this.x + (x-this.xlim[0])/(this.xlim[1]-this.xlim[0]) * this.w;
-        j = this.y + (y-this.ylim[0])/(this.ylim[1]-this.ylim[0]) * this.h;
+        i = this.x + (x-this._xLim[0])/(this._xLim[1]-this._xLim[0]) * this.w;
+        j = this.y + (y-this._yLim[0])/(this._yLim[1]-this._yLim[0]) * this.h;
+        // reverse j axis
+        j = 1-j;
 
     }
     else {
-        var CameraPosition, CameraTarget, CameraUpVector, CameraViewAngle, M, b;
-        CameraPosition = [-36.5257, -47.6012, 86.6025];
-	CameraTarget = [0, 0, 0];
-	CameraUpVector = [0, 0, 1];
-	CameraViewAngle = [10.3396];
-        var fovy  = Math.PI/20;
-        var aspect = 1.;
-        var zNear = -5;
-        var zFar = 10;
-
-        var modelView = this.LookAt(CameraPosition,CameraTarget,CameraUpVector);
-        var projection = Perspective(fovy, aspect, zNear, zFar);
-        M = numeric.dot(projection,modelView);
-
-        var b = numeric.dot(M,[x,y,z,0]);
-        i = b[0]/200+.3;
-        j = b[1]/200+.4;
+        var b = numeric.dot(this.M,[x,y,-z,1]);
+        i = b[0]/200+.45;
+        j = b[1]/200+.5;
     }
 
     // i,j in figure space (pixels)
     i = i * this.fig.canvas.width;
     j = j * this.fig.canvas.height;
 
-    // reverse j axis
-    j = this.fig.canvas.height-j;
 
     return {i:i,j:j};
 
@@ -617,13 +688,17 @@ matplot.Axis.prototype.lim = function(what) {
     else {
         min = max = NaN;
     }
-
-    if (min === max) {
+// not here
+/*    if (min === max) {
         min = min-1;
         max = max+1;
     }
-
+*/
     return [min,max];
+};
+
+matplot.Axis.prototype.line = function(x,y,z,style) {
+    this.children.push(new matplot.Line(x,y,z,style));
 };
 
 matplot.Axis.prototype.pcolor = function(x,y,v) {
@@ -660,11 +735,54 @@ matplot.Axis.prototype.surf = function(x,y,z) {
 };
 
 matplot.Axis.prototype.draw = function() {
-    var i;
+    var i, is2D;
 
-    this.xlim = this.xLim();
-    this.ylim = this.yLim();
-    this.cmap.clim = this.cLim();
+    this._xLim = this.xLim();
+    this._yLim = this.yLim();
+    this._zLim = this.zLim();    
+    this.cmap.cLim = this.cLim();
+
+    is2D = this._zLim[0] === this._zLim[1] || this._zLim[0] !== this._zLim[0];
+
+    if (!is2D) {
+        this._projection = 'perspective';
+    }
+
+    console.log('is2D',is2D,this._zLim);
+    // camera
+    this._CameraTarget = [(this._xLim[0]+this._xLim[1])/2,
+                          (this._yLim[0]+this._yLim[1])/2,
+                          (this._zLim[0]+this._zLim[1])/2];
+
+    if (this._projection === 'orthographic') {
+        // y-direction if upward
+        this._CameraUpVector = [0,1,0];
+        this._CameraPosition = [this._CameraTarget[0],
+                                this._CameraTarget[1],
+                                this._CameraTarget[2]+10];
+    }
+    else {
+        this._CameraPosition = [-36.5257, -47.6012, 86.6025];
+        this._CameraPosition = [-27.394,  -35.701,   25.981];
+        // z-direction if upward
+	this._CameraUpVector = [0, 0, 1];
+	this._CameraViewAngle = [10.3396];
+
+        var fovy  = Math.PI/20;
+        var aspect = 1.;
+        var zNear = -10;
+        var zFar = 20;
+
+        var modelView = this.LookAt(this._CameraPosition,this._CameraTarget,this._CameraUpVector);
+        console.log('modelView ',numeric.prettyPrint(modelView));
+
+        var projection = Perspective(fovy, aspect, zNear, zFar);
+
+        console.log('projection ',numeric.prettyPrint(projection));
+        this.M = numeric.dot(projection,modelView);
+        //this.M = numeric.dot(modelView,projection);
+    }
+
 
     for (i = 0; i<this.children.length; i++) {
         this.children[i].draw(this);
@@ -676,15 +794,21 @@ matplot.Axis.prototype.draw = function() {
                          this.fig.canvas.height*this.h,
                          'none','black');
 
-    this.drawXTicks();
-    this.drawYTicks();
+    
+    if (is2D) {
+        this.drawXTicks();
+        this.drawYTicks();
+    }
+    else {
+
+    }
 };
 
 matplot.Axis.prototype.drawXTicks = function() {
     var i, y, pos, VerticalAlignment, offset;
 
     if (this.xTickMode === 'auto') {
-        this.xTick = matplot.ticks(this.xlim[0],this.xlim[1],5);
+        this.xTick = matplot.ticks(this._xLim[0],this._xLim[1],5);
     }
 
     if (this.xTickLabelMode === 'auto') {
@@ -694,12 +818,12 @@ matplot.Axis.prototype.drawXTicks = function() {
     if (this.xAxisLocation === 'bottom') {
         VerticalAlignment = 'top';
         offset = this.xTickLen/2;        
-        y = this.ylim[0];
+        y = this._yLim[0];
     }
     else {
         VerticalAlignment = 'bottom';
         offset = -this.xTickLen/2;        
-        y = this.ylim[1];
+        y = this._yLim[1];
     }
 
     for (i = 0; i < this.xTick.length; i++) {
@@ -721,7 +845,7 @@ matplot.Axis.prototype.drawYTicks = function() {
     var i, x, pos, HorizontalAlignment, offset;
 
     if (this.yTickMode === 'auto') {
-        this.yTick = matplot.ticks(this.ylim[0],this.ylim[1],5);
+        this.yTick = matplot.ticks(this._yLim[0],this._yLim[1],5);
     }
 
     if (this.yTickLabelMode === 'auto') {
@@ -731,12 +855,12 @@ matplot.Axis.prototype.drawYTicks = function() {
     if (this.yAxisLocation === 'left') {
         HorizontalAlignment = 'right';
         offset = -this.yTickLen/2;        
-        x = this.xlim[0];
+        x = this._xLim[0];
     }
     else {
         HorizontalAlignment = 'left';
         offset = this.yTickLen/2;        
-        x = this.xlim[1];
+        x = this._xLim[1];
     }
 
     for (i = 0; i < this.yTick.length; i++) {
@@ -787,8 +911,21 @@ matplot.Axis.prototype.polygon = function(x,y,z,v) {
     this.fig.canvas.polygon(i,j,{fill: color, stroke: color});
 };
 
+matplot.Axis.prototype.polyline = function(x,y,z,style) {
+    var p, i=[], j=[], l;
+
+    for (l = 0; l < x.length; l++) {
+        p = this.project(x[l],y[l],z[l]);
+        i.push(p.i);
+        j.push(p.j);
+    }
+
+    this.fig.canvas.polyline(i,j,style);
+};
+
+
 matplot.Axis.prototype.colorbar = function() {
-    var cax, cmap, clim, i, x, y,
+    var cax, cmap, cLim, i, x, y,
         n = 64, tmp;
 
     cax = this.fig.axes(0.85,0.1,0.05,0.8);
@@ -796,15 +933,15 @@ matplot.Axis.prototype.colorbar = function() {
     cax.xTickMode = 'manual';
     cax.xTick = [];
 
-    clim = this.cLim();
+    cLim = this.cLim();
 
-    tmp = range(clim[0],clim[1],(clim[1]-clim[0])/(n-1));
+    tmp = range(cLim[0],cLim[1],(cLim[1]-cLim[0])/(n-1));
     cmap = [tmp,tmp];
 
     x = [[],[]];
     y = [[],[]];
     for (i = 0; i < n; i++) {
-        y[0][i] = clim[0] + i * (clim[1]-clim[0])/(n-1);
+        y[0][i] = cLim[0] + i * (cLim[1]-cLim[0])/(n-1);
         y[1][i] = y[0][i];
 
         x[0][i] = 0;
@@ -822,8 +959,6 @@ matplot.Axis.prototype.colorbar = function() {
 
 matplot.Figure = function Figure(id,width,height) {
     this.canvas = new matplot.SVGCanvas(id,width,height);
-    this.xlim = [0,100];
-    this.ylim = [0,100];
     this._axes = [];
 };
 
