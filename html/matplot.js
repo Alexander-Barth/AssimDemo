@@ -304,6 +304,46 @@ matplot.SVGCanvas.prototype.text = function(x,y,text,FontFamily,FontSize,fill,Ho
            [text] ));
 };
 
+
+matplot.SVGCanvas.prototype.text2 = function(x,y,text,style) {
+
+    var TextAnchor, dy = 0;
+    FontFamily,FontSize,fill,HorizontalAlignment,VerticalAlignment
+    
+
+
+    if (HorizontalAlignment === 'left') {
+        TextAnchor = 'start';
+    }
+    else if (HorizontalAlignment === 'center') {
+        TextAnchor = 'middle';
+    }
+    else if (HorizontalAlignment === 'right') {
+        TextAnchor = 'end';
+    }
+    else {
+        console.error(HorizontalAlignment);
+    }
+
+    if (VerticalAlignment === 'top') {
+        dy = FontSize;
+    }
+    else if (VerticalAlignment === 'middle') {
+        dy = FontSize/2;
+    }
+
+    this.axis.appendChild(
+        matplot.mk('text',{'x': x,
+                   'y': y,
+                   'font-family': FontFamily,
+                   'font-size': FontSize,
+                   'text-anchor': TextAnchor,
+                   'dy': dy,
+                   'fill': fill},
+           [text] ));
+};
+
+
 matplot.SVGCanvas.prototype.line = function(x,y,color) {
     var strokeWidth = 1;
     var style="stroke:" + color + ";stroke-width:" + strokeWidth;
@@ -738,12 +778,7 @@ matplot.Axis.prototype.lim = function(what) {
     else {
         min = max = NaN;
     }
-// not here
-/*    if (min === max) {
-        min = min-1;
-        max = max+1;
-    }
-*/
+
     return [min,max];
 };
 
@@ -787,12 +822,29 @@ matplot.Axis.prototype.surf = function(x,y,z) {
 matplot.Axis.prototype.draw = function() {
     var i, j, k, is2D;
 
-    this._xLim = this.xLim();
-    this._yLim = this.yLim();
-    this._zLim = this.zLim();    
+    function nz_range(lim) {
+        var min = lim[0], max = lim[1];
+        if (min === max) {
+            min = min-1;
+            max = max+1;
+        }
+        return [min,max];
+    };
+
+    // real range of x, y and z variable (might be [0,0])
+    this._xrange = this.xLim();
+    this._yrange = this.yLim();
+    this._zrange = this.zLim();    
+
+
+    // range for plotting which is never zero in length
+    this._xLim = nz_range(this._xrange);
+    this._yLim = nz_range(this._yrange);
+    this._zLim = nz_range(this._zrange);
+
     this.cmap.cLim = this.cLim();
 
-    is2D = this._zLim[0] === this._zLim[1] || this._zLim[0] !== this._zLim[0];
+    is2D = this._zrange[0] === this._zrange[1] || this._zrange[0] !== this._zrange[0];
 
     if (this.xTickMode === 'auto') {
         this.xTick = matplot.ticks(this._xLim[0],this._xLim[1],5);
@@ -932,6 +984,11 @@ matplot.Axis.prototype.draw = function() {
         this.polyline([this._xLim[i],this._xLim[i]],[this._yLim[j],this._yLim[j]],this._zLim);
 
 
+        for (i = 0; i < this.xTick.length; i++) {
+
+
+        }
+
         //this.polyline([this._xLim[i],this._xLim[i]],[this._yLim[j],this._yLim[j]],[this._zLim[k],this._zLim[k]]);
 
 
@@ -1036,6 +1093,25 @@ matplot.Axis.prototype.rect = function(x,y,v) {
 };
 
 
+matplot.Axis.prototype.text = function(x,y,z,string,style) {
+    var pos, offseti, offsetj;
+    offseti = style.offseti || 0;
+    offsetj = style.offsetj || 0;
+    FontSize = style.FontSize || 18;
+    FontFamily = style.FontFamily || 'Sans';
+    color = style.color || 'black';
+    HorizontalAlignment = style.HorizontalAlignment || 'left';
+    VerticalAlignment = style.VerticalAlignmentAlignment || 'middle';
+    pos = this.project(x,y,z);
+    
+    this.fig.canvas.text(pos.i+offset,pos.j,
+                             this.yTickLabel[i],this.FontFamily,
+                             this.FontSize,this.color,
+                             HorizontalAlignment,'middle'
+                            );
+
+};
+
 matplot.Axis.prototype.polygon = function(x,y,z,v) {
     var p, i=[], j=[], l, color;
 
@@ -1061,6 +1137,8 @@ matplot.Axis.prototype.polyline = function(x,y,z,style) {
 
     this.fig.canvas.polyline(i,j,style);
 };
+
+
 
 
 matplot.Axis.prototype.colorbar = function() {
