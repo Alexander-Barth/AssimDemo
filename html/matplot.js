@@ -887,49 +887,49 @@ matplot.Axis.prototype.draw = function() {
         k = 0;
         for (j = 0; j < this.yTick.length; j++) {
             this.line(this._xLim,
-                          [this.yTick[j],this.yTick[j]],
-                          [this.zTick[k],this.zTick[k]],
-                          {linespec: this.gridLineStyle});
+                      [this.yTick[j],this.yTick[j]],
+                      [this.zTick[k],this.zTick[k]],
+                      {linespec: this.gridLineStyle});
         }
 
         j = 0;
         for (k = 0; k < this.zTick.length; k++) {
             this.line(this._xLim,
-                          [this.yTick[j],this.yTick[j]],
-                          [this.zTick[k],this.zTick[k]],
-                          {linespec: this.gridLineStyle});
+                      [this.yTick[j],this.yTick[j]],
+                      [this.zTick[k],this.zTick[k]],
+                      {linespec: this.gridLineStyle});
         }
 
         k = 0;
         for (i = 0; i < this.xTick.length; i++) {
             this.line([this.xTick[i],this.xTick[i]],
-                          this._yLim,                          
-                          [this.zTick[k],this.zTick[k]],
-                          {linespec: this.gridLineStyle});
+                      this._yLim,                          
+                      [this.zTick[k],this.zTick[k]],
+                      {linespec: this.gridLineStyle});
         }
 
         i = 0;
         for (k = 0; k < this.zTick.length; k++) {
             this.line([this.xTick[i],this.xTick[i]],
-                          this._yLim,                          
-                          [this.zTick[k],this.zTick[k]],
-                          {linespec: this.gridLineStyle});
+                      this._yLim,                          
+                      [this.zTick[k],this.zTick[k]],
+                      {linespec: this.gridLineStyle});
         }
 
         j = 0;
         for (i = 0; i < this.xTick.length; i++) {
             this.line([this.xTick[i],this.xTick[i]],
-                          [this.yTick[j],this.yTick[j]],
-                          this._zLim,
-                          {linespec: this.gridLineStyle});
+                      [this.yTick[j],this.yTick[j]],
+                      this._zLim,
+                      {linespec: this.gridLineStyle});
         }
 
         i = 0;
         for (j = 0; j < this.yTick.length; j++) {
             this.line([this.xTick[i],this.xTick[i]],
-                          [this.yTick[j],this.yTick[j]],
-                          this._zLim,
-                          {linespec: this.gridLineStyle});
+                      [this.yTick[j],this.yTick[j]],
+                      this._zLim,
+                      {linespec: this.gridLineStyle});
         }
 
 
