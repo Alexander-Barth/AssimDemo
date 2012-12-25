@@ -328,6 +328,9 @@ matplot.SVGCanvas.prototype.polyline = function(x,y,style) {
     else if (linespec === '-.') {
         dasharray = '5,3,2,5,3,2';
     }
+    else if (linespec === ':') {
+        dasharray = '1,3';
+    }
 
     //s = 'fill:' + style.fill + ';stroke:' + 'black';
     s = 'fill: none; stroke:' + (style.color || 'black') + '; stroke-width:' + (style.width || 1) + 
@@ -488,6 +491,18 @@ matplot.Axis = function Axis(fig,x,y,w,h) {
 
     this._zLim = [];
     this._zLimMode = 'auto';
+    this.zLabel = '';
+    this.zGrid = 'on';
+    this.zDir = 'normal';    
+    this.zScale = 'linear';    
+    this.zMinorGrid = 'off';
+    this.zMinorTick = 'off';
+    this.zColor = [0,0,0];
+    this.zTickLen = 10;
+    this.zTickMode = 'auto';
+    this.zTick = [];
+    this.zTickLabelMode = 'auto';
+    this.zTickLabel = [];
 
     this._cLim = [];
     this._cLimMode = 'auto';
@@ -498,6 +513,7 @@ matplot.Axis = function Axis(fig,x,y,w,h) {
     this._CameraUpVector = [0,1,0];
     this._CameraViewAngle = 10.3396;
 
+    this.gridLineStyle = ':';
 };
 
 function getterSetterMode(func,prop,mode) {
@@ -603,6 +619,13 @@ function Perspective(fovy, aspect, zNear, zFar) {
 
 }
 
+function translate(dx) {
+    return [[1,0,0,dx[0]],
+            [0,1,0,dx[1]], 
+            [0,0,1,dx[2]],
+            [0,0,0,1]];
+}
+
 // http://publib.boulder.ibm.com/infocenter/pseries/v5r3/index.jsp?topic=/com.ibm.aix.opengl/doc/openglrf/gluLookAt.htm
 /*
 Let E be the 3d column vector (eyeX, eyeY, eyeZ).
@@ -621,21 +644,42 @@ Normalize S.
 Compute U' = S x L.
 */
     var nu = numeric;
+
+    // L vector pointing from camera to target
     L = nu.sub(C,E);
     L = nu.mul(1/nu.norm2(L),L);
+
+    // side direction to the "right" of L
     S = cross(L,U);
     S = nu.mul(1/nu.norm2(S),S);
+
+    // new up vector
     Up = cross(S,L);
 
 // M is the matrix whose columns are, in order:
 // (S, 0), (U', 0), (-L, 0), (-E, 1)  (all column vectors)
-    
+
+/*
+    M = [[ S[0], Up[0], -L[0], -E[0]],
+         [ S[1], Up[1], -L[1], -E[1]],
+         [ S[2], Up[2], -L[2], -E[2]],
+         [    0,     0,     0,     1]];
+ */
+  
 
     M = [[ S[0],  S[1],  S[2],  0],
          [Up[0], Up[1], Up[2],  0],
          [-L[0], -L[1], -L[2],  0],
-         [-E[0], -E[1], -E[2], -1]];
+         [-E[0], -E[1], -E[2], 1]];
 
+    M = [[ S[0],  S[1],  S[2],  0],
+         [Up[0], Up[1], Up[2],  0],
+         [-L[0], -L[1], -L[2],  0],
+         [0, 0, 0, 1]];
+
+    M = numeric.dot(M,translate([-E[0], -E[1], -E[2]]));
+
+/*
     M = [[ S[0],  S[1],  S[2],  0],
          [Up[0], Up[1], Up[2],  0],
          [-L[0], -L[1], -L[2],  0],
@@ -645,7 +689,7 @@ Compute U' = S x L.
          [Up[0], Up[1], Up[2],  0],
          [ L[0],  L[1],  L[2],  0],
          [0, 0, 0,  1]];
-
+*/
     return M;
 };
 
@@ -661,15 +705,21 @@ matplot.Axis.prototype.project = function(x,y,z) {
 
     }
     else {
-        var b = numeric.dot(this.M,[x,y,-z,1]);
+        //var b = numeric.dot(this.M,[x - this._CameraPosition[0],y - this._CameraPosition[1],(z - this._CameraPosition[2]),1]);
+        var b = numeric.dot(this.M,[x,y,z,1]);
         i = b[0]/200+.45;
         j = b[1]/200+.5;
+
+        i = b[0]/200+.5;
+        j = b[1]/200+.5;
+
+        j = 1-j;
     }
+
 
     // i,j in figure space (pixels)
     i = i * this.fig.canvas.width;
     j = j * this.fig.canvas.height;
-
 
     return {i:i,j:j};
 
@@ -735,7 +785,7 @@ matplot.Axis.prototype.surf = function(x,y,z) {
 };
 
 matplot.Axis.prototype.draw = function() {
-    var i, is2D;
+    var i, j, k, is2D;
 
     this._xLim = this.xLim();
     this._yLim = this.yLim();
@@ -743,6 +793,31 @@ matplot.Axis.prototype.draw = function() {
     this.cmap.cLim = this.cLim();
 
     is2D = this._zLim[0] === this._zLim[1] || this._zLim[0] !== this._zLim[0];
+
+    if (this.xTickMode === 'auto') {
+        this.xTick = matplot.ticks(this._xLim[0],this._xLim[1],5);
+    }
+
+    if (this.xTickLabelMode === 'auto') {
+        this.xTickLabel = this.xTick.map(function(x) {return x.toString();});
+    }
+
+    if (this.yTickMode === 'auto') {
+        this.yTick = matplot.ticks(this._yLim[0],this._yLim[1],5);
+    }
+
+    if (this.yTickLabelMode === 'auto') {
+        this.yTickLabel = this.yTick.map(function(y) {return y.toString();});
+    }
+
+    if (this.zTickMode === 'auto') {
+        this.zTick = matplot.ticks(this._zLim[0],this._zLim[1],5);
+    }
+
+    if (this.zTickLabelMode === 'auto') {
+        this.zTickLabel = this.zTick.map(function(z) {return z.toString();});
+    }
+
 
     if (!is2D) {
         this._projection = 'perspective';
@@ -764,6 +839,7 @@ matplot.Axis.prototype.draw = function() {
     else {
         this._CameraPosition = [-36.5257, -47.6012, 86.6025];
         this._CameraPosition = [-27.394,  -35.701,   25.981];
+        this._CameraPosition = [27.394,  35.701,   25.981];
         // z-direction if upward
 	this._CameraUpVector = [0, 0, 1];
 	this._CameraViewAngle = [10.3396];
@@ -780,7 +856,85 @@ matplot.Axis.prototype.draw = function() {
 
         console.log('projection ',numeric.prettyPrint(projection));
         this.M = numeric.dot(projection,modelView);
+        console.log('M ',numeric.prettyPrint(this.M));
+
+        console.log('Target ',this._CameraTarget);
+
+        console.log('MV * Target',  numeric.dot(modelView,[this._CameraTarget[0],this._CameraTarget[1],this._CameraTarget[2],1]));
+        //console.log('MV * Target',  numeric.dot(modelView,[this._CameraTarget[0]-this._CameraPosition[0],this._CameraTarget[1]-this._CameraPosition[1],this._CameraTarget[2]-this._CameraPosition[2],1]));
+
+        console.log('i ,j ',this.project(this._CameraTarget[0],this._CameraTarget[1],this._CameraTarget[2]));
+
         //this.M = numeric.dot(modelView,projection);
+    }
+
+    if (is2D) {
+    }
+    else {
+
+        
+        k = 0;
+        for (j = 0; j < this.yTick.length; j++) {
+            this.polyline(this._xLim,
+                          [this.yTick[j],this.yTick[j]],
+                          [this.zTick[k],this.zTick[k]],
+                          {linespec: this.gridLineStyle});
+        }
+
+        j = 0;
+        for (k = 0; k < this.zTick.length; k++) {
+            this.polyline(this._xLim,
+                          [this.yTick[j],this.yTick[j]],
+                          [this.zTick[k],this.zTick[k]],
+                          {linespec: this.gridLineStyle});
+        }
+
+        k = 0;
+        for (i = 0; i < this.xTick.length; i++) {
+            this.polyline([this.xTick[i],this.xTick[i]],
+                          this._yLim,                          
+                          [this.zTick[k],this.zTick[k]],
+                          {linespec: this.gridLineStyle});
+        }
+
+        i = 0;
+        for (k = 0; k < this.zTick.length; k++) {
+            this.polyline([this.xTick[i],this.xTick[i]],
+                          this._yLim,                          
+                          [this.zTick[k],this.zTick[k]],
+                          {linespec: this.gridLineStyle});
+        }
+
+        j = 0;
+        for (i = 0; i < this.xTick.length; i++) {
+            this.polyline([this.xTick[i],this.xTick[i]],
+                          [this.yTick[j],this.yTick[j]],
+                          this._zLim,
+                          {linespec: this.gridLineStyle});
+        }
+
+        i = 0;
+        for (j = 0; j < this.yTick.length; j++) {
+            this.polyline([this.xTick[i],this.xTick[i]],
+                          [this.yTick[j],this.yTick[j]],
+                          this._zLim,
+                          {linespec: this.gridLineStyle});
+        }
+
+
+        i = j = k = 0;
+        j = 1;
+        this.polyline(this._xLim,[this._yLim[j],this._yLim[j]],[this._zLim[k],this._zLim[k]]);
+
+        i = j = k = 0;
+        i = 1;
+        this.polyline([this._xLim[i],this._xLim[i]],this._yLim,[this._zLim[k],this._zLim[k]]);
+        this.polyline([this._xLim[i],this._xLim[i]],[this._yLim[j],this._yLim[j]],this._zLim);
+
+
+        //this.polyline([this._xLim[i],this._xLim[i]],[this._yLim[j],this._yLim[j]],[this._zLim[k],this._zLim[k]]);
+
+
     }
 
 
@@ -800,20 +954,12 @@ matplot.Axis.prototype.draw = function() {
         this.drawYTicks();
     }
     else {
-
     }
 };
 
 matplot.Axis.prototype.drawXTicks = function() {
     var i, y, pos, VerticalAlignment, offset;
 
-    if (this.xTickMode === 'auto') {
-        this.xTick = matplot.ticks(this._xLim[0],this._xLim[1],5);
-    }
-
-    if (this.xTickLabelMode === 'auto') {
-        this.xTickLabel = this.xTick.map(function(x) {return x.toString();});
-    }
 
     if (this.xAxisLocation === 'bottom') {
         VerticalAlignment = 'top';
@@ -843,14 +989,6 @@ matplot.Axis.prototype.drawXTicks = function() {
 
 matplot.Axis.prototype.drawYTicks = function() {
     var i, x, pos, HorizontalAlignment, offset;
-
-    if (this.yTickMode === 'auto') {
-        this.yTick = matplot.ticks(this._yLim[0],this._yLim[1],5);
-    }
-
-    if (this.yTickLabelMode === 'auto') {
-        this.yTickLabel = this.yTick.map(function(y) {return y.toString();});
-    }
 
     if (this.yAxisLocation === 'left') {
         HorizontalAlignment = 'right';
@@ -913,6 +1051,7 @@ matplot.Axis.prototype.polygon = function(x,y,z,v) {
 
 matplot.Axis.prototype.polyline = function(x,y,z,style) {
     var p, i=[], j=[], l;
+    style = style || {};
 
     for (l = 0; l < x.length; l++) {
         p = this.project(x[l],y[l],z[l]);
