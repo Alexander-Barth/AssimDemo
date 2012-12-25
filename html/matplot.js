@@ -316,20 +316,7 @@ matplot.SVGCanvas.prototype.text = function(x,y,text,style) {
 };
 
 
-matplot.SVGCanvas.prototype.line_old = function(x,y,color) {
-    var strokeWidth = 1;
-    var style="stroke:" + color + ";stroke-width:" + strokeWidth;
-
-    this.axis.appendChild(
-        matplot.mk('line',{'x1': x[0],
-                   'x2': x[1],
-                   'y1': y[0],
-                   'y2': y[1],
-                   'style': style}));
-};
-
-
-matplot.SVGCanvas.prototype.polyline = function(x,y,style) {
+matplot.SVGCanvas.prototype.line = function(x,y,style) {
 
     var polyline, points = '', i, s;
 
@@ -424,7 +411,7 @@ matplot.Line.prototype.lim = function(what) {
 matplot.Line.prototype.draw = function(axis) {
     var i,j;
 
-    axis.polyline(this.x,this.y,this.z,this.style);
+    axis.line(this.x,this.y,this.z,this.style);
 };
 
 matplot.ColorMap = function ColorMap(cLim,type) {
@@ -899,7 +886,7 @@ matplot.Axis.prototype.draw = function() {
         
         k = 0;
         for (j = 0; j < this.yTick.length; j++) {
-            this.polyline(this._xLim,
+            this.line(this._xLim,
                           [this.yTick[j],this.yTick[j]],
                           [this.zTick[k],this.zTick[k]],
                           {linespec: this.gridLineStyle});
@@ -907,7 +894,7 @@ matplot.Axis.prototype.draw = function() {
 
         j = 0;
         for (k = 0; k < this.zTick.length; k++) {
-            this.polyline(this._xLim,
+            this.line(this._xLim,
                           [this.yTick[j],this.yTick[j]],
                           [this.zTick[k],this.zTick[k]],
                           {linespec: this.gridLineStyle});
@@ -915,7 +902,7 @@ matplot.Axis.prototype.draw = function() {
 
         k = 0;
         for (i = 0; i < this.xTick.length; i++) {
-            this.polyline([this.xTick[i],this.xTick[i]],
+            this.line([this.xTick[i],this.xTick[i]],
                           this._yLim,                          
                           [this.zTick[k],this.zTick[k]],
                           {linespec: this.gridLineStyle});
@@ -923,7 +910,7 @@ matplot.Axis.prototype.draw = function() {
 
         i = 0;
         for (k = 0; k < this.zTick.length; k++) {
-            this.polyline([this.xTick[i],this.xTick[i]],
+            this.line([this.xTick[i],this.xTick[i]],
                           this._yLim,                          
                           [this.zTick[k],this.zTick[k]],
                           {linespec: this.gridLineStyle});
@@ -931,7 +918,7 @@ matplot.Axis.prototype.draw = function() {
 
         j = 0;
         for (i = 0; i < this.xTick.length; i++) {
-            this.polyline([this.xTick[i],this.xTick[i]],
+            this.line([this.xTick[i],this.xTick[i]],
                           [this.yTick[j],this.yTick[j]],
                           this._zLim,
                           {linespec: this.gridLineStyle});
@@ -939,7 +926,7 @@ matplot.Axis.prototype.draw = function() {
 
         i = 0;
         for (j = 0; j < this.yTick.length; j++) {
-            this.polyline([this.xTick[i],this.xTick[i]],
+            this.line([this.xTick[i],this.xTick[i]],
                           [this.yTick[j],this.yTick[j]],
                           this._zLim,
                           {linespec: this.gridLineStyle});
@@ -948,12 +935,12 @@ matplot.Axis.prototype.draw = function() {
 
         i = j = k = 0;
         j = 1;
-        this.polyline(this._xLim,[this._yLim[j],this._yLim[j]],[this._zLim[k],this._zLim[k]]);
+        this.line(this._xLim,[this._yLim[j],this._yLim[j]],[this._zLim[k],this._zLim[k]]);
 
         i = j = k = 0;
         i = 1;
-        this.polyline([this._xLim[i],this._xLim[i]],this._yLim,[this._zLim[k],this._zLim[k]]);
-        this.polyline([this._xLim[i],this._xLim[i]],[this._yLim[j],this._yLim[j]],this._zLim);
+        this.line([this._xLim[i],this._xLim[i]],this._yLim,[this._zLim[k],this._zLim[k]]);
+        this.line([this._xLim[i],this._xLim[i]],[this._yLim[j],this._yLim[j]],this._zLim);
 
 
         for (i = 0; i < this.xTick.length; i++) {
@@ -961,7 +948,7 @@ matplot.Axis.prototype.draw = function() {
 
         }
 
-        //this.polyline([this._xLim[i],this._xLim[i]],[this._yLim[j],this._yLim[j]],[this._zLim[k],this._zLim[k]]);
+        //this.line([this._xLim[i],this._xLim[i]],[this._yLim[j],this._yLim[j]],[this._zLim[k],this._zLim[k]]);
 
 
     }
@@ -1009,7 +996,7 @@ matplot.Axis.prototype.drawXTicks = function() {
     for (i = 0; i < this.xTick.length; i++) {
         pos = this.project(this.xTick[i],y);
 
-        this.fig.canvas.polyline([pos.i,pos.i],
+        this.fig.canvas.line([pos.i,pos.i],
                                  [pos.j-this.xTickLen/2,pos.j+this.xTickLen/2],
                                  {color: 'black'});
 
@@ -1041,7 +1028,7 @@ matplot.Axis.prototype.drawYTicks = function() {
     for (i = 0; i < this.yTick.length; i++) {
         pos = this.project(x,this.yTick[i]);
 
-        this.fig.canvas.polyline([pos.i-this.yTickLen/2,pos.i+this.yTickLen/2],
+        this.fig.canvas.line([pos.i-this.yTickLen/2,pos.i+this.yTickLen/2],
                                  [pos.j,pos.j],
                                  {color: 'black'});
 
@@ -1089,7 +1076,7 @@ matplot.Axis.prototype.polygon = function(x,y,z,v) {
     this.fig.canvas.polygon(i,j,{fill: color, stroke: color});
 };
 
-matplot.Axis.prototype.polyline = function(x,y,z,style) {
+matplot.Axis.prototype.line = function(x,y,z,style) {
     var p, i=[], j=[], l;
     style = style || {};
 
@@ -1099,7 +1086,7 @@ matplot.Axis.prototype.polyline = function(x,y,z,style) {
         j.push(p.j);
     }
 
-    this.fig.canvas.polyline(i,j,style);
+    this.fig.canvas.line(i,j,style);
 };
 
 
