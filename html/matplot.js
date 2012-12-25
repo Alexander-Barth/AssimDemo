@@ -269,43 +269,8 @@ matplot.SVGCanvas.prototype.polygon = function(x,y,style) {
 
 };
 
-matplot.SVGCanvas.prototype.text_old = function(x,y,text,FontFamily,FontSize,fill,HorizontalAlignment,VerticalAlignment) {
 
-    var TextAnchor, dy = 0;
-    
-    if (HorizontalAlignment === 'left') {
-        TextAnchor = 'start';
-    }
-    else if (HorizontalAlignment === 'center') {
-        TextAnchor = 'middle';
-    }
-    else if (HorizontalAlignment === 'right') {
-        TextAnchor = 'end';
-    }
-    else {
-        console.error(HorizontalAlignment);
-    }
-
-    if (VerticalAlignment === 'top') {
-        dy = FontSize;
-    }
-    else if (VerticalAlignment === 'middle') {
-        dy = FontSize/2;
-    }
-
-    this.axis.appendChild(
-        matplot.mk('text',{'x': x,
-                   'y': y,
-                   'font-family': FontFamily,
-                   'font-size': FontSize,
-                   'text-anchor': TextAnchor,
-                   'dy': dy,
-                   'fill': fill},
-           [text] ));
-};
-
-
-matplot.SVGCanvas.prototype.text2 = function(x,y,text,style) {
+matplot.SVGCanvas.prototype.text = function(x,y,text,style) {
     var offseti, offsetj, FontSize, FontFamily, color, HorizontalAlignment, VerticalAlignment;
     var TextAnchor, dy = 0;
 
@@ -351,7 +316,7 @@ matplot.SVGCanvas.prototype.text2 = function(x,y,text,style) {
 };
 
 
-matplot.SVGCanvas.prototype.line = function(x,y,color) {
+matplot.SVGCanvas.prototype.line_old = function(x,y,color) {
     var strokeWidth = 1;
     var style="stroke:" + color + ";stroke-width:" + strokeWidth;
 
@@ -1108,7 +1073,7 @@ matplot.Axis.prototype.text = function(x,y,z,string,style) {
     var pos;
 
     pos = this.project(x,y,z);    
-    this.fig.canvas.text2(pos.i,pos.j,string,style);
+    this.fig.canvas.text(pos.i,pos.j,string,style);
 };
 
 matplot.Axis.prototype.polygon = function(x,y,z,v) {
