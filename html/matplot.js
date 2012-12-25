@@ -274,6 +274,7 @@ matplot.SVGCanvas.prototype.text = function(x,y,text,style) {
     var offseti, offsetj, FontSize, FontFamily, color, HorizontalAlignment, VerticalAlignment;
     var TextAnchor, dy = 0;
 
+    style = style || {};
     offseti = style.offseti || 0;
     offsetj = style.offsetj || 0;
     FontSize = style.FontSize || 18;
@@ -849,7 +850,7 @@ matplot.Axis.prototype.draw = function() {
     }
     else {
         this._CameraPosition = [-36.5257, -47.6012, 86.6025];
-        this._CameraPosition = [-27.394,  -35.701,   25.981];
+        //this._CameraPosition = [-27.394,  -35.701,   25.981];
         this._CameraPosition = [27.394,  35.701,   25.981];
         // z-direction if upward
 	this._CameraUpVector = [0, 0, 1];
@@ -933,20 +934,46 @@ matplot.Axis.prototype.draw = function() {
         }
 
 
-        i = j = k = 0;
+        k = 0;
         j = 1;
+        var dx, dy, dz;
+        dx = dy = dz = .15;
+        
+        // x-axis
         this.line(this._xLim,[this._yLim[j],this._yLim[j]],[this._zLim[k],this._zLim[k]]);
-
-        i = j = k = 0;
-        i = 1;
-        this.line([this._xLim[i],this._xLim[i]],this._yLim,[this._zLim[k],this._zLim[k]]);
-        this.line([this._xLim[i],this._xLim[i]],[this._yLim[j],this._yLim[j]],this._zLim);
-
-
         for (i = 0; i < this.xTick.length; i++) {
+            this.line([this.xTick[i],this.xTick[i]],
+                      [this._yLim[j]-dy,this._yLim[j]+dy],
+                      [this.zTick[k],this.zTick[k]]);
 
-
+            this.text(this.xTick[i],this._yLim[j]+3*dy,this._zLim[k],this.xTickLabel[i]);            
         }
+
+
+        j = k = 0;
+        i = 1;
+        // y-axis
+        this.line([this._xLim[i],this._xLim[i]],this._yLim,[this._zLim[k],this._zLim[k]]);
+        for (j = 0; j < this.yTick.length; j++) {
+            this.line([this._xLim[i]-dx,this._xLim[i]+dx],
+                      [this.yTick[j],this.yTick[j]],
+                      [this.zTick[k],this.zTick[k]]);
+
+            this.text(this._xLim[i]+4*dx,this.yTick[j],this._zLim[k],this.yTickLabel[j]);
+        }
+
+        j = 0;
+        // z-axis
+        this.line([this._xLim[i],this._xLim[i]],[this._yLim[j],this._yLim[j]],this._zLim);
+        for (k = 0; k < this.zTick.length; k++) {
+            this.line([this._xLim[i]-dx,this._xLim[i]+dx],
+                      [this.yTick[j],this.yTick[j]],
+                      [this.zTick[k],this.zTick[k]]);
+
+            this.text(this._xLim[i]+4*dx,this.yTick[j],this.zTick[k],this.zTickLabel[k]);
+        }
+
+
 
         //this.line([this._xLim[i],this._xLim[i]],[this._yLim[j],this._yLim[j]],[this._zLim[k],this._zLim[k]]);
 
