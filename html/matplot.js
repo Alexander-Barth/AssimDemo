@@ -1022,14 +1022,13 @@ matplot.Axis.prototype.draw = function() {
 };
 
 matplot.Axis.prototype.drawXTicks = function() {
-    var i, y, pos, VerticalAlignment, offset;
+    var i, y, pos, style;
 
-    var style = 
+    style = 
         {HorizontalAlignment: 'center',
          FontSize: this.FontSize,
          color: this.color,
         };
-
 
     if (this.xAxisLocation === 'bottom') {
         style.VerticalAlignment = 'top';
@@ -1042,14 +1041,13 @@ matplot.Axis.prototype.drawXTicks = function() {
         y = this._yLim[1];
     }
 
-    console.log('offset ',offset,VerticalAlignment);
-
     for (i = 0; i < this.xTick.length; i++) {
         pos = this.project(this.xTick[i],y);
 
-        this.fig.canvas.line([pos.i,pos.i],
-                             [pos.j-this.xTickLen/2,pos.j+this.xTickLen/2],
-                             'black');
+        this.fig.canvas.polyline([pos.i,pos.i],
+                                 [pos.j-this.xTickLen/2,pos.j+this.xTickLen/2],
+                                 {color: 'black'});
+
         this.text(this.xTick[i],y,0,this.xTickLabel[i],style);
     }
 
