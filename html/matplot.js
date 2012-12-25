@@ -306,12 +306,19 @@ matplot.SVGCanvas.prototype.text = function(x,y,text,FontFamily,FontSize,fill,Ho
 
 
 matplot.SVGCanvas.prototype.text2 = function(x,y,text,style) {
-
+    var offseti, offsetj, FontSize, FontFamily, color, HorizontalAlignment, VerticalAlignment;
     var TextAnchor, dy = 0;
-    FontFamily,FontSize,fill,HorizontalAlignment,VerticalAlignment
-    
 
+    offseti = style.offseti || 0;
+    offsetj = style.offsetj || 0;
+    FontSize = style.FontSize || 18;
+    FontFamily = style.FontFamily || 'Sans';
+    color = style.color || 'black';
+    HorizontalAlignment = style.HorizontalAlignment || 'left';
+    VerticalAlignment = style.VerticalAlignment || 'middle';
+   
 
+    console.log('offsetj',offsetj,VerticalAlignment);
     if (HorizontalAlignment === 'left') {
         TextAnchor = 'start';
     }
@@ -333,13 +340,13 @@ matplot.SVGCanvas.prototype.text2 = function(x,y,text,style) {
     }
 
     this.axis.appendChild(
-        matplot.mk('text',{'x': x,
-                   'y': y,
+        matplot.mk('text',{'x': x+offseti,
+                   'y': y+offsetj,
                    'font-family': FontFamily,
                    'font-size': FontSize,
                    'text-anchor': TextAnchor,
                    'dy': dy,
-                   'fill': fill},
+                   'fill': color},
            [text] ));
 };
 
@@ -1017,17 +1024,25 @@ matplot.Axis.prototype.draw = function() {
 matplot.Axis.prototype.drawXTicks = function() {
     var i, y, pos, VerticalAlignment, offset;
 
+    var style = 
+        {HorizontalAlignment: 'center',
+         FontSize: this.FontSize,
+         color: this.color,
+        };
+
 
     if (this.xAxisLocation === 'bottom') {
-        VerticalAlignment = 'top';
-        offset = this.xTickLen/2;        
+        style.VerticalAlignment = 'top';
+        style.offsetj = this.xTickLen/2;        
         y = this._yLim[0];
     }
     else {
-        VerticalAlignment = 'bottom';
-        offset = -this.xTickLen/2;        
+        style.VerticalAlignment = 'bottom';
+        style.offsetj = -this.xTickLen/2;        
         y = this._yLim[1];
     }
+
+    console.log('offset ',offset,VerticalAlignment);
 
     for (i = 0; i < this.xTick.length; i++) {
         pos = this.project(this.xTick[i],y);
@@ -1035,11 +1050,7 @@ matplot.Axis.prototype.drawXTicks = function() {
         this.fig.canvas.line([pos.i,pos.i],
                              [pos.j-this.xTickLen/2,pos.j+this.xTickLen/2],
                              'black');
-        this.fig.canvas.text(pos.i,pos.j+offset,
-                             this.xTickLabel[i],this.FontFamily,
-                             this.FontSize,this.color,
-                             'center',VerticalAlignment
-                            );
+        this.text(this.xTick[i],y,0,this.xTickLabel[i],style);
     }
 
 };
@@ -1094,22 +1105,10 @@ matplot.Axis.prototype.rect = function(x,y,v) {
 
 
 matplot.Axis.prototype.text = function(x,y,z,string,style) {
-    var pos, offseti, offsetj;
-    offseti = style.offseti || 0;
-    offsetj = style.offsetj || 0;
-    FontSize = style.FontSize || 18;
-    FontFamily = style.FontFamily || 'Sans';
-    color = style.color || 'black';
-    HorizontalAlignment = style.HorizontalAlignment || 'left';
-    VerticalAlignment = style.VerticalAlignmentAlignment || 'middle';
-    pos = this.project(x,y,z);
-    
-    this.fig.canvas.text(pos.i+offset,pos.j,
-                             this.yTickLabel[i],this.FontFamily,
-                             this.FontSize,this.color,
-                             HorizontalAlignment,'middle'
-                            );
+    var pos;
 
+    pos = this.project(x,y,z);    
+    this.fig.canvas.text2(pos.i,pos.j,string,style);
 };
 
 matplot.Axis.prototype.polygon = function(x,y,z,v) {
