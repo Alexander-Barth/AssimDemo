@@ -1054,31 +1054,33 @@ matplot.Axis.prototype.drawXTicks = function() {
 };
 
 matplot.Axis.prototype.drawYTicks = function() {
-    var i, x, pos, HorizontalAlignment, offset;
+    var i, x, pos, style;
+
+    style = 
+        {VerticalAlignment: 'middle',
+         FontSize: this.FontSize,
+         color: this.color,
+        };
 
     if (this.yAxisLocation === 'left') {
-        HorizontalAlignment = 'right';
-        offset = -this.yTickLen/2;        
+        style.HorizontalAlignment = 'right';
+        style.offseti = -this.yTickLen/2;        
         x = this._xLim[0];
     }
     else {
-        HorizontalAlignment = 'left';
-        offset = this.yTickLen/2;        
+        style.HorizontalAlignment = 'left';
+        style.offseti = this.yTickLen/2;        
         x = this._xLim[1];
     }
 
     for (i = 0; i < this.yTick.length; i++) {
         pos = this.project(x,this.yTick[i]);
 
-        this.fig.canvas.line([pos.i-this.yTickLen/2,pos.i+this.yTickLen/2],
-                             [pos.j,pos.j],
-                             'black');
+        this.fig.canvas.polyline([pos.i-this.yTickLen/2,pos.i+this.yTickLen/2],
+                                 [pos.j,pos.j],
+                                 {color: 'black'});
 
-        this.fig.canvas.text(pos.i+offset,pos.j,
-                             this.yTickLabel[i],this.FontFamily,
-                             this.FontSize,this.color,
-                             HorizontalAlignment,'middle'
-                            );
+        this.text(x,this.yTick[i],0,this.yTickLabel[i],style);
     }
 
 };
