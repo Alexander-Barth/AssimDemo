@@ -269,7 +269,7 @@ matplot.SVGCanvas.prototype.polygon = function(x,y,style) {
 
 };
 
-matplot.SVGCanvas.prototype.text = function(x,y,text,FontFamily,FontSize,fill,HorizontalAlignment,VerticalAlignment) {
+matplot.SVGCanvas.prototype.text_old = function(x,y,text,FontFamily,FontSize,fill,HorizontalAlignment,VerticalAlignment) {
 
     var TextAnchor, dy = 0;
     
