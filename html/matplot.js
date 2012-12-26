@@ -246,7 +246,7 @@ matplot.SVGCanvas = function SVGCanvas(id,width,height) {
            [this.axis = matplot.mk('g')]));              
 };
 
-matplot.SVGCanvas.prototype.rect_new = function(x,y,width,height,style) {
+matplot.SVGCanvas.prototype.rect = function(x,y,width,height,style) {
     var rect, attrib, fill,stroke,info;
     style = style || {};
     fill = style.fill || 'none';
@@ -1039,7 +1039,7 @@ matplot.Axis.prototype.draw = function() {
         this.children[i].draw(this);
     }
 
-    this.fig.canvas.rect_new(this.fig.canvas.width*this.x,
+    this.fig.canvas.rect(this.fig.canvas.width*this.x,
                          this.fig.canvas.height*this.y,
                          this.fig.canvas.width*this.w,
                          this.fig.canvas.height*this.h,
@@ -1144,7 +1144,7 @@ matplot.Axis.prototype.legend = function() {
 
     x = this.fig.canvas.width - margin - legendWidth;
     y = margin;
-    this.fig.canvas.rect_new(x,y,legendWidth,legendHeight);
+    this.fig.canvas.rect(x,y,legendWidth,legendHeight);
 
 
 //    this.fig.canvas.text(label);
@@ -1165,7 +1165,7 @@ matplot.Axis.prototype.rect = function(x,y,v) {
         info = v.toString();
     }
 
-    this.fig.canvas.rect_new(ll.i,ll.j,
+    this.fig.canvas.rect(ll.i,ll.j,
                          up.i - ll.i,up.j - ll.j,
                              {fill: color,stroke: color,info: info});
 };
