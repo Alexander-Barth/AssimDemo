@@ -216,7 +216,7 @@ matplot.mk = function mk(tag,attribs,children) {
     elem = document.createElementNS(xmlns, tag);
 
     for (a in attribs) {
-        if (attribs.hasOwnProperty(a)) {
+        if (attribs.hasOwnProperty(a) && attribs[a] !== undefined) {
             if (a === 'style' && typeof attribs[a] === 'object') {
                 // style attribute can be a object
                 obj = attribs[a];
@@ -267,10 +267,8 @@ matplot.SVGCanvas = function SVGCanvas(id,width,height) {
 };
 
 matplot.SVGCanvas.prototype.rect = function(x,y,width,height,style) {
-    var rect, attrib, fill,stroke,info;
+    var rect, attrib, info;
     style = style || {};
-    fill = style.fill || 'none';
-    stroke = style.stroke || 'black';
     info = style.info || '';
 
     attrib = {x: x, 
@@ -278,8 +276,8 @@ matplot.SVGCanvas.prototype.rect = function(x,y,width,height,style) {
               width: width, 
               height: height, 
               style: {
-                  'fill': fill, 
-                  'stroke': stroke}
+                  'fill': style.fill || 'none', 
+                  'stroke':  style.stroke || 'black'}
              };
 
     if (info) {
