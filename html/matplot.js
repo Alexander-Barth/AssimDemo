@@ -189,6 +189,20 @@ matplot.ticks = function ticks(min,max,n) {
   
 };
 
+matplot.remove_spurious_decimals = function(s) {
+    var re1,re2,s2,s3;
+
+    if (typeof(s) == "number")
+	s = s + "";
+
+    re1 = new RegExp("(\\.[0-9]*[1-9]+)0{4,}.*$");
+
+    s2 = s.replace(re1,"$1");
+
+    re2 = new RegExp("(\\.)0{4,}.*$");
+    s3 = s2.replace(re2,"$1");
+    return s3;
+}
 
 matplot.mk = function mk(tag,attribs,children) {
     var xmlns, elem, child, a, c;
@@ -347,11 +361,12 @@ matplot.SVGCanvas.prototype.line = function(x,y,style) {
 
 
 
-matplot.Surface = function Surface(x,y,z,c) {
+matplot.Surface = function Surface(x,y,z,c,style) {
     this.x = x;
     this.y = y;
     this.z = z;
     this.c = c;
+    this.style = style || {};
 };
 
 matplot.Surface.prototype.lim = function(what) {
@@ -412,7 +427,7 @@ matplot.Line.prototype.lim = function(what) {
 matplot.Line.prototype.draw = function(axis) {
     var i,j;
 
-    axis.line(this.x,this.y,this.z,this.style);
+    axis.drawLine(this.x,this.y,this.z,this.style);
 };
 
 matplot.ColorMap = function ColorMap(cLim,type) {
@@ -512,6 +527,12 @@ matplot.Axis = function Axis(fig,x,y,w,h) {
     this._CameraTarget = [0,0,0];
     this._CameraUpVector = [0,1,0];
     this._CameraViewAngle = 10.3396;
+
+    this.xLabelFormat = function(x) {return matplot.remove_spurious_decimals(x.toString());};
+    this.yLabelFormat = function(x) {return matplot.remove_spurious_decimals(x.toString());};
+    this.zLabelFormat = function(x) {return matplot.remove_spurious_decimals(x.toString());};
+
+
 
     this.gridLineStyle = ':';
 };
@@ -742,7 +763,44 @@ matplot.Axis.prototype.lim = function(what) {
     return [min,max];
 };
 
-matplot.Axis.prototype.line = function(x,y,z,style) {
+
+matplot.Axis.prototype.plot = function(x,y,z,style) {
+    var i, lastArg, args;
+
+    // get a real array for arguments
+    args = Array.prototype.slice.call(arguments);    
+    lastArg = args[args.length-1];
+
+    // handle the case of missing style object
+    if (Object.prototype.toString.call(lastArg) === '[object Array]' ) {
+        args.push({});
+        return matplot.Axis.prototype.plot.apply(this,args);
+    }
+
+    if (args.length === 2) {
+        // missing x and z
+        y = args[0];
+        style = args[1];
+        x = [];
+        z = [];
+        
+        for (i = 0; i < y.length; i++) {
+            x[i] = i;
+            z[i] = 0;
+        }
+    }
+    else if (args.length === 3) {
+        // missing z
+        x = args[0];
+        y = args[1];
+        style = args[2];
+        z = [];
+        
+        for (i = 0; i < x.length; i++) {
+            z[i] = 0;
+        }
+    }
+
     this.children.push(new matplot.Line(x,y,z,style));
 };
 
@@ -811,7 +869,7 @@ matplot.Axis.prototype.draw = function() {
     }
 
     if (this.xTickLabelMode === 'auto') {
-        this.xTickLabel = this.xTick.map(function(x) {return x.toString();});
+        this.xTickLabel = this.xTick.map(this.xLabelFormat);
     }
 
     if (this.yTickMode === 'auto') {
@@ -819,7 +877,7 @@ matplot.Axis.prototype.draw = function() {
     }
 
     if (this.yTickLabelMode === 'auto') {
-        this.yTickLabel = this.yTick.map(function(y) {return y.toString();});
+        this.yTickLabel = this.yTick.map(this.yLabelFormat);
     }
 
     if (this.zTickMode === 'auto') {
@@ -827,7 +885,7 @@ matplot.Axis.prototype.draw = function() {
     }
 
     if (this.zTickLabelMode === 'auto') {
-        this.zTickLabel = this.zTick.map(function(z) {return z.toString();});
+        this.zTickLabel = this.zTick.map(this.zLabelFormat);
     }
 
 
@@ -887,7 +945,7 @@ matplot.Axis.prototype.draw = function() {
         
         k = 0;
         for (j = 0; j < this.yTick.length; j++) {
-            this.line(this._xLim,
+            this.drawLine(this._xLim,
                       [this.yTick[j],this.yTick[j]],
                       [this.zTick[k],this.zTick[k]],
                       {linespec: this.gridLineStyle});
@@ -895,7 +953,7 @@ matplot.Axis.prototype.draw = function() {
 
         j = 0;
         for (k = 0; k < this.zTick.length; k++) {
-            this.line(this._xLim,
+            this.drawLine(this._xLim,
                       [this.yTick[j],this.yTick[j]],
                       [this.zTick[k],this.zTick[k]],
                       {linespec: this.gridLineStyle});
@@ -903,7 +961,7 @@ matplot.Axis.prototype.draw = function() {
 
         k = 0;
         for (i = 0; i < this.xTick.length; i++) {
-            this.line([this.xTick[i],this.xTick[i]],
+            this.drawLine([this.xTick[i],this.xTick[i]],
                       this._yLim,                          
                       [this.zTick[k],this.zTick[k]],
                       {linespec: this.gridLineStyle});
@@ -911,7 +969,7 @@ matplot.Axis.prototype.draw = function() {
 
         i = 0;
         for (k = 0; k < this.zTick.length; k++) {
-            this.line([this.xTick[i],this.xTick[i]],
+            this.drawLine([this.xTick[i],this.xTick[i]],
                       this._yLim,                          
                       [this.zTick[k],this.zTick[k]],
                       {linespec: this.gridLineStyle});
@@ -919,7 +977,7 @@ matplot.Axis.prototype.draw = function() {
 
         j = 0;
         for (i = 0; i < this.xTick.length; i++) {
-            this.line([this.xTick[i],this.xTick[i]],
+            this.drawLine([this.xTick[i],this.xTick[i]],
                       [this.yTick[j],this.yTick[j]],
                       this._zLim,
                       {linespec: this.gridLineStyle});
@@ -927,7 +985,7 @@ matplot.Axis.prototype.draw = function() {
 
         i = 0;
         for (j = 0; j < this.yTick.length; j++) {
-            this.line([this.xTick[i],this.xTick[i]],
+            this.drawLine([this.xTick[i],this.xTick[i]],
                       [this.yTick[j],this.yTick[j]],
                       this._zLim,
                       {linespec: this.gridLineStyle});
@@ -940,9 +998,9 @@ matplot.Axis.prototype.draw = function() {
         dx = dy = dz = .15;
         
         // x-axis
-        this.line(this._xLim,[this._yLim[j],this._yLim[j]],[this._zLim[k],this._zLim[k]]);
+        this.drawLine(this._xLim,[this._yLim[j],this._yLim[j]],[this._zLim[k],this._zLim[k]]);
         for (i = 0; i < this.xTick.length; i++) {
-            this.line([this.xTick[i],this.xTick[i]],
+            this.drawLine([this.xTick[i],this.xTick[i]],
                       [this._yLim[j]-dy,this._yLim[j]+dy],
                       [this.zTick[k],this.zTick[k]]);
 
@@ -953,9 +1011,9 @@ matplot.Axis.prototype.draw = function() {
         j = k = 0;
         i = 1;
         // y-axis
-        this.line([this._xLim[i],this._xLim[i]],this._yLim,[this._zLim[k],this._zLim[k]]);
+        this.drawLine([this._xLim[i],this._xLim[i]],this._yLim,[this._zLim[k],this._zLim[k]]);
         for (j = 0; j < this.yTick.length; j++) {
-            this.line([this._xLim[i]-dx,this._xLim[i]+dx],
+            this.drawLine([this._xLim[i]-dx,this._xLim[i]+dx],
                       [this.yTick[j],this.yTick[j]],
                       [this.zTick[k],this.zTick[k]]);
 
@@ -964,9 +1022,9 @@ matplot.Axis.prototype.draw = function() {
 
         j = 0;
         // z-axis
-        this.line([this._xLim[i],this._xLim[i]],[this._yLim[j],this._yLim[j]],this._zLim);
+        this.drawLine([this._xLim[i],this._xLim[i]],[this._yLim[j],this._yLim[j]],this._zLim);
         for (k = 0; k < this.zTick.length; k++) {
-            this.line([this._xLim[i]-dx,this._xLim[i]+dx],
+            this.drawLine([this._xLim[i]-dx,this._xLim[i]+dx],
                       [this.yTick[j],this.yTick[j]],
                       [this.zTick[k],this.zTick[k]]);
 
@@ -975,7 +1033,7 @@ matplot.Axis.prototype.draw = function() {
 
 
 
-        //this.line([this._xLim[i],this._xLim[i]],[this._yLim[j],this._yLim[j]],[this._zLim[k],this._zLim[k]]);
+        //this.drawLine([this._xLim[i],this._xLim[i]],[this._yLim[j],this._yLim[j]],[this._zLim[k],this._zLim[k]]);
 
 
     }
@@ -1064,6 +1122,10 @@ matplot.Axis.prototype.drawYTicks = function() {
 
 };
 
+matplot.Axis.prototype.legend = function() {
+    
+};
+
 matplot.Axis.prototype.rect = function(x,y,v) {
     var color, info = null;
     var ll = this.project(x[0],y[1]);
@@ -1103,7 +1165,7 @@ matplot.Axis.prototype.polygon = function(x,y,z,v) {
     this.fig.canvas.polygon(i,j,{fill: color, stroke: color});
 };
 
-matplot.Axis.prototype.line = function(x,y,z,style) {
+matplot.Axis.prototype.drawLine = function(x,y,z,style) {
     var p, i=[], j=[], l;
     style = style || {};
 
