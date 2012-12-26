@@ -205,7 +205,9 @@ matplot.remove_spurious_decimals = function(s) {
 }
 
 matplot.mk = function mk(tag,attribs,children) {
-    var xmlns, elem, child, a, c;
+    var xmlns, elem, child, a, c, style, obj;
+    
+
 
     attribs = attribs || {}; 
     children = children || [];
@@ -215,7 +217,25 @@ matplot.mk = function mk(tag,attribs,children) {
 
     for (a in attribs) {
         if (attribs.hasOwnProperty(a)) {
-            elem.setAttributeNS(null, a, attribs[a]);
+            if (a === 'style' && typeof attribs[a] === 'object') {
+                // style attribute can be a object
+                obj = attribs[a];
+                style = '';
+
+                for (s in obj) {
+                    if (obj.hasOwnProperty(s)) {
+                        // ignore style if undefined
+                        if (obj[s] !== undefined) {
+                            style += s + ': ' + obj[s] + ';';
+                        }
+                    }
+                }
+                
+                elem.setAttributeNS(null, a, style);
+            }
+            else {
+                elem.setAttributeNS(null, a, attribs[a]);
+            }
         }
     }
 
@@ -253,8 +273,14 @@ matplot.SVGCanvas.prototype.rect = function(x,y,width,height,style) {
     stroke = style.stroke || 'black';
     info = style.info || '';
 
-    attrib = {x: x, y: y, width: width, height: height, fill: fill, 
-              'stroke': stroke};
+    attrib = {x: x, 
+              y: y, 
+              width: width, 
+              height: height, 
+              style: {
+                  'fill': fill, 
+                  'stroke': stroke}
+             };
 
     if (info) {
         attrib.title = info;
@@ -270,15 +296,13 @@ matplot.SVGCanvas.prototype.rect = function(x,y,width,height,style) {
 
 
 matplot.SVGCanvas.prototype.polygon = function(x,y,style) {
-    var polygon, points = '', i, attrib, s = 'fill:' + style.fill + ';stroke:' + style.stroke;
-
-    //s = 'fill:' + style.fill + ';stroke:' + 'black';
+    var polygon, points = '', i, attrib;
 
     for (i = 0; i < x.length; i++) {
         points += x[i] + ',' + y[i] + ' ';
     }
     
-    attrib = {points: points, style: s};
+    attrib = {points: points, style: {fill: style.fill, stroke: style.stroke}};
 
     this.axis.appendChild(
         polygon = matplot.mk('polygon',attrib));
@@ -353,7 +377,6 @@ matplot.SVGCanvas.prototype.text = function(x,y,string,style) {
 
 
 matplot.SVGCanvas.prototype.line = function(x,y,style) {
-
     var polyline, points = '', i, s;
 
     linespec = style.linespec || '-';
@@ -367,9 +390,10 @@ matplot.SVGCanvas.prototype.line = function(x,y,style) {
         dasharray = '1,3';
     }
 
-    //s = 'fill:' + style.fill + ';stroke:' + 'black';
-    s = 'fill: none; stroke:' + (style.color || 'black') + '; stroke-width:' + (style.width || 1) + 
-        '; stroke-dasharray: ' +  dasharray;
+    s = {'fill': 'none',
+         'stroke': (style.color || 'black'),
+         'stroke-width': (style.width || 1),         
+         'stroke-dasharray': dasharray};
 
     for (i = 0; i < x.length; i++) {
         points += x[i] + ',' + y[i] + ' ';
@@ -1167,7 +1191,7 @@ matplot.Axis.prototype.rect = function(x,y,v) {
 
     this.fig.canvas.rect(ll.i,ll.j,
                          up.i - ll.i,up.j - ll.j,
-                             {fill: color,stroke: color,info: info});
+                         {fill: color,stroke: color,info: info});
 };
 
 
