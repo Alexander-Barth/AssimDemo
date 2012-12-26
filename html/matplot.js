@@ -283,8 +283,27 @@ matplot.SVGCanvas.prototype.polygon = function(x,y,style) {
 
 };
 
+matplot.SVGCanvas.prototype.textBBox = function(string,style) {
+    var text, FontSize, FontFamily, bbox;
 
-matplot.SVGCanvas.prototype.text = function(x,y,text,style) {
+    style = style || {};
+    FontSize = style.FontSize || 18;
+    FontFamily = style.FontFamily || 'Sans';
+
+    // text should not be visible
+    text = matplot.mk('text',{'x': -10000,
+                              'y': 0,
+                              'font-family': FontFamily,
+                              'font-size': FontSize},[string]);
+
+    this.axis.appendChild(text);    
+    bbox = text.getBBox();
+    this.axis.removeChild(text);
+
+    return {width: bbox.width, height: bbox.height};
+};
+
+matplot.SVGCanvas.prototype.text = function(x,y,string,style) {
     var offseti, offsetj, FontSize, FontFamily, color, HorizontalAlignment, VerticalAlignment;
     var TextAnchor, dy = 0;
 
@@ -327,7 +346,7 @@ matplot.SVGCanvas.prototype.text = function(x,y,text,style) {
                    'text-anchor': TextAnchor,
                    'dy': dy,
                    'fill': color},
-           [text] ));
+           [string] ));
 };
 
 
@@ -677,40 +696,15 @@ Compute U' = S x L.
     // new up vector
     Up = cross(S,L);
 
-// M is the matrix whose columns are, in order:
-// (S, 0), (U', 0), (-L, 0), (-E, 1)  (all column vectors)
-
-/*
-    M = [[ S[0], Up[0], -L[0], -E[0]],
-         [ S[1], Up[1], -L[1], -E[1]],
-         [ S[2], Up[2], -L[2], -E[2]],
-         [    0,     0,     0,     1]];
- */
-  
-
-    M = [[ S[0],  S[1],  S[2],  0],
-         [Up[0], Up[1], Up[2],  0],
-         [-L[0], -L[1], -L[2],  0],
-         [-E[0], -E[1], -E[2], 1]];
-
+    // turn vector
     M = [[ S[0],  S[1],  S[2],  0],
          [Up[0], Up[1], Up[2],  0],
          [-L[0], -L[1], -L[2],  0],
          [0, 0, 0, 1]];
-
+    
+    // translate to the CameraPosition
     M = numeric.dot(M,translate([-E[0], -E[1], -E[2]]));
 
-/*
-    M = [[ S[0],  S[1],  S[2],  0],
-         [Up[0], Up[1], Up[2],  0],
-         [-L[0], -L[1], -L[2],  0],
-         [-E[0], -E[1], -E[2],  1]];
-
-    M = [[ S[0],  S[1],  S[2],  0],
-         [Up[0], Up[1], Up[2],  0],
-         [ L[0],  L[1],  L[2],  0],
-         [0, 0, 0,  1]];
-*/
     return M;
 };
 
@@ -1038,7 +1032,7 @@ matplot.Axis.prototype.draw = function() {
 
     }
 
-
+    // draw all children
     for (i = 0; i<this.children.length; i++) {
         this.children[i].draw(this);
     }
@@ -1123,7 +1117,37 @@ matplot.Axis.prototype.drawYTicks = function() {
 };
 
 matplot.Axis.prototype.legend = function() {
+    var style, label, maxWidth = -Infinity, maxHeight=-Infinity, bbox, x, y, n=0;
+
+    for (i = 0; i<this.children.length; i++) {
+        label = this.children[i].style.label;
+        
+        if (label !== undefined && label !== '') {
+            console.log('label ',label);
+            bbox = this.fig.canvas.textBBox(label);
+            maxWidth = Math.max(maxWidth,bbox.width);
+            maxHeight = Math.max(maxHeight,bbox.height);
+            console.log('bbox ',bbox);
+            n = n+1;
+        }
+
+    }
+
+    console.log('bbox ',maxWidth,maxHeight);
+
+    var margin = 10, padding = 5;
     
+    // position top right
+    var legendWidth = maxWidth + 2*padding, legendHeight = n*maxHeight + 2*padding;
+
+    x = this.fig.canvas.width - margin - legendWidth;
+    y = margin;
+    this.fig.canvas.rect(x,y,legendWidth,legendHeight);
+
+
+//    this.fig.canvas.text(label);
+    
+  
 };
 
 matplot.Axis.prototype.rect = function(x,y,v) {
