@@ -357,9 +357,14 @@ matplot.SVGCanvas.prototype.text = function(x,y,string,style) {
 
     if (VerticalAlignment === 'top') {
         dy = FontSize;
+        //dy = this.textBBox(string).height;
     }
     else if (VerticalAlignment === 'middle') {
-        dy = FontSize/2;
+        dy = FontSize/2-1.5;
+        //dy = this.textBBox(string).height/2;
+    }
+    else if (VerticalAlignment === 'baseline') {
+        dy = 0;
     }
 
     this.axis.appendChild(
@@ -1141,7 +1146,7 @@ matplot.Axis.prototype.drawYTicks = function() {
 };
 
 matplot.Axis.prototype.legend = function() {
-    var style, label, maxWidth = -Infinity, maxHeight=-Infinity, bbox, x, y, n=0;
+    var style, label, maxWidth = -Infinity, maxHeight=-Infinity, bbox, x, y, n=0, style;
 
     for (i = 0; i<this.children.length; i++) {
         label = this.children[i].style.label;
@@ -1159,16 +1164,29 @@ matplot.Axis.prototype.legend = function() {
 
     console.log('bbox ',maxWidth,maxHeight);
 
-    var margin = 10, padding = 5;
+    var margin = 10, padding = 10, lineSpace = 5, iconWidth = 25, iconSep = 5;
     
     // position top right
-    var legendWidth = maxWidth + 2*padding, legendHeight = n*maxHeight + 2*padding;
+    var legendWidth = maxWidth + 2*padding + iconWidth + iconSep, legendHeight = n*(maxHeight+lineSpace) + 2*padding;
 
-    x = this.fig.canvas.width - margin - legendWidth;
-    y = margin;
-    this.fig.canvas.rect(x,y,legendWidth,legendHeight);
+    x = this.fig.canvas.width*(this.x+this.w) - margin - legendWidth;
+    y = this.fig.canvas.height*(1-this.y-this.h) + margin;
+    this.fig.canvas.rect(x,y,legendWidth,legendHeight,{fill: 'white'});
 
+    x = x + padding;
+    y = y + padding + maxHeight/2;
+    
+    for (i = 0; i<this.children.length; i++) {
+        style = this.children[i].style;
+        label = style.label;
+        
+        if (label !== undefined && label !== '') {
+            this.fig.canvas.line([x,x + iconWidth],[y,y],style);
 
+            this.fig.canvas.text(x + iconWidth + iconSep,y,label,{VerticalAlignment: 'middle'});
+            y = y+maxHeight+lineSpace;
+        }
+    }
 //    this.fig.canvas.text(label);
     
   
