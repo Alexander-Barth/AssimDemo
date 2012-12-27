@@ -293,6 +293,28 @@ matplot.SVGCanvas.prototype.rect = function(x,y,width,height,style) {
 };
 
 
+matplot.SVGCanvas.prototype.circle = function(x,y,radius,style) {
+    var circle;
+    style = style || {};
+    
+    this.axis.appendChild(
+        circle = matplot.mk('circle',
+                           {cx: x, 
+                            cy: y, 
+                            r: radius, 
+                            title: style.info,
+                            style: {
+                                'fill': style.fill || 'none', 
+                                'stroke':  style.stroke || 'black'}
+                           }));
+
+    if (style.info) {
+        circle.onclick = function() { console.log('x',style.info); };
+    }
+};
+
+
+
 matplot.SVGCanvas.prototype.polygon = function(x,y,style) {
     var polygon, points = '', i, attrib;
 
@@ -383,14 +405,21 @@ matplot.SVGCanvas.prototype.line = function(x,y,style) {
     var polyline, points = '', i, s;
 
     linespec = style.linespec || '-';
-    if (linespec === '-') {
+
+    if (linespec === 'none') {
+        return;
+    }
+    else if (linespec === '-') {
         dasharray = 'none';
     }
     else if (linespec === '-.') {
-        dasharray = '5,3,2,5,3,2';
+        dasharray = '15,5,1,5';
     }
     else if (linespec === ':') {
         dasharray = '1,3';
+    }
+    else if (linespec === '--') {
+        dasharray = '15,5';
     }
 
     s = {'fill': 'none',
@@ -1109,6 +1138,15 @@ matplot.Axis.prototype.drawXTicks = function() {
                                  {color: 'black'});
 
         this.text(this.xTick[i],y,0,this.xTickLabel[i],style);
+
+        // major grid lines
+        if (this.xGrid === 'on') {
+            this.drawLine([this.xTick[i],this.xTick[i]],
+                          this._yLim,                          
+                          [0,0],
+                          {linespec: this.gridLineStyle});
+        }
+
     }
 
 };
@@ -1141,8 +1179,16 @@ matplot.Axis.prototype.drawYTicks = function() {
                                  {color: 'black'});
 
         this.text(x,this.yTick[i],0,this.yTickLabel[i],style);
-    }
 
+        // major grid lines
+        if (this.yGrid === 'on') {
+            this.drawLine(this._xLim,                          
+                          [this.yTick[i],this.yTick[i]],
+                          [0,0],
+                          {linespec: this.gridLineStyle});
+        }
+
+    }
 };
 
 matplot.Axis.prototype.legend = function() {
@@ -1239,9 +1285,19 @@ matplot.Axis.prototype.drawLine = function(x,y,z,style) {
         p = this.project(x[l],y[l],z[l]);
         i.push(p.i);
         j.push(p.j);
+
+        if (style.marker === 'o') {
+            this.fig.canvas.circle(p.i,p.j,
+                                   style.MarkerSize || 3,
+                                   {fill: style.MarkerFaceColor,
+                                    stroke: style.MarkerEdgeColor || style.color});
+        }
+
     }
 
     this.fig.canvas.line(i,j,style);
+    
+
 };
 
 
