@@ -1164,7 +1164,7 @@ matplot.Axis.prototype.legend = function() {
 
     console.log('bbox ',maxWidth,maxHeight);
 
-    var margin = 10, padding = 10, lineSpace = 5, iconWidth = 25, iconSep = 5;
+    var margin = 10, padding = 7, lineSpace = 1, iconWidth = 25, iconSep = 5;
     
     // position top right
     var legendWidth = maxWidth + 2*padding + iconWidth + iconSep, legendHeight = n*(maxHeight+lineSpace) + 2*padding;
