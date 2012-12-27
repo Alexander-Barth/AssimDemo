@@ -1290,7 +1290,9 @@ matplot.Axis.prototype.drawLine = function(x,y,z,style) {
             this.fig.canvas.circle(p.i,p.j,
                                    style.MarkerSize || 3,
                                    {fill: style.MarkerFaceColor,
-                                    stroke: style.MarkerEdgeColor || style.color});
+                                    stroke: style.MarkerEdgeColor || style.color,
+                                    info: 'info:' + x[l] + ',' + y[l]
+                                   });
         }
 
     }
