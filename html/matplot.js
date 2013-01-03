@@ -15,8 +15,8 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-/*jslint browse: true, continue : true, devel : true, indent : 4, maxerr : 50, newcap : false, nomen : true, plusplus : false, regexp : true, sloppy : true, vars : true, white : false */
-/*global jQuery: false, $: false, numeric: false, MathJax, range */
+/*jslint browse: true, continue : true, devel : true, indent : 4, maxerr : 50, newcap : false, nomen : true, plusplus : false, regexp : true, sloppy : true, vars : true, white : false, nomen: false */
+/*global jQuery: false, $: false, numeric: false, MathJax */
 
 
 var matplot = {};
@@ -95,7 +95,7 @@ matplot.peaks = function() {
     var f = function(x,y) {
         return 3*(1-x)*(1-x)*Math.exp(-x*x - (y+1)*(y+1))
             - 10*(x/5 - x*x*x - Math.pow(y,5))*Math.exp(-x*x-y*y)
-            - 1/3*Math.exp(-(x+1)*(x+1) - y*y); }
+            - 1/3*Math.exp(-(x+1)*(x+1) - y*y); };
 
     for (i=0; i < 49; i++) {
         x[i] = [];
@@ -112,7 +112,7 @@ matplot.peaks = function() {
     return {x: x, y: y, z:z};
 };
 
-function range(start,end,step) {
+matplot.range = function (start,end,step) {
     var i, r = [];
     step = step || 1;
 
@@ -120,7 +120,7 @@ function range(start,end,step) {
         r.push(i);
     }
     return r;
-}
+};
 
 // Propose about n ticks for range (min,max)
 // Code taken from yapso
@@ -192,8 +192,9 @@ matplot.ticks = function ticks(min,max,n) {
 matplot.remove_spurious_decimals = function(s) {
     var re1,re2,s2,s3;
 
-    if (typeof(s) == "number")
-	s = s + "";
+    if (typeof(s) === "number") {
+	s = s.toString();
+    }
 
     re1 = new RegExp("(\\.[0-9]*[1-9]+)0{4,}.*$");
 
@@ -202,7 +203,7 @@ matplot.remove_spurious_decimals = function(s) {
     re2 = new RegExp("(\\.)0{4,}.*$");
     s3 = s2.replace(re2,"$1");
     return s3;
-}
+};
 
 // create DOM nodes with the tag name tag and the given attributes (attribs) and children.
 // attribs: fields are attributes of the new element. Undefined fields are ignored.
@@ -210,7 +211,7 @@ matplot.remove_spurious_decimals = function(s) {
 //
 
 matplot.mk = function mk(xmlns,tag,attribs,children) {
-    var elem, child, a, c, style, obj;
+    var elem, child, a, c, style, obj, s;
 
     attribs = attribs || {};
     children = children || [];
@@ -221,7 +222,7 @@ matplot.mk = function mk(xmlns,tag,attribs,children) {
         if (attribs.hasOwnProperty(a) && attribs[a] !== undefined) {
             if (typeof attribs[a] === 'function') {
                 // event handler
-                elem[a] = attribs[a]
+                elem[a] = attribs[a];
             }
             else if (a === 'style' && typeof attribs[a] === 'object') {
                 // style attribute can be a object
@@ -278,7 +279,7 @@ matplot.SVGCanvas.prototype.mk = function mk(tag,attribs,children) {
 
 matplot.SVGCanvas.prototype.remove = function(elem) {
     this.axis.removeChild(elem);
-}
+};
 
 matplot.SVGCanvas.prototype.rect = function(x,y,width,height,style) {
     var rect;
@@ -416,7 +417,7 @@ matplot.SVGCanvas.prototype.text = function(x,y,string,style) {
 
 
 matplot.SVGCanvas.prototype.line = function(x,y,style) {
-    var polyline, points = '', i, s;
+    var polyline, points = '', i, linespec, dasharray;
 
     linespec = style.linespec || '-';
 
@@ -436,11 +437,6 @@ matplot.SVGCanvas.prototype.line = function(x,y,style) {
         dasharray = '15,5';
     }
 
-    s = {'fill': 'none',
-         'stroke': (style.color || 'black'),
-         'stroke-width': (style.width || 1),
-         'stroke-dasharray': dasharray};
-
     for (i = 0; i < x.length; i++) {
         points += x[i] + ',' + y[i] + ' ';
     }
@@ -449,7 +445,11 @@ matplot.SVGCanvas.prototype.line = function(x,y,style) {
         polyline = this.mk('polyline',
                            {points: points,
                             onclick: style.onclick,
-                            style: s}
+                            style: {'fill': 'none',
+                                    'stroke': (style.color || 'black'),
+                                    'stroke-width': (style.width || 1),
+                                    'stroke-dasharray': dasharray}
+                           }
                           ));
 
 
@@ -509,7 +509,7 @@ matplot.Line = function Line(x,y,z,style) {
 matplot.Line.prototype.lim = function(what) {
     var i, min, max, tmp = this[what];
 
-    if (what == 'c') {
+    if (what === 'c') {
         return [NaN,NaN];
     }
     min = max = tmp[0];
@@ -632,6 +632,15 @@ matplot.Axis = function Axis(fig,x,y,w,h) {
     this.gridLineStyle = ':';
 
     this.annotationNDigits = 3;
+    this.annotationFormat = function(x) {
+        var s1 = x.toString(),s2 = x.toPrecision(this.annotationNDigits);
+        if (s2.length < s1.length) {
+            return s2;
+        }
+        else {
+            return s1;
+        }
+    };
     this.annotatedElements = [];
 
 };
@@ -652,7 +661,7 @@ function getterSetterMode(func,prop,mode) {
             this[prop] = data;
             this[mode] = 'manual';
         }
-    }
+    };
 }
 
 function getterSetterVal(prop,vals) {
@@ -671,7 +680,7 @@ function getterSetterVal(prop,vals) {
                 this[prop] = data;
             }
         }
-    }
+    };
 }
 
 matplot.Axis.prototype.xLim = getterSetterMode(function() { return this.lim('x'); },'_xLim','_xLimMode');
@@ -688,17 +697,17 @@ matplot.Axis.prototype.cLimMode = getterSetterVal('_cLimMode',['auto','manual'])
 
 
 
-function cross(a,b) {
+matplot.cross = function (a,b) {
     var c = [];
     c[0] = a[1] * b[2] - a[2] * b[1];
     c[1] = a[2] * b[0] - a[0] * b[2];
     c[2] = a[0] * b[1] - a[1] * b[0];
     return c;
-}
+};
 
 // http://publib.boulder.ibm.com/infocenter/pseries/v5r3/index.jsp?topic=/com.ibm.aix.opengl/doc/openglrf/gluProject.htm
 
-function Perspective(fovy, aspect, zNear, zFar) {
+matplot.perspective = function (fovy, aspect, zNear, zFar) {
     var f = 1/Math.tan(fovy/2), z = zNear-zFar;
 /*
 
@@ -737,14 +746,14 @@ function Perspective(fovy, aspect, zNear, zFar) {
             [        0,    0,              -1,                 0]];
 
 
-}
+};
 
-function translate(dx) {
+matplot.translate = function (dx) {
     return [[1,0,0,dx[0]],
             [0,1,0,dx[1]],
             [0,0,1,dx[2]],
             [0,0,0,1]];
-}
+};
 
 // http://publib.boulder.ibm.com/infocenter/pseries/v5r3/index.jsp?topic=/com.ibm.aix.opengl/doc/openglrf/gluLookAt.htm
 /*
@@ -754,7 +763,7 @@ Let U be the 3d column vector (upX, upY, upZ).
 
 */
 
-matplot.Axis.prototype.LookAt = function(E,C,U) {
+matplot.LookAt = function(E,C,U) {
     var L, S, Up, M;
 /*
 Compute L = C - E.
@@ -770,11 +779,11 @@ Compute U' = S x L.
     L = nu.mul(1/nu.norm2(L),L);
 
     // side direction to the "right" of L
-    S = cross(L,U);
+    S = matplot.cross(L,U);
     S = nu.mul(1/nu.norm2(S),S);
 
     // new up vector
-    Up = cross(S,L);
+    Up = matplot.cross(S,L);
 
     // turn vector
     M = [[ S[0],  S[1],  S[2],  0],
@@ -783,7 +792,7 @@ Compute U' = S x L.
          [0, 0, 0, 1]];
 
     // translate to the CameraPosition
-    M = numeric.dot(M,translate([-E[0], -E[1], -E[2]]));
+    M = numeric.dot(M,matplot.translate([-E[0], -E[1], -E[2]]));
 
     return M;
 };
@@ -802,11 +811,9 @@ matplot.Axis.prototype.project = function(x,y,z) {
     else {
         //var b = numeric.dot(this.M,[x - this._CameraPosition[0],y - this._CameraPosition[1],(z - this._CameraPosition[2]),1]);
         var b = numeric.dot(this.M,[x,y,z,1]);
-        i = b[0]/200+.45;
-        j = b[1]/200+.5;
 
-        i = b[0]/200+.5;
-        j = b[1]/200+.5;
+        i = b[0]/200+0.5;
+        j = b[1]/200+0.5;
 
         j = 1-j;
     }
@@ -912,9 +919,9 @@ matplot.Axis.prototype.surf = function(x,y,z) {
 };
 
 matplot.Axis.prototype.is2dim = function() {
-    _zrange = this.zLim();
+    var _zrange = this.zLim();
 
-    return this._zrange[0] === this._zrange[1] || this._zrange[0] !== this._zrange[0];
+    return (this._zrange[0] === this._zrange[1]) || (this._zrange[0] !== this._zrange[0]);
 };
 
 matplot.Axis.prototype.draw = function() {
@@ -927,7 +934,7 @@ matplot.Axis.prototype.draw = function() {
             max = max+1;
         }
         return [min,max];
-    };
+    }
 
     // real range of x, y and z variable (might be [0,0])
     this._xrange = this.xLim();
@@ -995,14 +1002,14 @@ matplot.Axis.prototype.draw = function() {
 	this._CameraViewAngle = [10.3396];
 
         var fovy  = Math.PI/20;
-        var aspect = 1.;
+        var aspect = 1;
         var zNear = -10;
         var zFar = 20;
 
         var modelView = this.LookAt(this._CameraPosition,this._CameraTarget,this._CameraUpVector);
         console.log('modelView ',numeric.prettyPrint(modelView));
 
-        var projection = Perspective(fovy, aspect, zNear, zFar);
+        var projection = matplot.perspective(fovy, aspect, zNear, zFar);
 
         console.log('projection ',numeric.prettyPrint(projection));
         this.M = numeric.dot(projection,modelView);
@@ -1018,11 +1025,7 @@ matplot.Axis.prototype.draw = function() {
         //this.M = numeric.dot(modelView,projection);
     }
 
-    if (is2D) {
-    }
-    else {
-
-
+    if (!is2D) {
         k = 0;
         for (j = 0; j < this.yTick.length; j++) {
             this.drawLine(this._xLim,
@@ -1075,7 +1078,7 @@ matplot.Axis.prototype.draw = function() {
         k = 0;
         j = 1;
         var dx, dy, dz;
-        dx = dy = dz = .15;
+        dx = dy = dz = 0.15;
 
         // x-axis
         this.drawLine(this._xLim,[this._yLim[j],this._yLim[j]],[this._zLim[k],this._zLim[k]]);
@@ -1134,8 +1137,6 @@ matplot.Axis.prototype.draw = function() {
         this.drawXTicks();
         this.drawYTicks();
     }
-    else {
-    }
 };
 
 matplot.Axis.prototype.drawXTicks = function() {
@@ -1144,7 +1145,7 @@ matplot.Axis.prototype.drawXTicks = function() {
     style =
         {HorizontalAlignment: 'center',
          FontSize: this.FontSize,
-         color: this.color,
+         color: this.color
         };
 
     if (this.xAxisLocation === 'bottom') {
@@ -1185,7 +1186,7 @@ matplot.Axis.prototype.drawYTicks = function() {
     style =
         {VerticalAlignment: 'middle',
          FontSize: this.FontSize,
-         color: this.color,
+         color: this.color
         };
 
     if (this.yAxisLocation === 'left') {
@@ -1220,7 +1221,7 @@ matplot.Axis.prototype.drawYTicks = function() {
 };
 
 matplot.Axis.prototype.legend = function() {
-    var style, label, maxWidth = -Infinity, maxHeight=-Infinity, maxMarkerSize=0, bbox, x, y, n=0, style;
+    var style, label, maxWidth = -Infinity, maxHeight=-Infinity, maxMarkerSize=0, bbox, x, y, n=0, i, w, h;
 
     for (i = 0; i<this.children.length; i++) {
         style = this.children[i].style;
@@ -1314,7 +1315,7 @@ matplot.Axis.prototype.polygon = function(x,y,z,v) {
     }
     color = this.cmap.get(v);
 
-    onclick = function (l) {
+    onclick = (function (l) {
         return function (event) {
             var n = that.annotationNDigits, text, coord;
 
@@ -1323,14 +1324,13 @@ matplot.Axis.prototype.polygon = function(x,y,z,v) {
             }
             else {
                 coord = [x[0],y[0],z[0]];
-                text = v.toFixed(n) + ' at [' + [x[0].toFixed(n),y[0].toFixed(n),z[0].toFixed(n)] + ']';
             }
 
             coord = coord.map(function(c) { return c.toFixed(n); });
             text = v.toFixed(n) + ' at [' + coord + ']';
             that.toggleAnnotation(event,event.target,x[0],y[0],z[0],text);
         };
-    }(l);
+    }(l));
 
     this.fig.canvas.polygon(i,j,{fill: color,
                                  stroke: color,
@@ -1340,7 +1340,7 @@ matplot.Axis.prototype.polygon = function(x,y,z,v) {
 
 
 matplot.Axis.prototype.addAnnotation = function(x,y,z,text,style) {
-    var bbox, p, an = {}, padding = 4, i, j, that = this;
+    var bbox, p, an = {}, padding = 4, i, j, that = this, w, h;
     style = style || {};
 
     p = this.project(x,y,z);
@@ -1372,8 +1372,21 @@ matplot.Axis.prototype.removeAnnotation = function(an) {
 };
 
 matplot.Axis.prototype.toggleAnnotation = function(event,elem,x,y,z,text) {
-    var an, i, found = -1, that = this;
-    text = text || '[' + [x,y,z] + ']';
+    var an, i, found = -1, that = this, coord, n = this.annotationNDigits;
+
+    if (!text) {
+        if (this.is2dim()) {
+            coord = [x,y];
+        }
+        else {
+            coord = [x,y,z];
+        }
+
+        coord = coord.map(function(c) { return that.annotationFormat(c); });
+
+
+        text = '[' + coord + ']';
+    }
 
     console.log('lala',[x,y],event,elem);
 
@@ -1410,7 +1423,7 @@ matplot.Axis.prototype.toggleAnnotation = function(event,elem,x,y,z,text) {
           },10000);
         */
     }
-}
+};
 
 matplot.Axis.prototype.drawLine = function(x,y,z,style) {
     var p, i=[], j=[], l;
@@ -1436,11 +1449,11 @@ matplot.Axis.prototype.drawProjectedLine = function(i,j,style,x,y,z) {
         if (x) {
             opt.data = [x[l],y[l]];
             opt['pointer-events'] = 'visible';
-            opt.onclick = function (l) {
+            opt.onclick = (function (l) {
                 return function (event) {
                     that.toggleAnnotation(event,event.target,x[l],y[l],z[l]);
                 };
-            }(l);
+            }(l));
         }
                 //,
                                     //info: 'info:' + x[l] + ',' + y[l]
@@ -1476,7 +1489,7 @@ matplot.Axis.prototype.colorbar = function() {
 
     cLim = this.cLim();
 
-    tmp = range(cLim[0],cLim[1],(cLim[1]-cLim[0])/(n-1));
+    tmp = matplot.range(cLim[0],cLim[1],(cLim[1]-cLim[0])/(n-1));
     cmap = [tmp,tmp];
 
     x = [[],[]];
