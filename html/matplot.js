@@ -204,7 +204,11 @@ matplot.remove_spurious_decimals = function(s) {
     return s3;
 }
 
-// create DOM nodes
+// create DOM nodes with the tag name tag and the given attributes (attribs) and children.
+// attribs: fields are attributes of the new element. Undefined fields are ignored. 
+//
+// 
+
 matplot.mk = function mk(xmlns,tag,attribs,children) {
     var elem, child, a, c, style, obj;
     
@@ -215,7 +219,11 @@ matplot.mk = function mk(xmlns,tag,attribs,children) {
 
     for (a in attribs) {
         if (attribs.hasOwnProperty(a) && attribs[a] !== undefined) {
-            if (a === 'style' && typeof attribs[a] === 'object') {
+            if (typeof attribs[a] === 'function') {
+                // event handler
+                elem[a] = attribs[a]
+            }
+            else if (a === 'style' && typeof attribs[a] === 'object') {
                 // style attribute can be a object
                 obj = attribs[a];
                 style = '';
@@ -273,32 +281,23 @@ matplot.SVGCanvas.prototype.remove = function(elem) {
 }
 
 matplot.SVGCanvas.prototype.rect = function(x,y,width,height,style) {
-    var rect, attrib, info;
+    var rect;
     style = style || {};
-    info = style.info || '';
-
-    attrib = {x: x, 
-              y: y, 
-              width: width, 
-              height: height, 
-              style: {
-                  'fill': style.fill || 'none', 
-                  'fill-opacity': style['fill-opacity'],
-                  'pointer-events': style['pointer-events'],
-                  'stroke':  style.stroke || 'black'}
-             };
-
-    if (info) {
-        attrib.title = info;
-    }
     
     this.axis.appendChild(
-        rect = this.mk('rect',attrib));
+        rect = this.mk('rect',
+                       {x: x, 
+                        y: y, 
+                        width: width, 
+                        height: height, 
+                        onclick: style.onclick,
+                        style: {
+                            'fill': style.fill || 'none', 
+                            'fill-opacity': style['fill-opacity'],
+                            'pointer-events': style['pointer-events'],
+                            'stroke':  style.stroke || 'black'}
+                       }));
 
-    if (style.onmouseover) {
-        rect.onclick = style.onmouseover;
-    }
-    
     return rect;
 };
 
@@ -309,44 +308,38 @@ matplot.SVGCanvas.prototype.circle = function(x,y,radius,style) {
     
     this.axis.appendChild(
         circle = this.mk('circle',
-                           {cx: x, 
-                            cy: y, 
-                            r: radius, 
-                            style: {
-                                'fill': style.fill || 'none', 
-                                'stroke':  style.stroke || 'black',
-                                'pointer-events': style['pointer-events']
-}
-                           }));
+                         {cx: x, 
+                          cy: y, 
+                          r: radius, 
+                          onclick: style.onclick,
+                          style: {
+                              'fill': style.fill || 'none', 
+                              'stroke':  style.stroke || 'black',
+                              'pointer-events': style['pointer-events']
+                          }
+                         }));
 
-    if (style.info) {
-        circle.onclick = function() { console.log('x',style.info); };
-    }
-    
-/*    circle.onclick = function() { console.log('lala'); };
-        circle.onmouseover = //style.onmouseover;
-        function(ev) { console.log('lala',ev); };
-*/
-
-    if (style.onmouseover) {
-        circle.onmouseover = style.onmouseover;
-    }
+    return circle;
 };
 
 
 
 matplot.SVGCanvas.prototype.polygon = function(x,y,style) {
-    var polygon, points = '', i, attrib;
+    var polygon, points = '', i;
 
     for (i = 0; i < x.length; i++) {
         points += x[i] + ',' + y[i] + ' ';
     }
-    
-    attrib = {points: points, style: {fill: style.fill, stroke: style.stroke}};
 
     this.axis.appendChild(
-        polygon = this.mk('polygon',attrib));
-
+        polygon = this.mk('polygon',
+                         {points: points, 
+                          onclick: style.onclick,
+                          style: {fill: style.fill, stroke: style.stroke}
+                         }
+                         ));
+    
+    return polygon;
 };
 
 matplot.SVGCanvas.prototype.textBBox = function(string,style) {
@@ -453,8 +446,14 @@ matplot.SVGCanvas.prototype.line = function(x,y,style) {
     }
 
     this.axis.appendChild(
-        polyline = this.mk('polyline',{points: points, style: s}));
+        polyline = this.mk('polyline',
+                           {points: points, 
+                            onclick: style.onclick,
+                            style: s}
+                          ));
 
+    
+    return polyline;
 };
 
 
@@ -632,7 +631,9 @@ matplot.Axis = function Axis(fig,x,y,w,h) {
 
     this.gridLineStyle = ':';
 
+    this.annotationNDigits = 3;
     this.annotatedElements = [];
+    
 };
 
 function getterSetterMode(func,prop,mode) {
@@ -910,6 +911,12 @@ matplot.Axis.prototype.surf = function(x,y,z) {
     this.children.push(new matplot.Surface(x,y,z,z));
 };
 
+matplot.Axis.prototype.is2dim = function() {
+    _zrange = this.zLim();    
+
+    return this._zrange[0] === this._zrange[1] || this._zrange[0] !== this._zrange[0];
+};
+
 matplot.Axis.prototype.draw = function() {
     var i, j, k, is2D;
 
@@ -935,7 +942,7 @@ matplot.Axis.prototype.draw = function() {
 
     this.cmap.cLim = this.cLim();
 
-    is2D = this._zrange[0] === this._zrange[1] || this._zrange[0] !== this._zrange[0];
+    is2D = this.is2dim();
 
     if (this.xTickMode === 'auto') {
         this.xTick = matplot.ticks(this._xLim[0],this._xLim[1],5);
@@ -1298,7 +1305,7 @@ matplot.Axis.prototype.text = function(x,y,z,string,style) {
 };
 
 matplot.Axis.prototype.polygon = function(x,y,z,v) {
-    var p, i=[], j=[], l, color;
+    var p, i = [], j = [], l, color, onclick, that = this;
 
     for (l = 0; l < x.length; l++) {
         p = this.project(x[l],y[l],z[l]);
@@ -1307,7 +1314,28 @@ matplot.Axis.prototype.polygon = function(x,y,z,v) {
     }
     color = this.cmap.get(v);
 
-    this.fig.canvas.polygon(i,j,{fill: color, stroke: color});
+    onclick = function (l) { 
+        return function (event) { 
+            var n = that.annotationNDigits, text, coord;
+            
+            if (that.is2dim()) {
+                coord = [x[0],y[0]];
+            }
+            else {
+                coord = [x[0],y[0],z[0]];
+                text = v.toFixed(n) + ' at [' + [x[0].toFixed(n),y[0].toFixed(n),z[0].toFixed(n)] + ']';
+            }
+
+            coord = coord.map(function(c) { return c.toFixed(n); });
+            text = v.toFixed(n) + ' at [' + coord + ']';
+            that.toggleAnnotation(event,event.target,x[0],y[0],z[0],text);
+        };                    
+    }(l);
+
+    this.fig.canvas.polygon(i,j,{fill: color, 
+                                 stroke: color,
+                                 onclick: onclick
+                                });
 };
 
 
@@ -1343,8 +1371,10 @@ matplot.Axis.prototype.removeAnnotation = function(an) {
     this.fig.canvas.remove(an.rect);
 };
 
-matplot.Axis.prototype.toggleAnnotation = function(event,elem,x,y,z) { 
+matplot.Axis.prototype.toggleAnnotation = function(event,elem,x,y,z,text) { 
     var an, i, found = -1, that = this;
+    text = text || '[' + [x,y,z] + ']';
+
     console.log('lala',[x,y],event,elem); 
                    
     // search for index 
@@ -1363,7 +1393,7 @@ matplot.Axis.prototype.toggleAnnotation = function(event,elem,x,y,z) {
     }
     else {
         // create annotation
-        an = this.addAnnotation(x,y,z,'[' + [x,y,z] + ']');
+        an = this.addAnnotation(x,y,z,text);
         an.elem = elem;
         an.text.onclick = an.rect.onclick = function(event) {
             that.toggleAnnotation(event,elem,x,y,z);            
@@ -1406,7 +1436,7 @@ matplot.Axis.prototype.drawProjectedLine = function(i,j,style,x,y,z) {
         if (x) {               
             opt.data = [x[l],y[l]];
             opt['pointer-events'] = 'visible';
-            opt.onmouseover = function (l) { 
+            opt.onclick = function (l) { 
                 return function (event) { 
                     that.toggleAnnotation(event,event.target,x[l],y[l],z[l]);
                 };                    
