@@ -1312,7 +1312,7 @@ matplot.Axis.prototype.polygon = function(x,y,z,v) {
 
 
 matplot.Axis.prototype.addAnnotation = function(x,y,z,text,style) {
-    var bbox, p, an = {}, padding = 4, i, j;
+    var bbox, p, an = {}, padding = 4, i, j, that = this;
     style = style || {};
     
     p = this.project(x,y,z);
@@ -1329,6 +1329,11 @@ matplot.Axis.prototype.addAnnotation = function(x,y,z,text,style) {
     
     an.text = this.fig.canvas.text(i,j,text,
                                    {VerticalAlignment: 'top'});
+
+    an.text.onclick = an.rect.onclick = function(event) {
+        that.removeAnnotation(an);            
+    };
+
     return an;
 };
 
@@ -1339,13 +1344,12 @@ matplot.Axis.prototype.removeAnnotation = function(an) {
 };
 
 matplot.Axis.prototype.toggleAnnotation = function(event,elem,x,y,z) { 
-    var an, i, found = -1;
+    var an, i, found = -1, that = this;
     console.log('lala',[x,y],event,elem); 
                    
     // search for index 
     for (i = 0; i < this.annotatedElements.length; i++) {
-        if (this.annotatedElements[i].elem === elem ||
-            this.annotatedElements[i].text === elem) {
+        if (this.annotatedElements[i].elem === elem) {
             found = i;
             break;
         }
@@ -1361,6 +1365,10 @@ matplot.Axis.prototype.toggleAnnotation = function(event,elem,x,y,z) {
         // create annotation
         an = this.addAnnotation(x,y,z,'[' + [x,y,z] + ']');
         an.elem = elem;
+        an.text.onclick = an.rect.onclick = function(event) {
+            that.toggleAnnotation(event,elem,x,y,z);            
+        };
+
         this.annotatedElements.push(an);
         /*
           setTimeout(function() {
@@ -1392,6 +1400,8 @@ matplot.Axis.prototype.drawProjectedLine = function(i,j,style,x,y,z) {
     var l, opt = {}, that = this, ms;
     style = style || {};
 
+    this.fig.canvas.line(i,j,style);
+
     for (l = 0; l < i.length; l++) {
         if (x) {               
             opt.data = [x[l],y[l]];
@@ -1399,42 +1409,6 @@ matplot.Axis.prototype.drawProjectedLine = function(i,j,style,x,y,z) {
             opt.onmouseover = function (l) { 
                 return function (event) { 
                     that.toggleAnnotation(event,event.target,x[l],y[l],z[l]);
-/*
-                    var an, elem = event.target, ans, i, found = -1;
-                    console.log('lala',[x[l],y[l]],event,elem); 
-                   
-                    // search for index 
-                    for (i = 0; i < that.annotatedElements.length; i++) {
-                        if (that.annotatedElements[i].elem === elem ||
-                            that.annotatedElements[i].text === elem) {
-                            found = i;
-                            break;
-                        }
-                    }
-
-                    if (found !== -1) {
-                        // is already annotated, remove annotation
-                        an = that.annotatedElements[found];
-                        that.removeAnnotation(an);
-                        that.annotatedElements.splice(found,1);
-                    }
-                    else {
-                        // create annotation
-                        an = that.addAnnotation(x[l],y[l],z[l],'[' + [x[l],y[l],z[l]] + ']');
-                        an.elem = elem;
-                        that.annotatedElements.push(an);
-
-                        setTimeout(function() {
-                            // check if still annotated
-                            if (that.annotatedElements[elem]) {
-                                that.removeAnnotation(an);
-                                that.annotatedElements[elem] = undefined;
-                            }                            
-                        },10000);
-
-                    }
-*/
-
                 };                    
             }(l);
         }
@@ -1454,8 +1428,6 @@ matplot.Axis.prototype.drawProjectedLine = function(i,j,style,x,y,z) {
             this.fig.canvas.rect(i[l]-ms/2,j[l]-ms/2,ms,ms,opt);
         }
     }
-
-    this.fig.canvas.line(i,j,style);
     
 
 };
