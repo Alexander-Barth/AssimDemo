@@ -1,18 +1,18 @@
 /*
-  Copyright (C) 2012 Alexander Barth <a.barth at ulg.ac.be>.      
-  
-  This program is free software: you can redistribute it and/or modify      
-  it under the terms of the GNU Affero General Public License as published  
-  by the Free Software Foundation, either version 3 of the License, or      
-  (at your option) any later version.                                       
-  
-  This program is distributed in the hope that it will be useful,           
-  but WITHOUT ANY WARRANTY; without even the implied warranty of            
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             
-  GNU Affero General Public License for more details.                       
-  
-  You should have received a copy of the GNU Affero General Public License  
-  along with this program.  If not, see <http://www.gnu.org/licenses/>.     
+  Copyright (C) 2012 Alexander Barth <a.barth at ulg.ac.be>.
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU Affero General Public License as published
+  by the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU Affero General Public License for more details.
+
+  You should have received a copy of the GNU Affero General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 /*jslint browse: true, continue : true, devel : true, indent : 4, maxerr : 50, newcap : false, nomen : true, plusplus : false, regexp : true, sloppy : true, vars : true, white : false */
@@ -92,9 +92,9 @@ matplot.colormaps = {'jet':
 
 matplot.peaks = function() {
     var i,j,x=[],y=[],z=[];
-    var f = function(x,y) { 
+    var f = function(x,y) {
         return 3*(1-x)*(1-x)*Math.exp(-x*x - (y+1)*(y+1))
-            - 10*(x/5 - x*x*x - Math.pow(y,5))*Math.exp(-x*x-y*y) 
+            - 10*(x/5 - x*x*x - Math.pow(y,5))*Math.exp(-x*x-y*y)
             - 1/3*Math.exp(-(x+1)*(x+1) - y*y); }
 
     for (i=0; i < 49; i++) {
@@ -135,7 +135,7 @@ matplot.ticks = function ticks(min,max,n) {
 
     range = max-min;
     dt = range/n;
- 
+
     // transform dt in "scientific notation"
     // dt = sdt * 10^(log10(base))
 
@@ -159,7 +159,7 @@ matplot.ticks = function ticks(min,max,n) {
     else {
 	sdt = 10;
     }
-    
+
     dt = sdt * base;
 
     // the first label will be:  ceil(min/dt)*dt
@@ -167,7 +167,7 @@ matplot.ticks = function ticks(min,max,n) {
 
     t0 = Math.ceil(min/dt)*dt;
 
-    // the difference between first and last label 
+    // the difference between first and last label
     // gives the number of labels
 
     nt = Math.round(Math.floor(max/dt) - Math.ceil(min/dt) +1);
@@ -180,13 +180,13 @@ matplot.ticks = function ticks(min,max,n) {
 	// attempt to remove spurious decimals
 	var eps = dt;
 	t[i] = Math.round(t[i]/eps)*eps;
-	if (Math.abs(t[i])<1e-14) { 
+	if (Math.abs(t[i])<1e-14) {
             t[i]=0;
         }
     }
 
     return t;
-  
+
 };
 
 matplot.remove_spurious_decimals = function(s) {
@@ -205,16 +205,16 @@ matplot.remove_spurious_decimals = function(s) {
 }
 
 // create DOM nodes with the tag name tag and the given attributes (attribs) and children.
-// attribs: fields are attributes of the new element. Undefined fields are ignored. 
+// attribs: fields are attributes of the new element. Undefined fields are ignored.
 //
-// 
+//
 
 matplot.mk = function mk(xmlns,tag,attribs,children) {
     var elem, child, a, c, style, obj;
-    
-    attribs = attribs || {}; 
+
+    attribs = attribs || {};
     children = children || [];
-    
+
     elem = document.createElementNS(xmlns, tag);
 
     for (a in attribs) {
@@ -236,7 +236,7 @@ matplot.mk = function mk(xmlns,tag,attribs,children) {
                         }
                     }
                 }
-                
+
                 elem.setAttributeNS(null, a, style);
             }
             else {
@@ -253,7 +253,7 @@ matplot.mk = function mk(xmlns,tag,attribs,children) {
             else {
                 child = children[c];
             }
-        
+
             elem.appendChild(child);
         }
     }
@@ -268,7 +268,7 @@ matplot.SVGCanvas = function SVGCanvas(container,width,height) {
     this.container = container;
     this.container.appendChild(
         this.svg = this.mk('svg',{width: width, height: height, 'style': 'border: 1px solid black'},
-           [this.axis = this.mk('g')]));              
+           [this.axis = this.mk('g')]));
 };
 
 matplot.SVGCanvas.prototype.mk = function mk(tag,attribs,children) {
@@ -283,16 +283,16 @@ matplot.SVGCanvas.prototype.remove = function(elem) {
 matplot.SVGCanvas.prototype.rect = function(x,y,width,height,style) {
     var rect;
     style = style || {};
-    
+
     this.axis.appendChild(
         rect = this.mk('rect',
-                       {x: x, 
-                        y: y, 
-                        width: width, 
-                        height: height, 
+                       {x: x,
+                        y: y,
+                        width: width,
+                        height: height,
                         onclick: style.onclick,
                         style: {
-                            'fill': style.fill || 'none', 
+                            'fill': style.fill || 'none',
                             'fill-opacity': style['fill-opacity'],
                             'pointer-events': style['pointer-events'],
                             'stroke':  style.stroke || 'black'}
@@ -305,15 +305,15 @@ matplot.SVGCanvas.prototype.rect = function(x,y,width,height,style) {
 matplot.SVGCanvas.prototype.circle = function(x,y,radius,style) {
     var circle;
     style = style || {};
-    
+
     this.axis.appendChild(
         circle = this.mk('circle',
-                         {cx: x, 
-                          cy: y, 
-                          r: radius, 
+                         {cx: x,
+                          cy: y,
+                          r: radius,
                           onclick: style.onclick,
                           style: {
-                              'fill': style.fill || 'none', 
+                              'fill': style.fill || 'none',
                               'stroke':  style.stroke || 'black',
                               'pointer-events': style['pointer-events']
                           }
@@ -333,12 +333,12 @@ matplot.SVGCanvas.prototype.polygon = function(x,y,style) {
 
     this.axis.appendChild(
         polygon = this.mk('polygon',
-                         {points: points, 
+                         {points: points,
                           onclick: style.onclick,
                           style: {fill: style.fill, stroke: style.stroke}
                          }
                          ));
-    
+
     return polygon;
 };
 
@@ -355,7 +355,7 @@ matplot.SVGCanvas.prototype.textBBox = function(string,style) {
                               'font-family': FontFamily,
                               'font-size': FontSize},[string]);
 
-    this.axis.appendChild(text);    
+    this.axis.appendChild(text);
     bbox = text.getBBox();
     this.axis.removeChild(text);
 
@@ -374,7 +374,7 @@ matplot.SVGCanvas.prototype.text = function(x,y,string,style) {
     color = style.color || 'black';
     HorizontalAlignment = style.HorizontalAlignment || 'left';
     VerticalAlignment = style.VerticalAlignment || 'baseline';
-   
+
 
     console.log('offsetj',offsetj,VerticalAlignment);
     if (HorizontalAlignment === 'left') {
@@ -438,7 +438,7 @@ matplot.SVGCanvas.prototype.line = function(x,y,style) {
 
     s = {'fill': 'none',
          'stroke': (style.color || 'black'),
-         'stroke-width': (style.width || 1),         
+         'stroke-width': (style.width || 1),
          'stroke-dasharray': dasharray};
 
     for (i = 0; i < x.length; i++) {
@@ -447,12 +447,12 @@ matplot.SVGCanvas.prototype.line = function(x,y,style) {
 
     this.axis.appendChild(
         polyline = this.mk('polyline',
-                           {points: points, 
+                           {points: points,
                             onclick: style.onclick,
                             style: s}
                           ));
 
-    
+
     return polyline;
 };
 
@@ -475,7 +475,7 @@ matplot.Surface.prototype.lim = function(what) {
             min = Math.min(min,tmp[i][j]);
             max = Math.max(max,tmp[i][j]);
         }
-    }    
+    }
     return [min,max];
 };
 
@@ -493,7 +493,7 @@ matplot.Surface.prototype.draw = function(axis) {
                          [this.y[i][j],this.y[i+1][j],this.y[i+1][j+1],this.y[i][j+1]],
                          [this.z[i][j],this.z[i+1][j],this.z[i+1][j+1],this.z[i][j+1]],
                          this.c[i][j]);
-            
+
         }
     }
 };
@@ -517,7 +517,7 @@ matplot.Line.prototype.lim = function(what) {
     for (i=0; i<tmp.length; i++) {
         min = Math.min(min,tmp[i]);
         max = Math.max(max,tmp[i]);
-    }    
+    }
     return [min,max];
 };
 
@@ -539,7 +539,7 @@ matplot.ColorMap.prototype.get = function (v) {
     c[0] = vs;
     c[1] = 1;
     c[2] = 1;
-    
+
     var index = Math.round(vs * this.cm.length);
     index = Math.max(Math.min(index,this.cm.length-1),0);
     c = this.cm[index];
@@ -547,7 +547,7 @@ matplot.ColorMap.prototype.get = function (v) {
     return 'rgb(' + Math.round(255*c[0]) + ',' + Math.round(255*c[1]) + ',' + Math.round(255*c[2]) + ')';
 };
 
-// Axis(fig,x,y,w,h) 
+// Axis(fig,x,y,w,h)
 // create a new axes in figure fig
 // at location x,y and width w and height h
 // x,y,w,h are fraction of the total figure height and width
@@ -571,8 +571,8 @@ matplot.Axis = function Axis(fig,x,y,w,h) {
     this._xLimMode = 'auto';
     this.xLabel = '';
     this.xGrid = 'on';
-    this.xDir = 'normal';    
-    this.xScale = 'linear';    
+    this.xDir = 'normal';
+    this.xScale = 'linear';
     this.xMinorGrid = 'off';
     this.xMinorTick = 'off';
     this.xColor = [0,0,0];
@@ -588,8 +588,8 @@ matplot.Axis = function Axis(fig,x,y,w,h) {
     this._yLimMode = 'auto';
     this.yLabel = '';
     this.yGrid = 'on';
-    this.yDir = 'normal';    
-    this.yScale = 'linear';    
+    this.yDir = 'normal';
+    this.yScale = 'linear';
     this.yMinorGrid = 'off';
     this.yMinorTick = 'off';
     this.yColor = [0,0,0];
@@ -605,8 +605,8 @@ matplot.Axis = function Axis(fig,x,y,w,h) {
     this._zLimMode = 'auto';
     this.zLabel = '';
     this.zGrid = 'on';
-    this.zDir = 'normal';    
-    this.zScale = 'linear';    
+    this.zDir = 'normal';
+    this.zScale = 'linear';
     this.zMinorGrid = 'off';
     this.zMinorTick = 'off';
     this.zColor = [0,0,0];
@@ -633,7 +633,7 @@ matplot.Axis = function Axis(fig,x,y,w,h) {
 
     this.annotationNDigits = 3;
     this.annotatedElements = [];
-    
+
 };
 
 function getterSetterMode(func,prop,mode) {
@@ -664,7 +664,7 @@ function getterSetterVal(prop,vals) {
         else {
             // set
             if (vals.indexOf(data) === -1) {
-                throw 'Error: value of property ' + prop + ' should be one of ' + 
+                throw 'Error: value of property ' + prop + ' should be one of ' +
                     vals.join(', ') + ' but got ' + data + '.';
             }
             else {
@@ -741,7 +741,7 @@ function Perspective(fovy, aspect, zNear, zFar) {
 
 function translate(dx) {
     return [[1,0,0,dx[0]],
-            [0,1,0,dx[1]], 
+            [0,1,0,dx[1]],
             [0,0,1,dx[2]],
             [0,0,0,1]];
 }
@@ -781,7 +781,7 @@ Compute U' = S x L.
          [Up[0], Up[1], Up[2],  0],
          [-L[0], -L[1], -L[2],  0],
          [0, 0, 0, 1]];
-    
+
     // translate to the CameraPosition
     M = numeric.dot(M,translate([-E[0], -E[1], -E[2]]));
 
@@ -842,7 +842,7 @@ matplot.Axis.prototype.plot = function(x,y,z,style) {
     var i, lastArg, args;
 
     // get a real array for arguments
-    args = Array.prototype.slice.call(arguments);    
+    args = Array.prototype.slice.call(arguments);
     lastArg = args[args.length-1];
 
     // handle the case of missing style object
@@ -857,7 +857,7 @@ matplot.Axis.prototype.plot = function(x,y,z,style) {
         style = args[1];
         x = [];
         z = [];
-        
+
         for (i = 0; i < y.length; i++) {
             x[i] = i;
             z[i] = 0;
@@ -869,7 +869,7 @@ matplot.Axis.prototype.plot = function(x,y,z,style) {
         y = args[1];
         style = args[2];
         z = [];
-        
+
         for (i = 0; i < x.length; i++) {
             z[i] = 0;
         }
@@ -903,7 +903,7 @@ matplot.Axis.prototype.pcolor = function(x,y,v) {
             z[i][j] = 0;
         }
     }
-    
+
     this.children.push(new matplot.Surface(x,y,z,v));
 };
 
@@ -912,7 +912,7 @@ matplot.Axis.prototype.surf = function(x,y,z) {
 };
 
 matplot.Axis.prototype.is2dim = function() {
-    _zrange = this.zLim();    
+    _zrange = this.zLim();
 
     return this._zrange[0] === this._zrange[1] || this._zrange[0] !== this._zrange[0];
 };
@@ -932,7 +932,7 @@ matplot.Axis.prototype.draw = function() {
     // real range of x, y and z variable (might be [0,0])
     this._xrange = this.xLim();
     this._yrange = this.yLim();
-    this._zrange = this.zLim();    
+    this._zrange = this.zLim();
 
 
     // range for plotting which is never zero in length
@@ -1022,7 +1022,7 @@ matplot.Axis.prototype.draw = function() {
     }
     else {
 
-        
+
         k = 0;
         for (j = 0; j < this.yTick.length; j++) {
             this.drawLine(this._xLim,
@@ -1042,7 +1042,7 @@ matplot.Axis.prototype.draw = function() {
         k = 0;
         for (i = 0; i < this.xTick.length; i++) {
             this.drawLine([this.xTick[i],this.xTick[i]],
-                      this._yLim,                          
+                      this._yLim,
                       [this.zTick[k],this.zTick[k]],
                       {linespec: this.gridLineStyle});
         }
@@ -1050,7 +1050,7 @@ matplot.Axis.prototype.draw = function() {
         i = 0;
         for (k = 0; k < this.zTick.length; k++) {
             this.drawLine([this.xTick[i],this.xTick[i]],
-                      this._yLim,                          
+                      this._yLim,
                       [this.zTick[k],this.zTick[k]],
                       {linespec: this.gridLineStyle});
         }
@@ -1076,7 +1076,7 @@ matplot.Axis.prototype.draw = function() {
         j = 1;
         var dx, dy, dz;
         dx = dy = dz = .15;
-        
+
         // x-axis
         this.drawLine(this._xLim,[this._yLim[j],this._yLim[j]],[this._zLim[k],this._zLim[k]]);
         for (i = 0; i < this.xTick.length; i++) {
@@ -1084,7 +1084,7 @@ matplot.Axis.prototype.draw = function() {
                       [this._yLim[j]-dy,this._yLim[j]+dy],
                       [this.zTick[k],this.zTick[k]]);
 
-            this.text(this.xTick[i],this._yLim[j]+3*dy,this._zLim[k],this.xTickLabel[i]);            
+            this.text(this.xTick[i],this._yLim[j]+3*dy,this._zLim[k],this.xTickLabel[i]);
         }
 
 
@@ -1129,7 +1129,7 @@ matplot.Axis.prototype.draw = function() {
                          this.fig.canvas.height*this.h,
                              {fill: 'none', stroke: 'black'});
 
-    
+
     if (is2D) {
         this.drawXTicks();
         this.drawYTicks();
@@ -1141,7 +1141,7 @@ matplot.Axis.prototype.draw = function() {
 matplot.Axis.prototype.drawXTicks = function() {
     var i, y, pos, style;
 
-    style = 
+    style =
         {HorizontalAlignment: 'center',
          FontSize: this.FontSize,
          color: this.color,
@@ -1149,12 +1149,12 @@ matplot.Axis.prototype.drawXTicks = function() {
 
     if (this.xAxisLocation === 'bottom') {
         style.VerticalAlignment = 'top';
-        style.offsetj = this.xTickLen/2;        
+        style.offsetj = this.xTickLen/2;
         y = this._yLim[0];
     }
     else {
         style.VerticalAlignment = 'bottom';
-        style.offsetj = -this.xTickLen/2;        
+        style.offsetj = -this.xTickLen/2;
         y = this._yLim[1];
     }
 
@@ -1170,7 +1170,7 @@ matplot.Axis.prototype.drawXTicks = function() {
         // major grid lines
         if (this.xGrid === 'on') {
             this.drawLine([this.xTick[i],this.xTick[i]],
-                          this._yLim,                          
+                          this._yLim,
                           [0,0],
                           {linespec: this.gridLineStyle});
         }
@@ -1182,7 +1182,7 @@ matplot.Axis.prototype.drawXTicks = function() {
 matplot.Axis.prototype.drawYTicks = function() {
     var i, x, pos, style;
 
-    style = 
+    style =
         {VerticalAlignment: 'middle',
          FontSize: this.FontSize,
          color: this.color,
@@ -1190,12 +1190,12 @@ matplot.Axis.prototype.drawYTicks = function() {
 
     if (this.yAxisLocation === 'left') {
         style.HorizontalAlignment = 'right';
-        style.offseti = -this.yTickLen/2;        
+        style.offseti = -this.yTickLen/2;
         x = this._xLim[0];
     }
     else {
         style.HorizontalAlignment = 'left';
-        style.offseti = this.yTickLen/2;        
+        style.offseti = this.yTickLen/2;
         x = this._xLim[1];
     }
 
@@ -1210,7 +1210,7 @@ matplot.Axis.prototype.drawYTicks = function() {
 
         // major grid lines
         if (this.yGrid === 'on') {
-            this.drawLine(this._xLim,                          
+            this.drawLine(this._xLim,
                           [this.yTick[i],this.yTick[i]],
                           [0,0],
                           {linespec: this.gridLineStyle});
@@ -1225,7 +1225,7 @@ matplot.Axis.prototype.legend = function() {
     for (i = 0; i<this.children.length; i++) {
         style = this.children[i].style;
         label = style.label;
-        
+
         if (label !== undefined && label !== '') {
             console.log('label ',label);
             bbox = this.fig.canvas.textBBox(label);
@@ -1245,7 +1245,7 @@ matplot.Axis.prototype.legend = function() {
     console.log('bbox ',maxWidth,maxHeight,maxMarkerSize);
 
     var margin = 10, padding = 7, lineSpace = 1, iconWidth = 25, iconSep = 5;
-    
+
     // position top right
     var legendWidth = maxWidth + 2*padding + iconWidth + iconSep + 2*maxMarkerSize, legendHeight = n*(maxHeight+lineSpace) + 2*padding;
 
@@ -1255,11 +1255,11 @@ matplot.Axis.prototype.legend = function() {
 
     x = x + padding;
     y = y + padding + maxHeight/2;
-    
+
     for (i = 0; i<this.children.length; i++) {
         style = this.children[i].style;
         label = style.label;
-        
+
         if (label !== undefined && label !== '') {
             //this.fig.canvas.line([x,x + iconWidth],[y,y],style);
             this.drawProjectedLine([x + maxMarkerSize,x + maxMarkerSize + iconWidth],
@@ -1274,8 +1274,8 @@ matplot.Axis.prototype.legend = function() {
         }
     }
 //    this.fig.canvas.text(label);
-    
-  
+
+
 };
 
 matplot.Axis.prototype.rect = function(x,y,v) {
@@ -1300,7 +1300,7 @@ matplot.Axis.prototype.rect = function(x,y,v) {
 matplot.Axis.prototype.text = function(x,y,z,string,style) {
     var pos;
 
-    pos = this.project(x,y,z);    
+    pos = this.project(x,y,z);
     this.fig.canvas.text(pos.i,pos.j,string,style);
 };
 
@@ -1314,10 +1314,10 @@ matplot.Axis.prototype.polygon = function(x,y,z,v) {
     }
     color = this.cmap.get(v);
 
-    onclick = function (l) { 
-        return function (event) { 
+    onclick = function (l) {
+        return function (event) {
             var n = that.annotationNDigits, text, coord;
-            
+
             if (that.is2dim()) {
                 coord = [x[0],y[0]];
             }
@@ -1329,10 +1329,10 @@ matplot.Axis.prototype.polygon = function(x,y,z,v) {
             coord = coord.map(function(c) { return c.toFixed(n); });
             text = v.toFixed(n) + ' at [' + coord + ']';
             that.toggleAnnotation(event,event.target,x[0],y[0],z[0],text);
-        };                    
+        };
     }(l);
 
-    this.fig.canvas.polygon(i,j,{fill: color, 
+    this.fig.canvas.polygon(i,j,{fill: color,
                                  stroke: color,
                                  onclick: onclick
                                 });
@@ -1342,7 +1342,7 @@ matplot.Axis.prototype.polygon = function(x,y,z,v) {
 matplot.Axis.prototype.addAnnotation = function(x,y,z,text,style) {
     var bbox, p, an = {}, padding = 4, i, j, that = this;
     style = style || {};
-    
+
     p = this.project(x,y,z);
     bbox = this.fig.canvas.textBBox(text);
     i = p.i;
@@ -1354,12 +1354,12 @@ matplot.Axis.prototype.addAnnotation = function(x,y,z,text,style) {
 
     i += padding;
     j += padding;
-    
+
     an.text = this.fig.canvas.text(i,j,text,
                                    {VerticalAlignment: 'top'});
 
     an.text.onclick = an.rect.onclick = function(event) {
-        that.removeAnnotation(an);            
+        that.removeAnnotation(an);
     };
 
     return an;
@@ -1371,20 +1371,20 @@ matplot.Axis.prototype.removeAnnotation = function(an) {
     this.fig.canvas.remove(an.rect);
 };
 
-matplot.Axis.prototype.toggleAnnotation = function(event,elem,x,y,z,text) { 
+matplot.Axis.prototype.toggleAnnotation = function(event,elem,x,y,z,text) {
     var an, i, found = -1, that = this;
     text = text || '[' + [x,y,z] + ']';
 
-    console.log('lala',[x,y],event,elem); 
-                   
-    // search for index 
+    console.log('lala',[x,y],event,elem);
+
+    // search for index
     for (i = 0; i < this.annotatedElements.length; i++) {
         if (this.annotatedElements[i].elem === elem) {
             found = i;
             break;
         }
     }
-    
+
     if (found !== -1) {
         // is already annotated, remove annotation
         an = this.annotatedElements[found];
@@ -1396,7 +1396,7 @@ matplot.Axis.prototype.toggleAnnotation = function(event,elem,x,y,z,text) {
         an = this.addAnnotation(x,y,z,text);
         an.elem = elem;
         an.text.onclick = an.rect.onclick = function(event) {
-            that.toggleAnnotation(event,elem,x,y,z);            
+            that.toggleAnnotation(event,elem,x,y,z);
         };
 
         this.annotatedElements.push(an);
@@ -1406,7 +1406,7 @@ matplot.Axis.prototype.toggleAnnotation = function(event,elem,x,y,z,text) {
           if (this.annotatedElements[elem]) {
           this.removeAnnotation(an);
           this.annotatedElements[elem] = undefined;
-          }                            
+          }
           },10000);
         */
     }
@@ -1433,13 +1433,13 @@ matplot.Axis.prototype.drawProjectedLine = function(i,j,style,x,y,z) {
     this.fig.canvas.line(i,j,style);
 
     for (l = 0; l < i.length; l++) {
-        if (x) {               
+        if (x) {
             opt.data = [x[l],y[l]];
             opt['pointer-events'] = 'visible';
-            opt.onclick = function (l) { 
-                return function (event) { 
+            opt.onclick = function (l) {
+                return function (event) {
                     that.toggleAnnotation(event,event.target,x[l],y[l],z[l]);
-                };                    
+                };
             }(l);
         }
                 //,
@@ -1448,17 +1448,17 @@ matplot.Axis.prototype.drawProjectedLine = function(i,j,style,x,y,z) {
 
         if (style.marker === 'o') {
             opt.fill = style.MarkerFaceColor;
-            opt.stroke = style.MarkerEdgeColor || style.color;            
+            opt.stroke = style.MarkerEdgeColor || style.color;
             this.fig.canvas.circle(i[l],j[l],ms,opt);
         }
         else if (style.marker === 's') {
             opt.fill = style.MarkerFaceColor;
-            //opt['fill-opacity'] = '0.00001';            
-            opt.stroke = style.MarkerEdgeColor || style.color;            
+            //opt['fill-opacity'] = '0.00001';
+            opt.stroke = style.MarkerEdgeColor || style.color;
             this.fig.canvas.rect(i[l]-ms/2,j[l]-ms/2,ms,ms,opt);
         }
     }
-    
+
 
 };
 
@@ -1488,7 +1488,7 @@ matplot.Axis.prototype.colorbar = function() {
         x[0][i] = 0;
         x[1][i] = 1;
     }
-           
+
     cax.pcolor(x,y,y);
     return cax;
 };
@@ -1501,13 +1501,13 @@ matplot.Axis.prototype.colorbar = function() {
 matplot.Figure = function Figure(id,width,height) {
 
     this.container = document.getElementById(id);
-    this.outerDIV = 
+    this.outerDIV =
         matplot.mk(null,'div',
                    {style: {
                        position: 'relative'}
                    },
                    [
-                       this.innerDIV = 
+                       this.innerDIV =
                            matplot.mk(null,'div',
                                       {style: {
                                           position: 'absolute'}
