@@ -911,12 +911,6 @@ matplot.Axis.prototype.project = function(x,y,z) {
         j = this.y + (y-this._yLim[0])/(this._yLim[1]-this._yLim[0]) * this.h;
 
         var v,v2,M;
-        v = [x,y,z,1];
-        v[0] = (v[0]-this._xLim[0]);
-        v[1] = (v[1]-this._yLim[0]);
-        
-        v2 = numeric.dot(matplot.translate([-this._xLim[0],-this._yLim[0],0]),[x,y,z,1]);
-        v = v2;
 
         M = numeric.dot(
             matplot.translate([this.x,this.y,0]),
@@ -924,14 +918,7 @@ matplot.Axis.prototype.project = function(x,y,z) {
                 matplot.scale([this.w/(this._xLim[1]-this._xLim[0]),this.h/(this._yLim[1]-this._yLim[0]),1]),
                 matplot.translate([-this._xLim[0],-this._yLim[0],0])));
 
-        v2 = numeric.dot(M,[x,y,z,1]);
-        
-
-        v[0] = v[0]/(this._xLim[1]-this._xLim[0]) * this.w;
-        v[1] = v[1]/(this._yLim[1]-this._yLim[0]) * this.h;
-
-        v[0] = this.x + v[0];
-        v[1] = this.y + v[1];
+        v = numeric.dot(M,[x,y,z,1]);
 
         i = v[0];
         j = v[1];
