@@ -902,40 +902,29 @@ matplot.Axis.prototype.zoomIn = function() {
 }
 
 matplot.Axis.prototype.project = function(x,y,z) {
-    var i,j;
+    var i,j, b;
     z = z || 0;
+
+    b = numeric.dot(this.M,[x,y,z,1]);
 
     if (this._projection === 'orthographic') {
         // i,j in axis coordinate space
+
+        /*
         i = this.x + (x-this._xLim[0])/(this._xLim[1]-this._xLim[0]) * this.w;
         j = this.y + (y-this._yLim[0])/(this._yLim[1]-this._yLim[0]) * this.h;
-
-        var v,v2,M;
-
-        M = numeric.dot(
-            matplot.translate([this.x,this.y,0]),
-            numeric.dot(
-                matplot.scale([this.w/(this._xLim[1]-this._xLim[0]),this.h/(this._yLim[1]-this._yLim[0]),1]),
-                matplot.translate([-this._xLim[0],-this._yLim[0],0])));
-
-        v = numeric.dot(M,[x,y,z,1]);
-
-        i = v[0];
-        j = v[1];
-        // reverse j axis
-        j = 1-j;
-
+        */
     }
     else {
-        //var b = numeric.dot(this.M,[x - this._CameraPosition[0],y - this._CameraPosition[1],(z - this._CameraPosition[2]),1]);
-        var b = numeric.dot(this.M,[x,y,z,1]);
-
-        i = b[0]/200+0.5;
-        j = b[1]/200+0.5;
-
-        j = 1-j;
+        b[0] = b[0]/200+0.5;
+        b[1] = b[1]/200+0.5;
     }
 
+    i = b[0];
+    j = b[1];
+
+    // reverse j axis
+    j = 1-j;
 
     // i,j in figure space (pixels)
     i = i * this.fig.canvas.width;
@@ -1110,6 +1099,14 @@ matplot.Axis.prototype.draw = function() {
         this._CameraPosition = [this._CameraTarget[0],
                                 this._CameraTarget[1],
                                 this._CameraTarget[2]+10];
+
+
+        this.M = numeric.dot(
+            matplot.translate([this.x,this.y,0]),
+            numeric.dot(
+                matplot.scale([this.w/(this._xLim[1]-this._xLim[0]),this.h/(this._yLim[1]-this._yLim[0]),1]),
+                matplot.translate([-this._xLim[0],-this._yLim[0],0])));
+
     }
     else {
         this._CameraPosition = [-36.5257, -47.6012, 86.6025];
@@ -1124,7 +1121,7 @@ matplot.Axis.prototype.draw = function() {
         var zNear = -10;
         var zFar = 20;
 
-        var modelView = this.LookAt(this._CameraPosition,this._CameraTarget,this._CameraUpVector);
+        var modelView = matplot.LookAt(this._CameraPosition,this._CameraTarget,this._CameraUpVector);
         console.log('modelView ',numeric.prettyPrint(modelView));
 
         var projection = matplot.perspective(fovy, aspect, zNear, zFar);
