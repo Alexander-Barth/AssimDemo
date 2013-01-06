@@ -21,6 +21,90 @@
 
 var matplot = {};
 
+// creates a global "addwheelListener" method
+// example: addWheelListener( elem, function( e ) { console.log( e.deltaY ); e.preventDefault(); } );
+// https://developer.mozilla.org/en-US/docs/Mozilla_event_reference/wheel
+
+(function(window,document) {
+ 
+    var prefix = "", _addEventListener, onwheel, support;
+ 
+    // detect event model
+    if ( window.addEventListener ) {
+        _addEventListener = "addEventListener";
+    } else {
+        _addEventListener = "attachEvent";
+        prefix = "on";
+    }
+ 
+    // detect available wheel event
+    if ( document.onmousewheel !== undefined ) {
+        // Webkit and IE support at least "mousewheel"
+        support = "mousewheel"
+    }
+    try {
+        // Modern browsers support "wheel"
+        WheelEvent("wheel");
+        support = "wheel";
+    } catch (e) {}
+    if ( !support ) {
+        // let's assume that remaining browsers are older Firefox
+        support = "DOMMouseScroll";
+    }
+ 
+    window.addWheelListener = function( elem, callback, useCapture ) {
+        _addWheelListener( elem, support, callback, useCapture );
+ 
+        // handle MozMousePixelScroll in older Firefox
+        if( support == "DOMMouseScroll" ) {
+            _addWheelListener( elem, "MozMousePixelScroll", callback, useCapture );
+        }
+    };
+ 
+    function _addWheelListener( elem, eventName, callback, useCapture ) {
+        elem[ _addEventListener ]( prefix + eventName, support == "wheel" ? callback : function( originalEvent ) {
+            !originalEvent && ( originalEvent = window.event );
+ 
+            // create a normalized event object
+            var event = {
+                // keep a ref to the original event object
+                originalEvent: originalEvent,
+                target: originalEvent.target || originalEvent.srcElement,
+                type: "wheel",
+                deltaMode: originalEvent.type == "MozMousePixelScroll" ? 0 : 1,
+                deltaX: 0,
+                delatZ: 0,
+                preventDefault: function() {
+                    originalEvent.preventDefault ?
+                        originalEvent.preventDefault() :
+                        originalEvent.returnValue = false;
+                }
+            };
+             
+            // calculate deltaY (and deltaX) according to the event
+            if ( support == "mousewheel" ) {
+                event.deltaY = - 1/40 * originalEvent.wheelDelta;
+                // Webkit also support wheelDeltaX
+                originalEvent.wheelDeltaX && ( event.deltaX = - 1/40 * originalEvent.wheelDeltaX );
+
+                // Alex: position of mouse during scroll event
+                event.pageX = originalEvent.pageX;
+                event.pageY = originalEvent.pageY;
+                event.clientX = originalEvent.clientX;
+                event.clientY = originalEvent.clientY;
+            } else {
+                event.deltaY = originalEvent.detail;
+            }
+ 
+            // it's time to fire the callback
+            return callback( event );
+ 
+        }, useCapture || false );
+    }
+ 
+})(window,document);
+
+
 matplot.colormaps = {'jet':
             [
    [0.000000000000000,0.000000000000000,0.500000000000000],
@@ -277,8 +361,15 @@ matplot.SVGCanvas.prototype.mk = function mk(tag,attribs,children) {
     return matplot.mk(xmlns,tag,attribs,children);
 };
 
+
 matplot.SVGCanvas.prototype.remove = function(elem) {
     this.axis.removeChild(elem);
+};
+
+matplot.SVGCanvas.prototype.clear = function() {
+    while (this.axis.firstChild) {
+        this.axis.removeChild(this.axis.firstChild);    
+    }
 };
 
 matplot.SVGCanvas.prototype.rect = function(x,y,width,height,style) {
@@ -748,6 +839,14 @@ matplot.perspective = function (fovy, aspect, zNear, zFar) {
 
 };
 
+matplot.scale = function (s) {
+    return [[s[0],0,0,0],
+            [0,s[1],0,0],
+            [0,0,s[2],0],
+            [0,0,0,1]];
+
+};
+
 matplot.translate = function (dx) {
     return [[1,0,0,dx[0]],
             [0,1,0,dx[1]],
@@ -797,13 +896,45 @@ Compute U' = S x L.
     return M;
 };
 
+matplot.Axis.prototype.zoomIn = function() {
+    var xl = this.xLim();
+
+}
+
 matplot.Axis.prototype.project = function(x,y,z) {
     var i,j;
+    z = z || 0;
 
     if (this._projection === 'orthographic') {
         // i,j in axis coordinate space
         i = this.x + (x-this._xLim[0])/(this._xLim[1]-this._xLim[0]) * this.w;
         j = this.y + (y-this._yLim[0])/(this._yLim[1]-this._yLim[0]) * this.h;
+
+        var v,v2,M;
+        v = [x,y,z,1];
+        v[0] = (v[0]-this._xLim[0]);
+        v[1] = (v[1]-this._yLim[0]);
+        
+        v2 = numeric.dot(matplot.translate([-this._xLim[0],-this._yLim[0],0]),[x,y,z,1]);
+        v = v2;
+
+        M = numeric.dot(
+            matplot.translate([this.x,this.y,0]),
+            numeric.dot(
+                matplot.scale([this.w/(this._xLim[1]-this._xLim[0]),this.h/(this._yLim[1]-this._yLim[0]),1]),
+                matplot.translate([-this._xLim[0],-this._yLim[0],0])));
+
+        v2 = numeric.dot(M,[x,y,z,1]);
+        
+
+        v[0] = v[0]/(this._xLim[1]-this._xLim[0]) * this.w;
+        v[1] = v[1]/(this._yLim[1]-this._yLim[0]) * this.h;
+
+        v[0] = this.x + v[0];
+        v[1] = this.y + v[1];
+
+        i = v[0];
+        j = v[1];
         // reverse j axis
         j = 1-j;
 
@@ -1013,6 +1144,7 @@ matplot.Axis.prototype.draw = function() {
 
         console.log('projection ',numeric.prettyPrint(projection));
         this.M = numeric.dot(projection,modelView);
+
         console.log('M ',numeric.prettyPrint(this.M));
 
         console.log('Target ',this._CameraTarget);
@@ -1512,8 +1644,20 @@ matplot.Axis.prototype.colorbar = function() {
 // should not contain SVG specific stuff
 
 matplot.Figure = function Figure(id,width,height) {
-
+    var that = this;
     this.container = document.getElementById(id);
+
+    addWheelListener(this.container, 
+                     function( e ) { 
+                         var i,j;
+                         i = e.pageX - that.container.offsetLeft;
+                         j = e.pageY - that.container.offsetTop;
+
+                         console.log('wheel', e.deltaY,e,e.clientX,e.clientY,that.container.offsetTop,e.pageY,i,j ); 
+                         e.preventDefault(); 
+                     }                    
+                    );
+
     this.outerDIV =
         matplot.mk(null,'div',
                    {style: {
@@ -1538,6 +1682,10 @@ matplot.Figure.prototype.axes = function(x,y,w,h) {
     var ax = new matplot.Axis(this,x,y,w,h);
     this._axes.push(ax);
     return ax;
+};
+
+matplot.Figure.prototype.clear = function() {
+    othis.canvas.clear();
 };
 
 matplot.Figure.prototype.draw = function() {

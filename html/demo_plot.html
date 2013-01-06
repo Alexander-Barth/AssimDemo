@@ -22,11 +22,12 @@
         fig = new matplot.Figure("plot",700,500);
         ax = fig.axes(0.1,0.1,.72,.8);
         //ax.plot(x,y,z);
-        ax.plot(z,{color: 'red', label: 'Zero'});
+        //ax.plot(z,{color: 'red', label: 'Zero'});
+        ax.plot([0,1],{color: 'red', label: 'Zero'});
         //ax.plot(y,{'marker': 'o','color': 'blue', MarkerSize: 5, label: 'test'});
-        ax.plot(y,{'marker': 's','color': 'blue', MarkerSize: 15, label: 'test'});
+        //ax.plot(y,{'marker': 's','color': 'blue', MarkerSize: 15, label: 'test'});
         //ax.plot(y,{'color': 'blue',linespec: '-.'});
-        ax.plot(x,y,{linespec: ':',color: 'blue', label: 'sin'});                  
+        //ax.plot(x,y,{linespec: ':',color: 'blue', label: 'sin'});                  
         fig.draw();
         ax.legend();
         ax.addAnnotation(20,0.6,0,'toto');
@@ -37,7 +38,6 @@
  </head>
     <body onload="init()">
     <h1>matplot: pcolor</h1>
-
     <div id="plot">
     </div>
   </body>
