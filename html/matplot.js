@@ -1161,16 +1161,6 @@ matplot.Axis.prototype.draw = function() {
     if (this._projection === 'orthographic') {
         this.projection = matplot.ortho(left, right, bottom, top, near, far);
 
-        this.viewport = numeric.dot(
-            matplot.translate([this.x,this.y,0]),
-            numeric.dot(
-                matplot.scale([this.w/2,this.h/2,1]),
-                matplot.translate([1,1,0])));
-
-        this.viewport = numeric.dot(
-            matplot.translate([this.x+this.w/2,this.y+this.h/2,0]),
-            matplot.scale([this.w/2,this.h/2,1]));
-
         console.log('projection ',numeric.prettyPrint(this.projection));
         console.log('v  ',databox[0]);
         v = numeric.dot(this.modelView,databox[0]);
@@ -1189,20 +1179,13 @@ matplot.Axis.prototype.draw = function() {
         //console.log('MV * Target',  numeric.dot(this.modelView,[this._CameraTarget[0]-this._CameraPosition[0],this._CameraTarget[1]-this._CameraPosition[1],this._CameraTarget[2]-this._CameraPosition[2],1]));
         console.log('i ,j ',this.project(this._CameraTarget[0],this._CameraTarget[1],this._CameraTarget[2]));
 
-        this.viewport = 
-            numeric.dot(matplot.translate([this.x + this.w/2,this.y + this.h/2,0]),
-                        matplot.scale([1/4,1/4,1]));
-
-        this.viewport = 
-            numeric.dot(matplot.translate([this.x + this.w/2,this.y + this.h/2,0]),
-                        matplot.scale([1/2,1/2,1]));
-
-        this.viewport = numeric.dot(
-            matplot.translate([this.x+this.w/2,this.y+this.h/2,0]),
-            matplot.scale([this.w/2,this.h/2,1]));
     }
+
     this.projectionModelView = numeric.dot(this.projection,this.modelView);
 
+    this.viewport = numeric.dot(
+        matplot.translate([this.x+this.w/2,this.y+this.h/2,0]),
+        matplot.scale([this.w/2,this.h/2,1]));
 
     // perspective test
 
