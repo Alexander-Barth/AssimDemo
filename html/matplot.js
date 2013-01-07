@@ -439,7 +439,7 @@ matplot.SVGCanvas.prototype.textBBox = function(string,style) {
 
     style = style || {};
     FontSize = style.FontSize || 18;
-    FontFamily = style.FontFamily || 'Sans';
+    FontFamily = style.FontFamily || 'sans-serif';
 
     // text should not be visible
     text = this.mk('text',{'x': -10000,
@@ -462,7 +462,7 @@ matplot.SVGCanvas.prototype.text = function(x,y,string,style) {
     offseti = style.offseti || 0;
     offsetj = style.offsetj || 0;
     FontSize = style.FontSize || 18;
-    FontFamily = style.FontFamily || 'Sans';
+    FontFamily = style.FontFamily || 'sans-serif';
     color = style.color || 'black';
     HorizontalAlignment = style.HorizontalAlignment || 'left';
     VerticalAlignment = style.VerticalAlignment || 'baseline';
