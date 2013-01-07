@@ -797,6 +797,7 @@ matplot.cross = function (a,b) {
 };
 
 // http://publib.boulder.ibm.com/infocenter/pseries/v5r3/index.jsp?topic=/com.ibm.aix.opengl/doc/openglrf/gluProject.htm
+// http://publib.boulder.ibm.com/infocenter/pseries/v5r3/index.jsp?topic=/com.ibm.aix.opengl/doc/openglrf/gluPerspective.htm
 
 matplot.perspective = function (fovy, aspect, zNear, zFar) {
     var f = 1/Math.tan(fovy/2), z = zNear-zFar;
@@ -854,6 +855,20 @@ matplot.translate = function (dx) {
             [0,0,0,1]];
 };
 
+
+// http://en.wikipedia.org/wiki/Orthographic_projection_%28geometry%29
+// http://publib.boulder.ibm.com/infocenter/pseries/v5r3/index.jsp?topic=/com.ibm.aix.opengl/doc/openglrf/glOrtho.htm
+
+// The box is translated so that its center is at the origin, then it is scaled to the unit cube which is defined by having a minimum corner at (-1,-1,-1) and a maximum corner at (1,1,1).
+
+matplot.ortho = function (left, right, bottom, top, near, far) {
+    return numeric.dot(
+        matplot.scale([2/(right-left),2/(top-bottom),2/(far-near) ]),
+        matplot.translate([-(right+left)/2,-(top+bottom)/2,-(far+near)/2 ]));
+
+};
+
+
 // http://publib.boulder.ibm.com/infocenter/pseries/v5r3/index.jsp?topic=/com.ibm.aix.opengl/doc/openglrf/gluLookAt.htm
 /*
 Let E be the 3d column vector (eyeX, eyeY, eyeZ).
@@ -902,12 +917,34 @@ matplot.Axis.prototype.zoomIn = function() {
 }
 
 matplot.Axis.prototype.project = function(x,y,z) {
-    var i,j, b;
+    var i,j, b, v;
     z = z || 0;
 
     b = numeric.dot(this.M,[x,y,z,1]);
 
     if (this._projection === 'orthographic') {
+        
+        v = numeric.dot(numeric.dot(this.projection,this.modelView),[x,y,z,1]);
+        
+       // console.log('v',v);
+        //console.log('b ',b[0],this.x + (v[0]+1)/2 * this.w);
+        //console.log('b ',b[0],this.x+1/2 * this.w + v[0]/2 * this.w);
+
+
+        v = numeric.dot(numeric.dot(this.projection,this.modelView),[x,y,z,1]);
+
+        // perspective division
+        // http://www.glprogramming.com/red/chapter03.html
+
+        v[0] = v[0]/v[3];
+        v[1] = v[1]/v[3];
+        v[2] = v[2]/v[3];
+        v[3] = v[3]/v[3];
+
+        b = numeric.dot(this.viewport,v);
+        
+        //console.log('b v ',b[0],v[0]);
+
         // i,j in axis coordinate space
 
         /*
@@ -916,8 +953,39 @@ matplot.Axis.prototype.project = function(x,y,z) {
         */
     }
     else {
-        b[0] = b[0]/200+0.5;
-        b[1] = b[1]/200+0.5;
+//        console.log('b',b);
+
+/*        b[0] = b[0]/200+0.5;
+        b[1] = b[1]/200+0.5;*/
+/*
+
+        b[0] = b[0]+0.5;
+        b[1] = b[1]+0.5;
+*/
+
+
+
+
+        b = numeric.dot(matplot.scale([1/4,1/4,1]),b);
+/*        b[0] = b[0]/4;
+        b[1] = b[1]/4;*/
+/*
+        b[0] = b[0]+25;
+        b[1] = b[1]+25;
+        b[2] = b[2]+25;
+*/
+
+        // perspective division
+        // http://www.glprogramming.com/red/chapter03.html
+
+        b[0] = b[0]/b[3];
+        b[1] = b[1]/b[3];
+        b[2] = b[2]/b[3];
+        b[3] = b[3]/b[3];
+
+        b[0] = b[0]+0.5;
+        b[1] = b[1]+0.5;
+
     }
 
     i = b[0];
@@ -1101,11 +1169,63 @@ matplot.Axis.prototype.draw = function() {
                                 this._CameraTarget[2]+10];
 
 
+        this.modelView = matplot.LookAt(this._CameraPosition,this._CameraTarget,this._CameraUpVector);
+        console.log('modelView ',numeric.prettyPrint(this.modelView));
+
+        var databox = [
+            [this._xLim[0],this._yLim[0],this._zLim[0],1],
+            [this._xLim[1],this._yLim[0],this._zLim[0],1],
+            [this._xLim[0],this._yLim[1],this._zLim[0],1],
+            [this._xLim[1],this._yLim[1],this._zLim[0],1],
+            [this._xLim[0],this._yLim[0],this._zLim[1],1],
+            [this._xLim[1],this._yLim[0],this._zLim[1],1],
+            [this._xLim[0],this._yLim[1],this._zLim[1],1],
+            [this._xLim[1],this._yLim[1],this._zLim[1],1]
+        ];
+
+        var v, right = -Infinity, left = Infinity,
+          top = -Infinity, bottom = Infinity,
+          near = Infinity, far = -Infinity;
+
+        for (var l = 0; l < 8; l++) {
+            v = numeric.dot(this.modelView,databox[l]);
+            console.log('v', v);
+            left = Math.min(left,v[0]);
+            right = Math.max(right,v[0]);
+
+            top = Math.max(top,v[1]);
+            bottom = Math.min(bottom,v[1]);
+
+            near = Math.min(near,v[2]);
+            far = Math.max(far,v[2]);
+        }
+        
+        console.log('rl', left, right, bottom, top, near, far);
+        this.projection = matplot.ortho(left, right, bottom, top, near, far);
+
         this.M = numeric.dot(
             matplot.translate([this.x,this.y,0]),
             numeric.dot(
                 matplot.scale([this.w/(this._xLim[1]-this._xLim[0]),this.h/(this._yLim[1]-this._yLim[0]),1]),
                 matplot.translate([-this._xLim[0],-this._yLim[0],0])));
+
+
+        this.viewport = numeric.dot(
+            matplot.translate([this.x,this.y,0]),
+            numeric.dot(
+                matplot.scale([this.w/2,this.h/2,1]),
+                matplot.translate([1,1,0])));
+
+
+        console.log('projection ',numeric.prettyPrint(this.projection));
+
+        console.log('v  ',databox[0]);
+
+        v = numeric.dot(this.modelView,databox[0]);
+        console.log('mv v  ',v);
+
+        v = numeric.dot(numeric.dot(this.projection,this.modelView),databox[0]);
+        console.log('p mv v  ',v);
 
     }
     else {
@@ -1127,6 +1247,7 @@ matplot.Axis.prototype.draw = function() {
         var projection = matplot.perspective(fovy, aspect, zNear, zFar);
 
         console.log('projection ',numeric.prettyPrint(projection));
+
         this.M = numeric.dot(projection,modelView);
 
         console.log('M ',numeric.prettyPrint(this.M));
@@ -1138,7 +1259,10 @@ matplot.Axis.prototype.draw = function() {
 
         console.log('i ,j ',this.project(this._CameraTarget[0],this._CameraTarget[1],this._CameraTarget[2]));
 
-        //this.M = numeric.dot(modelView,projection);
+//        this.M = numeric.dot(matplot.scale([1/200,1/200,1]),this.M);
+
+//        this.M = numeric.dot(matplot.translate([0.5,0.5,0]),this.M);
+
     }
 
     if (!is2D) {
