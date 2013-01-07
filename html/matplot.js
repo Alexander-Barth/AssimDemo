@@ -1167,36 +1167,26 @@ matplot.Axis.prototype.draw = function() {
                 matplot.scale([this.w/2,this.h/2,1]),
                 matplot.translate([1,1,0])));
 
-
         console.log('projection ',numeric.prettyPrint(this.projection));
-
         console.log('v  ',databox[0]);
-
         v = numeric.dot(this.modelView,databox[0]);
         console.log('mv v  ',v);
-
         v = numeric.dot(numeric.dot(this.projection,this.modelView),databox[0]);
         console.log('p mv v  ',v);
-
     }
     else {
         var aspect = 1;
         var zNear = -10;
         var zFar = 20;
-
         this.projection = matplot.perspective(this._CameraViewAngle * Math.PI/180, aspect, zNear, zFar);
-
         console.log('projection ',numeric.prettyPrint(this.projection));
-
         console.log('Target ',this._CameraTarget);
-
         console.log('MV * Target',  numeric.dot(this.modelView,[this._CameraTarget[0],this._CameraTarget[1],this._CameraTarget[2],1]));
         //console.log('MV * Target',  numeric.dot(this.modelView,[this._CameraTarget[0]-this._CameraPosition[0],this._CameraTarget[1]-this._CameraPosition[1],this._CameraTarget[2]-this._CameraPosition[2],1]));
-
         console.log('i ,j ',this.project(this._CameraTarget[0],this._CameraTarget[1],this._CameraTarget[2]));
 
         this.viewport = 
-            numeric.dot(matplot.translate([.5,.5,0]),
+            numeric.dot(matplot.translate([this.x + this.w/2,this.y + this.h/2,0]),
                         matplot.scale([1/4,1/4,1]));
 
     }
