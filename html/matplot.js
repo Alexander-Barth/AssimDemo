@@ -920,6 +920,7 @@ matplot.Axis.prototype.project = function(x,y,z) {
     var i,j, b, v;
     z = z || 0;
 
+    // apply first ModelView matrix and then projection matrix
     v = numeric.dot(this.projectionModelView,[x,y,z,1]);
 
     // perspective division
@@ -930,46 +931,8 @@ matplot.Axis.prototype.project = function(x,y,z) {
     v[2] = v[2]/v[3];
     v[3] = v[3]/v[3];
 
-    if (this._projection === 'orthographic') {
-        v = numeric.dot(this.viewport,v);
-
-        // i,j in axis coordinate space
-
-        /*
-        i = this.x + (x-this._xLim[0])/(this._xLim[1]-this._xLim[0]) * this.w;
-        j = this.y + (y-this._yLim[0])/(this._yLim[1]-this._yLim[0]) * this.h;
-        */
-    }
-    else {
-//        console.log('b',b);
-
-/*        b[0] = b[0]/200+0.5;
-        b[1] = b[1]/200+0.5;*/
-/*
-
-        b[0] = b[0]+0.5;
-        b[1] = b[1]+0.5;
-*/
-
-
-
-
-/*        v[0] = v[0]/4;
-        v[1] = v[1]/4;*/
-/*
-        v[0] = v[0]+25;
-        v[1] = v[1]+25;
-        v[2] = v[2]+25;
-*/
-
-
-        v = numeric.dot(
-            matplot.scale([1/4,1/4,1]),v);
-
-        v[0] = v[0]+0.5;
-        v[1] = v[1]+0.5;
-
-    }
+    // viewport transformation
+    v = numeric.dot(this.viewport,v);
 
     i = v[0];
     j = v[1];
@@ -1241,6 +1204,10 @@ matplot.Axis.prototype.draw = function() {
 //        this.M = numeric.dot(matplot.scale([1/200,1/200,1]),this.M);
 
 //        this.M = numeric.dot(matplot.translate([0.5,0.5,0]),this.M);
+
+        this.viewport = 
+            numeric.dot(matplot.translate([.5,.5,0]),
+                        matplot.scale([1/4,1/4,1]));
 
     }
     this.projectionModelView = numeric.dot(this.projection,this.modelView);
