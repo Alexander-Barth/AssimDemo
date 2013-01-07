@@ -1124,30 +1124,41 @@ matplot.Axis.prototype.draw = function() {
         this._CameraPosition = [this._CameraTarget[0],
                                 this._CameraTarget[1],
                                 this._CameraTarget[2]+10];
+    }
+    else {
+        this._CameraPosition = [-36.5257, -47.6012, 86.6025];
+        //this._CameraPosition = [-27.394,  -35.701,   25.981];
+        this._CameraPosition = [27.394,  35.701,   25.981];
+        // z-direction if upward
+	this._CameraUpVector = [0, 0, 1];
+	this._CameraViewAngle = [9];
+    }
+
+    this.modelView = matplot.LookAt(this._CameraPosition,this._CameraTarget,this._CameraUpVector);
+    console.log('modelView ',numeric.prettyPrint(this.modelView));
 
 
-        this.modelView = matplot.LookAt(this._CameraPosition,this._CameraTarget,this._CameraUpVector);
-        console.log('modelView ',numeric.prettyPrint(this.modelView));
-
-
-        var v, right = -Infinity, left = Infinity,
-          top = -Infinity, bottom = Infinity,
-          near = Infinity, far = -Infinity;
-
-        for (var l = 0; l < 8; l++) {
-            v = numeric.dot(this.modelView,databox[l]);
-            console.log('v', v);
-            left = Math.min(left,v[0]);
-            right = Math.max(right,v[0]);
-
-            top = Math.max(top,v[1]);
-            bottom = Math.min(bottom,v[1]);
-
-            near = Math.min(near,v[2]);
-            far = Math.max(far,v[2]);
-        }
+    var v, right = -Infinity, left = Infinity,
+    top = -Infinity, bottom = Infinity,
+    near = Infinity, far = -Infinity;
+    
+    for (var l = 0; l < 8; l++) {
+        v = numeric.dot(this.modelView,databox[l]);
+        console.log('v', v);
+        left = Math.min(left,v[0]);
+        right = Math.max(right,v[0]);
         
-        console.log('rl', left, right, bottom, top, near, far);
+        top = Math.max(top,v[1]);
+        bottom = Math.min(bottom,v[1]);
+        
+        near = Math.min(near,v[2]);
+        far = Math.max(far,v[2]);
+    }
+        
+    console.log('rl', left, right, bottom, top, near, far);
+
+
+    if (this._projection === 'orthographic') {
         this.projection = matplot.ortho(left, right, bottom, top, near, far);
 
         this.viewport = numeric.dot(
@@ -1169,19 +1180,9 @@ matplot.Axis.prototype.draw = function() {
 
     }
     else {
-        this._CameraPosition = [-36.5257, -47.6012, 86.6025];
-        //this._CameraPosition = [-27.394,  -35.701,   25.981];
-        this._CameraPosition = [27.394,  35.701,   25.981];
-        // z-direction if upward
-	this._CameraUpVector = [0, 0, 1];
-	this._CameraViewAngle = [9];
-
         var aspect = 1;
         var zNear = -10;
         var zFar = 20;
-
-        this.modelView = matplot.LookAt(this._CameraPosition,this._CameraTarget,this._CameraUpVector);
-        console.log('modelView ',numeric.prettyPrint(this.modelView));
 
         this.projection = matplot.perspective(this._CameraViewAngle * Math.PI/180, aspect, zNear, zFar);
 
