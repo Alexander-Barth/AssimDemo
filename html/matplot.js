@@ -1150,8 +1150,6 @@ matplot.Axis.prototype.draw = function() {
         console.log('rl', left, right, bottom, top, near, far);
         this.projection = matplot.ortho(left, right, bottom, top, near, far);
 
-        this.projectionModelView = numeric.dot(this.projection,this.modelView);
-
         this.viewport = numeric.dot(
             matplot.translate([this.x,this.y,0]),
             numeric.dot(
@@ -1176,9 +1174,8 @@ matplot.Axis.prototype.draw = function() {
         this._CameraPosition = [27.394,  35.701,   25.981];
         // z-direction if upward
 	this._CameraUpVector = [0, 0, 1];
-	this._CameraViewAngle = [10.3396];
+	this._CameraViewAngle = [9];
 
-        var fovy  = Math.PI/20;
         var aspect = 1;
         var zNear = -10;
         var zFar = 20;
@@ -1186,13 +1183,9 @@ matplot.Axis.prototype.draw = function() {
         this.modelView = matplot.LookAt(this._CameraPosition,this._CameraTarget,this._CameraUpVector);
         console.log('modelView ',numeric.prettyPrint(this.modelView));
 
-        this.projection = matplot.perspective(fovy, aspect, zNear, zFar);
+        this.projection = matplot.perspective(this._CameraViewAngle * Math.PI/180, aspect, zNear, zFar);
 
         console.log('projection ',numeric.prettyPrint(this.projection));
-
-        this.M = numeric.dot(this.projection,this.modelView);
-
-        console.log('M ',numeric.prettyPrint(this.M));
 
         console.log('Target ',this._CameraTarget);
 
@@ -1200,10 +1193,6 @@ matplot.Axis.prototype.draw = function() {
         //console.log('MV * Target',  numeric.dot(this.modelView,[this._CameraTarget[0]-this._CameraPosition[0],this._CameraTarget[1]-this._CameraPosition[1],this._CameraTarget[2]-this._CameraPosition[2],1]));
 
         console.log('i ,j ',this.project(this._CameraTarget[0],this._CameraTarget[1],this._CameraTarget[2]));
-
-//        this.M = numeric.dot(matplot.scale([1/200,1/200,1]),this.M);
-
-//        this.M = numeric.dot(matplot.translate([0.5,0.5,0]),this.M);
 
         this.viewport = 
             numeric.dot(matplot.translate([.5,.5,0]),
