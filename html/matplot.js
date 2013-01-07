@@ -1040,9 +1040,9 @@ matplot.Axis.prototype.surf = function(x,y,z) {
 };
 
 matplot.Axis.prototype.is2dim = function() {
-    var _zrange = this.zLim();
+    var _zrange = this._zrange;
 
-    return (this._zrange[0] === this._zrange[1]) || (this._zrange[0] !== this._zrange[0]);
+    return (_zrange[0] === _zrange[1]);
 };
 
 matplot.Axis.prototype.draw = function() {
@@ -1131,7 +1131,7 @@ matplot.Axis.prototype.draw = function() {
         this._CameraPosition = [27.394,  35.701,   25.981];
         // z-direction if upward
 	this._CameraUpVector = [0, 0, 1];
-	this._CameraViewAngle = [9];
+	this._CameraViewAngle = [13];
     }
 
     this.modelView = matplot.LookAt(this._CameraPosition,this._CameraTarget,this._CameraUpVector);
@@ -1167,6 +1167,10 @@ matplot.Axis.prototype.draw = function() {
                 matplot.scale([this.w/2,this.h/2,1]),
                 matplot.translate([1,1,0])));
 
+        this.viewport = numeric.dot(
+            matplot.translate([this.x+this.w/2,this.y+this.h/2,0]),
+            matplot.scale([this.w/2,this.h/2,1]));
+
         console.log('projection ',numeric.prettyPrint(this.projection));
         console.log('v  ',databox[0]);
         v = numeric.dot(this.modelView,databox[0]);
@@ -1177,7 +1181,7 @@ matplot.Axis.prototype.draw = function() {
     else {
         var aspect = 1;
         var zNear = -10;
-        var zFar = 20;
+        var zFar = 200;
         this.projection = matplot.perspective(this._CameraViewAngle * Math.PI/180, aspect, zNear, zFar);
         console.log('projection ',numeric.prettyPrint(this.projection));
         console.log('Target ',this._CameraTarget);
@@ -1189,9 +1193,43 @@ matplot.Axis.prototype.draw = function() {
             numeric.dot(matplot.translate([this.x + this.w/2,this.y + this.h/2,0]),
                         matplot.scale([1/4,1/4,1]));
 
+        this.viewport = 
+            numeric.dot(matplot.translate([this.x + this.w/2,this.y + this.h/2,0]),
+                        matplot.scale([1/2,1/2,1]));
+
+        this.viewport = numeric.dot(
+            matplot.translate([this.x+this.w/2,this.y+this.h/2,0]),
+            matplot.scale([this.w/2,this.h/2,1]));
     }
     this.projectionModelView = numeric.dot(this.projection,this.modelView);
 
+
+    // perspective test
+
+    var v, right = -Infinity, left = Infinity,
+    top = -Infinity, bottom = Infinity,
+    near = Infinity, far = -Infinity;
+    
+    for (var l = 0; l < 8; l++) {
+        v = numeric.dot(this.projectionModelView,databox[l]);
+    v[0] = v[0]/v[3];
+    v[1] = v[1]/v[3];
+    v[2] = v[2]/v[3];
+    v[3] = v[3]/v[3];
+
+        console.log('v', v);
+        left = Math.min(left,v[0]);
+        right = Math.max(right,v[0]);
+        
+        top = Math.max(top,v[1]);
+        bottom = Math.min(bottom,v[1]);
+        
+        near = Math.min(near,v[2]);
+        far = Math.max(far,v[2]);
+    }
+
+     console.log('rl', left, right, bottom, top, near, far);
+   console.log('right-left', this._projection,right,left,right-left,is2D);
 
     if (!is2D) {
         k = 0;
