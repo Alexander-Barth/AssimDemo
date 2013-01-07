@@ -787,6 +787,17 @@ matplot.Axis.prototype.zLimMode = getterSetterVal('_zLimMode',['auto','manual'])
 matplot.Axis.prototype.cLimMode = getterSetterVal('_cLimMode',['auto','manual']);
 
 
+// makes a product of all matrices provided as arguments
+
+matplot.prod = function (M) {
+    var i;
+
+    for (i=1; i < arguments.length; i++) {
+        M = numeric.dot(M,arguments[i]);
+    }
+
+    return M;
+};
 
 matplot.cross = function (a,b) {
     var c = [];
@@ -936,13 +947,6 @@ matplot.Axis.prototype.project = function(x,y,z) {
 
     i = v[0];
     j = v[1];
-
-    // reverse j axis
-    j = 1-j;
-
-    // i,j in figure space (pixels)
-    i = i * this.fig.canvas.width;
-    j = j * this.fig.canvas.height;
 
     return {i:i,j:j};
 
@@ -1186,6 +1190,20 @@ matplot.Axis.prototype.draw = function() {
     this.viewport = numeric.dot(
         matplot.translate([this.x+this.w/2,this.y+this.h/2,0]),
         matplot.scale([this.w/2,this.h/2,1]));
+
+    this.viewport = matplot.prod(
+        // transform relative coordinates in pixels
+        matplot.scale([this.fig.canvas.width,this.fig.canvas.height,1]),
+        // reverse j-axis (1-j)
+        matplot.translate([0,1,0]),
+        matplot.scale([1,-1,1]),
+        // from [-w/2,w/2] to [x,x+w/2] 
+        // (unit fraction of figure width/height)
+        matplot.translate([this.x+this.w/2,this.y+this.h/2,0]),
+        // from [-1,1] to [-w/2,w/2] 
+        // (unit fraction of figure width/height)
+        matplot.scale([this.w/2,this.h/2,1])
+    );
 
     // perspective test
 
