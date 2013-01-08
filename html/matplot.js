@@ -931,10 +931,10 @@ matplot.Axis.prototype.project = function(x,y,z) {
     var i,j, b, v;
     z = z || 0;
 
-    // apply first ModelView matrix and then projection matrix
+    // Apply first ModelView matrix and then Projection matrix
     v = numeric.dot(this.projectionModelView,[x,y,z,1]);
 
-    // perspective division
+    // Perspective division
     // http://www.glprogramming.com/red/chapter03.html
     
     v[0] = v[0]/v[3];
@@ -945,10 +945,7 @@ matplot.Axis.prototype.project = function(x,y,z) {
     // viewport transformation
     v = numeric.dot(this.viewport,v);
 
-    i = v[0];
-    j = v[1];
-
-    return {i:i,j:j};
+    return v;
 
 };
 
@@ -1369,9 +1366,9 @@ matplot.Axis.prototype.drawXTicks = function() {
     for (i = 0; i < this.xTick.length; i++) {
         pos = this.project(this.xTick[i],y);
 
-        this.fig.canvas.line([pos.i,pos.i],
-                                 [pos.j-this.xTickLen/2,pos.j+this.xTickLen/2],
-                                 {color: 'black'});
+        this.fig.canvas.line([pos[0],pos[0]],
+                             [pos[1]-this.xTickLen/2,pos[1]+this.xTickLen/2],
+                             {color: 'black'});
 
         this.text(this.xTick[i],y,0,this.xTickLabel[i],style);
 
@@ -1410,9 +1407,9 @@ matplot.Axis.prototype.drawYTicks = function() {
     for (i = 0; i < this.yTick.length; i++) {
         pos = this.project(x,this.yTick[i]);
 
-        this.fig.canvas.line([pos.i-this.yTickLen/2,pos.i+this.yTickLen/2],
-                                 [pos.j,pos.j],
-                                 {color: 'black'});
+        this.fig.canvas.line([pos[0]-this.yTickLen/2,pos[0]+this.yTickLen/2],
+                             [pos[1],pos[1]],
+                             {color: 'black'});
 
         this.text(x,this.yTick[i],0,this.yTickLabel[i],style);
 
@@ -1499,8 +1496,8 @@ matplot.Axis.prototype.rect = function(x,y,v) {
         info = v.toString();
     }
 
-    this.fig.canvas.rect(ll.i,ll.j,
-                         up.i - ll.i,up.j - ll.j,
+    this.fig.canvas.rect(ll[0],ll[1],
+                         up[0] - ll[0],up[1] - ll[1],
                          {fill: color,stroke: color,info: info});
 };
 
@@ -1509,16 +1506,16 @@ matplot.Axis.prototype.text = function(x,y,z,string,style) {
     var pos;
 
     pos = this.project(x,y,z);
-    this.fig.canvas.text(pos.i,pos.j,string,style);
+    this.fig.canvas.text(pos[0],pos[1],string,style);
 };
 
 matplot.Axis.prototype.polygon = function(x,y,z,v) {
-    var p, i = [], j = [], l, color, onclick, that = this;
+    var pos, i = [], j = [], l, color, onclick, that = this;
 
     for (l = 0; l < x.length; l++) {
-        p = this.project(x[l],y[l],z[l]);
-        i.push(p.i);
-        j.push(p.j);
+        pos = this.project(x[l],y[l],z[l]);
+        i.push(pos[0]);
+        j.push(pos[1]);
     }
     color = this.cmap.get(v);
 
@@ -1547,13 +1544,13 @@ matplot.Axis.prototype.polygon = function(x,y,z,v) {
 
 
 matplot.Axis.prototype.addAnnotation = function(x,y,z,text,style) {
-    var bbox, p, an = {}, padding = 4, i, j, that = this, w, h;
+    var bbox, pos, an = {}, padding = 4, i, j, that = this, w, h;
     style = style || {};
 
-    p = this.project(x,y,z);
+    pos = this.project(x,y,z);
     bbox = this.fig.canvas.textBBox(text);
-    i = p.i;
-    j = p.j;
+    i = pos[0];
+    j = pos[1];
     w = bbox.width + 2*padding;
     h = bbox.height + 2*padding;
 
@@ -1633,13 +1630,13 @@ matplot.Axis.prototype.toggleAnnotation = function(event,elem,x,y,z,text) {
 };
 
 matplot.Axis.prototype.drawLine = function(x,y,z,style) {
-    var p, i=[], j=[], l;
+    var pos, i=[], j=[], l;
     style = style || {};
 
     for (l = 0; l < x.length; l++) {
-        p = this.project(x[l],y[l],z[l]);
-        i.push(p.i);
-        j.push(p.j);
+        pos = this.project(x[l],y[l],z[l]);
+        i.push(pos[0]);
+        j.push(pos[1]);
     }
 
     this.drawProjectedLine(i,j,style,x,y,z);
