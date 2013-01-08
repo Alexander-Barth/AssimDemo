@@ -352,7 +352,7 @@ matplot.SVGCanvas = function SVGCanvas(container,width,height) {
 
     this.container = container;
     this.container.appendChild(
-        this.svg = this.mk('svg',{width: width, height: height, 'style': 'border: 1px solid black'},
+        this.svg = this.mk('svg',{width: width, height: height},
            [this.axis = this.mk('g')]));
 };
 
