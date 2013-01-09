@@ -1233,18 +1233,16 @@ matplot.Axis.prototype.draw = function() {
         //console.log('projection ',numeric.prettyPrint(this.projection));
         v = numeric.dot(this.modelView,databox[0]);
         v = numeric.dot(numeric.dot(this.projection,this.modelView),databox[0]);
-        console.log('p mv v  ',v);
     }
     else {
         var aspect = 1;
         var zNear = -10;
         var zFar = 200;
         this.projection = matplot.perspective(this._CameraViewAngle * Math.PI/180, aspect, zNear, zFar);
-        console.log('projection ',numeric.prettyPrint(this.projection));
-        console.log('Target ',this._CameraTarget);
-        console.log('MV * Target',  numeric.dot(this.modelView,[this._CameraTarget[0],this._CameraTarget[1],this._CameraTarget[2],1]));
+        //console.log('projection ',numeric.prettyPrint(this.projection));
+        //console.log('Target ',this._CameraTarget);
+        //console.log('MV * Target',  numeric.dot(this.modelView,[this._CameraTarget[0],this._CameraTarget[1],this._CameraTarget[2],1]));
         //console.log('MV * Target',  numeric.dot(this.modelView,[this._CameraTarget[0]-this._CameraPosition[0],this._CameraTarget[1]-this._CameraPosition[1],this._CameraTarget[2]-this._CameraPosition[2],1]));
-        console.log('i ,j ',this.project(this._CameraTarget[0],this._CameraTarget[1],this._CameraTarget[2]));
 
     }
 
@@ -1286,7 +1284,7 @@ matplot.Axis.prototype.draw = function() {
     v[2] = v[2]/v[3];
     v[3] = v[3]/v[3];
 
-        console.log('v', v);
+        //console.log('v', v);
         left = Math.min(left,v[0]);
         right = Math.max(right,v[0]);
         
@@ -1297,8 +1295,7 @@ matplot.Axis.prototype.draw = function() {
         far = Math.max(far,v[2]);
     }
 
-     console.log('rl', left, right, bottom, top, near, far);
-   console.log('right-left', this._projection,right,left,right-left,is2D);
+    //console.log('rl', left, right, bottom, top, near, far);
 
     if (!is2D) {
         k = 0;
@@ -1529,7 +1526,6 @@ matplot.Axis.prototype.drawLegend = function() {
         label = style.label;
 
         if (label !== undefined && label !== '') {
-            console.log('label ',label);
             bbox = this.fig.canvas.textBBox(label);
             maxWidth = Math.max(maxWidth,bbox.width);
             maxHeight = Math.max(maxHeight,bbox.height);
@@ -1538,13 +1534,10 @@ matplot.Axis.prototype.drawLegend = function() {
                 maxMarkerSize = Math.max(maxMarkerSize,style.MarkerSize);
             }
 
-            console.log('bbox ',bbox);
             n = n+1;
         }
 
     }
-
-    console.log('bbox ',maxWidth,maxHeight,maxMarkerSize);
 
     var margin = 10, padding = 7, lineSpace = 1, iconWidth = 25, iconSep = 5;
 
@@ -1692,7 +1685,6 @@ matplot.Axis.prototype.toggleAnnotation = function(event,elem,x,y,z,text) {
         text = '[' + coord + ']';
     }
 
-    console.log('lala',[x,y],event,elem);
 
     // search for index
     for (i = 0; i < this.annotatedElements.length; i++) {
@@ -1810,30 +1802,6 @@ matplot.Figure = function Figure(id,width,height) {
     var that = this;
     this.container = document.getElementById(id);
 
-    addWheelListener(this.container, 
-                     function( e ) { 
-                         var i,j, ax;
-                         i = e.pageX - that.container.offsetLeft;
-                         j = e.pageY - that.container.offsetTop;
-
-                         console.log('wheel', e.deltaY,e,e.clientX,e.clientY,that.container.offsetTop,e.pageY,i,j ); 
-                         e.preventDefault(); 
-
-                         ax = that._axes[0];
-                         
-                         var v = ax.unproject(i,j);
-                         var test = ax.project(v[0],v[1],v[2]);
-                         console.log('unproject ',i,j,v,test);
-
-                         var xlim = ax.xLim();
-                         var xr = (1 - e.deltaY/20) * (xlim[1]-xlim[0]);
-                         
-                         console.log('xr ',xr,[v[0] - xr/2,v[0] + xr/2]);
-                         ax.xLim([v[0] - xr/2,v[0] + xr/2]);
-                         that.draw();
-
-                     }                    
-                    );
 
     this.outerDIV =
         matplot.mk(null,'div',
@@ -1853,6 +1821,47 @@ matplot.Figure = function Figure(id,width,height) {
 
     this.canvas = new matplot.SVGCanvas(this.container,width,height);
     this._axes = [];
+
+
+    addWheelListener(this.canvas.svg, 
+                     function( e ) { 
+                         var i,j, ax;
+                         i = e.pageX - that.container.offsetLeft;
+                         j = e.pageY - that.container.offsetTop;
+
+                         console.log('wheel', e.deltaY,e,e.clientX,e.clientY,that.container.offsetTop,e.pageY,i,j ); 
+                         e.preventDefault(); 
+
+                         ax = that._axes[0];
+                         
+                         
+                         var v = ax.unproject(i,j);
+                         var test = ax.project(v[0],v[1],v[2]);
+                         console.log('unproject ',i,j,v,test);
+                         
+
+                         var xlim = ax.xLim();
+
+
+                         var alpha = (1 + Math.abs(e.deltaY)/20);
+                         var xr, xc;
+
+                         if (e.deltaY > 0) {
+                             xr = alpha * (xlim[1]-xlim[0]);
+                             xc = alpha * (xlim[0]+xlim[1])/2 + (1-alpha) * v[0];
+                         }
+                         else {
+                             xr =  (xlim[1]-xlim[0]) / alpha;
+                             xc = ((xlim[0]+xlim[1])/2 - (1-alpha) * v[0])/alpha;
+                         }
+
+                         console.log('xr ',xr,[xc - xr/2,xc + xr/2]);
+                         ax.xLim([xc - xr/2,xc + xr/2]);
+                         that.draw();
+
+                     }                    
+                    );
+
 };
 
 matplot.Figure.prototype.axes = function(x,y,w,h) {
