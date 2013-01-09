@@ -515,7 +515,7 @@ matplot.SVGCanvas.prototype.text = function(x,y,string,style) {
     VerticalAlignment = style.VerticalAlignment || 'baseline';
 
 
-    console.log('offsetj',offsetj,VerticalAlignment);
+    //console.log('offsetj',offsetj,VerticalAlignment);
     if (HorizontalAlignment === 'left') {
         TextAnchor = 'start';
     }
@@ -1002,7 +1002,19 @@ matplot.Axis.prototype.project = function(x,y,z) {
     v = numeric.dot(this.viewport,v);
 
     return v;
+};
 
+matplot.Axis.prototype.unproject = function(i,j) {
+    var i,j, b, v;
+    v = [i,j,0,1];
+
+    // inverse viewport transformation
+    v = numeric.dot(this.invViewport,v);
+
+    // inverse of ModelView matrix and then Projection matrix
+    v = numeric.dot(this.invProjectionModelView,v);
+
+    return v;
 };
 
 matplot.Axis.prototype.lim = function(what) {
@@ -1158,7 +1170,7 @@ matplot.Axis.prototype.draw = function() {
         this._projection = 'perspective';
     }
 
-    console.log('is2D',is2D,this._zLim);
+    //console.log('is2D',is2D,this._zLim);
     // camera
     this._CameraTarget = [(this._xLim[0]+this._xLim[1])/2,
                           (this._yLim[0]+this._yLim[1])/2,
@@ -1192,7 +1204,7 @@ matplot.Axis.prototype.draw = function() {
     }
 
     this.modelView = matplot.LookAt(this._CameraPosition,this._CameraTarget,this._CameraUpVector);
-    console.log('modelView ',numeric.prettyPrint(this.modelView));
+    //console.log('modelView ',numeric.prettyPrint(this.modelView));
 
 
     var v, right = -Infinity, left = Infinity,
@@ -1201,7 +1213,7 @@ matplot.Axis.prototype.draw = function() {
     
     for (var l = 0; l < 8; l++) {
         v = numeric.dot(this.modelView,databox[l]);
-        console.log('v', v);
+        //console.log('v', v);
         left = Math.min(left,v[0]);
         right = Math.max(right,v[0]);
         
@@ -1212,16 +1224,14 @@ matplot.Axis.prototype.draw = function() {
         far = Math.max(far,v[2]);
     }
         
-    console.log('rl', left, right, bottom, top, near, far);
+    //console.log('rl', left, right, bottom, top, near, far);
 
 
     if (this._projection === 'orthographic') {
         this.projection = matplot.ortho(left, right, bottom, top, near, far);
 
-        console.log('projection ',numeric.prettyPrint(this.projection));
-        console.log('v  ',databox[0]);
+        //console.log('projection ',numeric.prettyPrint(this.projection));
         v = numeric.dot(this.modelView,databox[0]);
-        console.log('mv v  ',v);
         v = numeric.dot(numeric.dot(this.projection,this.modelView),databox[0]);
         console.log('p mv v  ',v);
     }
@@ -1257,6 +1267,11 @@ matplot.Axis.prototype.draw = function() {
         // (unit fraction of figure width/height)
         matplot.scale([this.w/2,this.h/2,1])
     );
+
+    // inverse of this.viewport and this.projectionModelView
+
+    this.invViewport = numeric.inv(this.viewport);
+    this.invProjectionModelView = numeric.inv(this.projectionModelView);
 
     // perspective test
 
@@ -1797,12 +1812,26 @@ matplot.Figure = function Figure(id,width,height) {
 
     addWheelListener(this.container, 
                      function( e ) { 
-                         var i,j;
+                         var i,j, ax;
                          i = e.pageX - that.container.offsetLeft;
                          j = e.pageY - that.container.offsetTop;
 
                          console.log('wheel', e.deltaY,e,e.clientX,e.clientY,that.container.offsetTop,e.pageY,i,j ); 
                          e.preventDefault(); 
+
+                         ax = that._axes[0];
+                         
+                         var v = ax.unproject(i,j);
+                         var test = ax.project(v[0],v[1],v[2]);
+                         console.log('unproject ',i,j,v,test);
+
+                         var xlim = ax.xLim();
+                         var xr = (1 - e.deltaY/20) * (xlim[1]-xlim[0]);
+                         
+                         console.log('xr ',xr,[v[0] - xr/2,v[0] + xr/2]);
+                         ax.xLim([v[0] - xr/2,v[0] + xr/2]);
+                         that.draw();
+
                      }                    
                     );
 
