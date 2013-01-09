@@ -353,7 +353,27 @@ matplot.SVGCanvas = function SVGCanvas(container,width,height) {
     this.container = container;
     this.container.appendChild(
         this.svg = this.mk('svg',{width: width, height: height},
-           [this.axis = this.mk('g')]));
+                           [this.axis = this.mk('g',{})]));
+
+    this.parentStack = [this.axis];
+
+    this.idconter = 0;
+};
+
+matplot.SVGCanvas.prototype.id = function () {
+    return 'matplot' + (this.idconter++);
+};
+
+matplot.SVGCanvas.prototype.push = function (elem) {
+    this.parentStack.push(elem);
+};
+
+matplot.SVGCanvas.prototype.pop = function () {
+    return this.parentStack.pop();
+};
+
+matplot.SVGCanvas.prototype.parent = function () {
+    return this.parentStack[this.parentStack.length-1];
 };
 
 matplot.SVGCanvas.prototype.mk = function mk(tag,attribs,children) {
@@ -361,22 +381,49 @@ matplot.SVGCanvas.prototype.mk = function mk(tag,attribs,children) {
     return matplot.mk(xmlns,tag,attribs,children);
 };
 
+matplot.SVGCanvas.prototype.append = function(elem) {
+
+};
 
 matplot.SVGCanvas.prototype.remove = function(elem) {
-    this.axis.removeChild(elem);
+    this.parent().removeChild(elem);
 };
 
 matplot.SVGCanvas.prototype.clear = function() {
-    while (this.axis.firstChild) {
-        this.axis.removeChild(this.axis.firstChild);    
+    while (this.parent().firstChild) {
+        this.parent().removeChild(this.parent().firstChild);    
     }
+};
+
+matplot.SVGCanvas.prototype.clipRect = function(x,y,w,h) {
+    var id = this.id();
+
+    this.parent().appendChild(
+        this.mk('defs',{},[
+            this.mk('clipPath',{id: id},[
+                this.mk('rect',{x: x, y:y, width: w, height: h},[])
+            ])
+        ]));
+    
+    this.push(this.group({'clip-path': 'url(#' + id + ')'}))
+};
+
+matplot.SVGCanvas.prototype.group = function(style) {
+    var group;
+    style = style || {};
+
+    this.parent().appendChild(
+        group = this.mk('g',
+                        {'clip-path': style['clip-path']}));
+
+    return group;
 };
 
 matplot.SVGCanvas.prototype.rect = function(x,y,width,height,style) {
     var rect;
     style = style || {};
 
-    this.axis.appendChild(
+    this.parent().appendChild(
         rect = this.mk('rect',
                        {x: x,
                         y: y,
@@ -398,7 +445,7 @@ matplot.SVGCanvas.prototype.circle = function(x,y,radius,style) {
     var circle;
     style = style || {};
 
-    this.axis.appendChild(
+    this.parent().appendChild(
         circle = this.mk('circle',
                          {cx: x,
                           cy: y,
@@ -423,7 +470,7 @@ matplot.SVGCanvas.prototype.polygon = function(x,y,style) {
         points += x[i] + ',' + y[i] + ' ';
     }
 
-    this.axis.appendChild(
+    this.parent().appendChild(
         polygon = this.mk('polygon',
                          {points: points,
                           onclick: style.onclick,
@@ -447,9 +494,9 @@ matplot.SVGCanvas.prototype.textBBox = function(string,style) {
                               'font-family': FontFamily,
                               'font-size': FontSize},[string]);
 
-    this.axis.appendChild(text);
+    this.parent().appendChild(text);
     bbox = text.getBBox();
-    this.axis.removeChild(text);
+    this.parent().removeChild(text);
 
     return {width: bbox.width, height: bbox.height};
 };
@@ -494,7 +541,7 @@ matplot.SVGCanvas.prototype.text = function(x,y,string,style) {
         dy = 0;
     }
 
-    this.axis.appendChild(
+    this.parent().appendChild(
         text = this.mk('text',{'x': x+offseti,
                    'y': y+offsetj,
                    'font-family': FontFamily,
@@ -532,7 +579,7 @@ matplot.SVGCanvas.prototype.line = function(x,y,style) {
         points += x[i] + ',' + y[i] + ' ';
     }
 
-    this.axis.appendChild(
+    this.parent().appendChild(
         polyline = this.mk('polyline',
                            {points: points,
                             onclick: style.onclick,
@@ -733,7 +780,7 @@ matplot.Axis = function Axis(fig,x,y,w,h) {
         }
     };
     this.annotatedElements = [];
-
+    this._annotations = [];
 };
 
 function getterSetterMode(func,prop,mode) {
@@ -752,6 +799,8 @@ function getterSetterMode(func,prop,mode) {
             this[prop] = data;
             this[mode] = 'manual';
         }
+
+        return this;
     };
 }
 
@@ -771,6 +820,8 @@ function getterSetterVal(prop,vals) {
                 this[prop] = data;
             }
         }
+
+        return this;
     };
 }
 
@@ -785,6 +836,11 @@ matplot.Axis.prototype.xLimMode = getterSetterVal('_xLimMode',['auto','manual'])
 matplot.Axis.prototype.yLimMode = getterSetterVal('_yLimMode',['auto','manual']);
 matplot.Axis.prototype.zLimMode = getterSetterVal('_zLimMode',['auto','manual']);
 matplot.Axis.prototype.cLimMode = getterSetterVal('_cLimMode',['auto','manual']);
+
+
+matplot.Axis.prototype.xtick = getterSetterMode(function() { return this.xTick; },'xTick','xTickMode');
+matplot.Axis.prototype.ytick = getterSetterMode(function() { return this.yTick; },'yTick','yTickMode');
+matplot.Axis.prototype.ztick = getterSetterMode(function() { return this.zTick; },'zTick','zTickMode');
 
 
 // makes a product of all matrices provided as arguments
@@ -924,7 +980,7 @@ Compute U' = S x L.
 
 matplot.Axis.prototype.zoomIn = function() {
     var xl = this.xLim();
-
+    
 }
 
 matplot.Axis.prototype.project = function(x,y,z) {
@@ -1325,10 +1381,19 @@ matplot.Axis.prototype.draw = function() {
 
     }
 
+    // define clip rectangle
+    this.fig.canvas.clipRect(this.fig.canvas.width*this.x,
+                             this.fig.canvas.height*this.y,
+                             this.fig.canvas.width*this.w,
+                             this.fig.canvas.height*this.h);
+
     // draw all children
     for (i = 0; i<this.children.length; i++) {
         this.children[i].draw(this);
     }
+
+    // exit clip rectangle
+    this.fig.canvas.pop()
 
     this.fig.canvas.rect(this.fig.canvas.width*this.x,
                          this.fig.canvas.height*this.y,
@@ -1340,6 +1405,18 @@ matplot.Axis.prototype.draw = function() {
     if (is2D) {
         this.drawXTicks();
         this.drawYTicks();
+    }
+
+    // legend
+    if (this._legend) {
+        this.drawLegend();
+    }
+
+    // annotation
+    
+    for (i = 0; i < this._annotations.length; i++) {
+        var an = this._annotations[i];
+        this.drawAnnotation(an.x,an.y,an.z,an.text,an.style);
     }
 };
 
@@ -1424,7 +1501,12 @@ matplot.Axis.prototype.drawYTicks = function() {
     }
 };
 
-matplot.Axis.prototype.legend = function() {
+matplot.Axis.prototype.legend = function(state) {
+    state = (state !== undefined ? state : true);
+    this._legend = state;
+};
+
+matplot.Axis.prototype.drawLegend = function() {
     var style, label, maxWidth = -Infinity, maxHeight=-Infinity, maxMarkerSize=0, bbox, x, y, n=0, i, w, h;
 
     for (i = 0; i<this.children.length; i++) {
@@ -1542,8 +1624,11 @@ matplot.Axis.prototype.polygon = function(x,y,z,v) {
                                 });
 };
 
+matplot.Axis.prototype.annotation = function(x,y,z,text,style) {
+    this._annotations.push({x: x, y: y, z: z, text: text, style: style});
+};
 
-matplot.Axis.prototype.addAnnotation = function(x,y,z,text,style) {
+matplot.Axis.prototype.drawAnnotation = function(x,y,z,text,style) {
     var bbox, pos, an = {}, padding = 4, i, j, that = this, w, h;
     style = style || {};
 
@@ -1610,22 +1695,13 @@ matplot.Axis.prototype.toggleAnnotation = function(event,elem,x,y,z,text) {
     }
     else {
         // create annotation
-        an = this.addAnnotation(x,y,z,text);
+        an = this.drawAnnotation(x,y,z,text);
         an.elem = elem;
         an.text.onclick = an.rect.onclick = function(event) {
             that.toggleAnnotation(event,elem,x,y,z);
         };
 
         this.annotatedElements.push(an);
-        /*
-          setTimeout(function() {
-          // check if still annotated
-          if (this.annotatedElements[elem]) {
-          this.removeAnnotation(an);
-          this.annotatedElements[elem] = undefined;
-          }
-          },10000);
-        */
     }
 };
 
@@ -1757,11 +1833,12 @@ matplot.Figure.prototype.axes = function(x,y,w,h) {
 };
 
 matplot.Figure.prototype.clear = function() {
-    othis.canvas.clear();
+    this.canvas.clear();
 };
 
 matplot.Figure.prototype.draw = function() {
     var i;
+    this.clear();
 
     for (i = 0; i<this._axes.length; i++) {
         this._axes[i].draw();
