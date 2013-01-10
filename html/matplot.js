@@ -1824,13 +1824,13 @@ matplot.Figure = function Figure(id,width,height) {
 
 
     addWheelListener(this.canvas.svg, 
-                     function( e ) { 
+                     function( ev ) { 
                          var i,j, ax;
-                         i = e.pageX - that.container.offsetLeft;
-                         j = e.pageY - that.container.offsetTop;
+                         i = ev.pageX - that.container.offsetLeft;
+                         j = ev.pageY - that.container.offsetTop;
 
-                         console.log('wheel', e.deltaY,e,e.clientX,e.clientY,that.container.offsetTop,e.pageY,i,j ); 
-                         e.preventDefault(); 
+                         console.log('wheel', ev.deltaY,ev,ev.clientX,ev.clientY,that.container.offsetTop,ev.pageY,i,j ); 
+                         ev.preventDefault(); 
 
                          ax = that._axes[0];
                          
@@ -1840,27 +1840,107 @@ matplot.Figure = function Figure(id,width,height) {
                          console.log('unproject ',i,j,v,test);
                          
 
-                         var xlim = ax.xLim();
+                         var alpha = (1 + Math.abs(ev.deltaY)/20);
 
+                         function newrange(lim,c) {
+                             var xr, xc;
 
-                         var alpha = (1 + Math.abs(e.deltaY)/20);
-                         var xr, xc;
+                             if (ev.deltaY > 0) {
+                                 xr = alpha * (lim[1]-lim[0]);
+                                 xc = alpha * (lim[0]+lim[1])/2 + (1-alpha) * c;
+                             }
+                             else {
+                                 xr =  (lim[1]-lim[0]) / alpha;
+                                 xc = ((lim[0]+lim[1])/2 - (1-alpha) * c)/alpha;
+                             }
 
-                         if (e.deltaY > 0) {
-                             xr = alpha * (xlim[1]-xlim[0]);
-                             xc = alpha * (xlim[0]+xlim[1])/2 + (1-alpha) * v[0];
+                             console.log('xr ',xr,[xc - xr/2,xc + xr/2]);
+                             return [xc - xr/2,xc + xr/2];
                          }
-                         else {
-                             xr =  (xlim[1]-xlim[0]) / alpha;
-                             xc = ((xlim[0]+xlim[1])/2 - (1-alpha) * v[0])/alpha;
-                         }
 
-                         console.log('xr ',xr,[xc - xr/2,xc + xr/2]);
-                         ax.xLim([xc - xr/2,xc + xr/2]);
+                         ax.xLim(newrange(ax.xLim(),v[0]));
+                         ax.yLim(newrange(ax.yLim(),v[1]));
                          that.draw();
 
                      }                    
                     );
+
+    function getcoord(ev) {
+        var i,j, ax;
+        i = ev.pageX - that.container.offsetLeft;
+        j = ev.pageY - that.container.offsetTop;
+        
+        ax = that._axes[0];
+        var v = ax.unproject(i,j);
+        //return [v[0],v[1]];
+        return [i,j];
+    }
+
+    function getcoordp(ev) {
+        var i,j, ax;
+        i = ev.pageX - that.container.offsetLeft;
+        j = ev.pageY - that.container.offsetTop;
+        
+        ax = that._axes[0];
+        var v = ax.unproject(i,j);
+        return [v[0],v[1]];
+    }
+
+    this.md = null;
+    this.md2 = null;
+    this.dragRect = null;
+
+    this.canvas.svg.addEventListener('mousedown',function(ev) {
+        that.md = ev;
+        console.log('mousedown ',ev,ev);
+    });
+
+    this.canvas.svg.addEventListener('mouseup',function(ev) {
+        var p1, p2, ax;
+
+        // remove zoom rectangle
+        if (that.dragRect) {
+            that.canvas.remove(that.dragRect);
+            that.dragRect = null;
+        }
+
+        if (that.md !== null && that.md2 !== null) {
+            p1 = getcoordp(that.md);
+            p2 = getcoordp(that.md2);
+            
+            console.log('zoom ',p1,p2);
+            ax = that._axes[0];
+            ax.xLim([Math.min(p1[0],p2[0]),Math.max(p1[0],p2[0])]);
+            ax.yLim([Math.min(p1[1],p2[1]),Math.max(p1[1],p2[1])]);
+            that.draw();            
+        };
+
+        that.md = null;
+        console.log('mouseup ',ev);
+    });
+
+    this.canvas.svg.addEventListener('mousemove',function(ev) {
+        var p1, p2, x, y, h, w;
+        if (that.md) {
+            if (that.dragRect) {
+                that.canvas.remove(that.dragRect);
+                that.dragRect = null;
+            }
+
+            that.md2 = ev;
+            p1 = getcoord(ev);
+            p2 = getcoord(that.md);
+            console.log('mousemove ',getcoord(ev),getcoord(that.md));
+            x = Math.min(p1[0],p2[0]);
+            w = Math.abs(p2[0]-p1[0]);
+
+            y = Math.min(p1[1],p2[1]);
+            h = Math.abs(p2[1]-p1[1]);
+
+            console.log('mousemove ',x,y,w,h);
+            that.dragRect = that.canvas.rect(x,y,w,h);
+        }
+    });
 
 };
 
