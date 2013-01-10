@@ -1869,43 +1869,8 @@ matplot.Figure = function Figure(id,width,height) {
 
     addWheelListener(this.canvas.svg, 
                      function(ev) { 
-                         var i,j, ax;
-                         i = ev.pageX - that.container.offsetLeft;
-                         j = ev.pageY - that.container.offsetTop;
-
-                         console.log('wheel', ev.deltaY,ev,ev.clientX,ev.clientY,that.container.offsetTop,ev.pageY,i,j ); 
+                         that.zoom(ev.deltaY,ev.pageX,ev.pageY);
                          ev.preventDefault(); 
-
-                         ax = that._axes[0];
-                         
-                         
-                         var v = ax.unproject(i,j);
-                         var test = ax.project(v[0],v[1],v[2]);
-                         console.log('unproject ',i,j,v,test);
-                         
-
-                         var alpha = (1 + Math.abs(ev.deltaY)/20);
-
-                         function newrange(lim,c) {
-                             var xr, xc;
-
-                             if (ev.deltaY > 0) {
-                                 xr = alpha * (lim[1]-lim[0]);
-                                 xc = alpha * (lim[0]+lim[1])/2 + (1-alpha) * c;
-                             }
-                             else {
-                                 xr =  (lim[1]-lim[0]) / alpha;
-                                 xc = ((lim[0]+lim[1])/2 - (1-alpha) * c)/alpha;
-                             }
-
-                             console.log('xr ',xr,[xc - xr/2,xc + xr/2]);
-                             return [xc - xr/2,xc + xr/2];
-                         }
-
-                         ax.xLim(newrange(ax.xLim(),v[0]));
-                         ax.yLim(newrange(ax.yLim(),v[1]));
-                         that.draw();
-
                      }                    
                     );
 
