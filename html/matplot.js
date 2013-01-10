@@ -1845,15 +1845,19 @@ matplot.Figure = function Figure(id,width,height) {
                                                     matplot.html('a',{'href': '#', 
                                                                       'onclick': function(ev) { return that.save(this); },
                                                                       'download': 'figure.svg'},
-                                                                 ['Download'])
-                                                ]),
+                                                                 ['Download'])]),
+                                                matplot.html('li',{},[
+                                                    matplot.html('a',{'href': '#', 
+                                                                      'onclick': function(ev) { return that.zoom(-6,ev.pageX,ev.pageY); }}, 
+                                                                 ['Zoom in'])]),
+                                                matplot.html('li',{},[
+                                                    matplot.html('a',{'href': '#', 
+                                                                      'onclick': function(ev) { return that.zoom(6,ev.pageX,ev.pageY); }}, 
+                                                                 ['Zoom out'])]),
                                                 matplot.html('li',{},[
                                                     matplot.html('a',{'href': '#', 
                                                                       'onclick': function(ev) { return that.resetZoom(); }}, 
-                                                                 ['Reset zoom']),
-
-                                                    
-                                                ])
+                                                                 ['Reset zoom'])])
                                             ])
                                         ]));
 
@@ -2043,8 +2047,41 @@ matplot.Figure.prototype.resetZoom = function() {
     this.closeContextmenu();
 };
 
-matplot.Figure.prototype.zoom = function() {
+matplot.Figure.prototype.zoom = function(delta,pageX,pageY) {
+    var i,j, ax;
 
+    i = pageX - this.container.offsetLeft;
+    j = pageY - this.container.offsetTop;
+
+    ax = this._axes[0];
+                         
+                         
+    var v = ax.unproject(i,j);
+    var test = ax.project(v[0],v[1],v[2]);
+    console.log('unproject ',i,j,v,test);
+                         
+
+    var alpha = (1 + Math.abs(delta)/20);
+
+    function newrange(lim,c) {
+        var xr, xc;
+        
+        if (delta > 0) {
+            xr = alpha * (lim[1]-lim[0]);
+            xc = alpha * (lim[0]+lim[1])/2 + (1-alpha) * c;
+        }
+        else {
+            xr =  (lim[1]-lim[0]) / alpha;
+            xc = ((lim[0]+lim[1])/2 - (1-alpha) * c)/alpha;
+        }
+        
+        console.log('xr ',xr,[xc - xr/2,xc + xr/2]);
+        return [xc - xr/2,xc + xr/2];
+    }
+
+    ax.xLim(newrange(ax.xLim(),v[0]));
+    ax.yLim(newrange(ax.yLim(),v[1]));
+    this.draw();
 };
 
 matplot.Figure.prototype.draw = function() {
