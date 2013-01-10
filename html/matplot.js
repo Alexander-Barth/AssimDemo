@@ -362,7 +362,11 @@ matplot.SVGCanvas = function SVGCanvas(container,width,height) {
 
     this.container = container;
     this.container.appendChild(
-        this.svg = this.mk('svg',{width: width, height: height},
+        this.svg = this.mk('svg',{width: width, 
+                                  height: height,
+                                  style: {'user-select': 'none',
+                                          '-webkit-user-select': 'none'}
+                                 },
                            [this.axis = this.mk('g',{})]));
 
     this.parentStack = [this.axis];
@@ -1834,10 +1838,10 @@ matplot.Figure = function Figure(id,width,height) {
         this.contextmenu = matplot.html('div',{
             'class': 'matplot-contextmenu',
             'style': {
-                      'position': 'absolute',
-                      'display': 'none',
-                      'left': '0px',
-                      'top': '0px'}
+                'position': 'absolute',
+                'display': 'none',
+                'left': '0px',
+                'top': '0px'}
         },
                                         [
                                             matplot.html('ul',{},[
@@ -1898,9 +1902,12 @@ matplot.Figure = function Figure(id,width,height) {
     this.md = null;
     this.md2 = null;
     this.dragRect = null;
-
+    this.dragMode = 'panning';
+    this.dragMode = 'zooming';
 
     this.canvas.svg.addEventListener('mousedown',function(ev) {
+        console.log('mousedown ',ev);
+
         // dismiss context menu if shown
         if (that.contextmenu.style.display === 'block') {
             that.contextmenu.style.display = 'none';
@@ -1909,9 +1916,11 @@ matplot.Figure = function Figure(id,width,height) {
         // check if left button is pressed
         // IE8- behaviour is different, but IE9 should be W3C conform
         // http://msdn.microsoft.com/en-us/library/ie/ff974877%28v=vs.85%29.aspx
-        if (ev.button === 1) {
+        if (ev.button === 0) {
             that.md = ev;
-            console.log('mousedown ',ev,ev);
+            that.po = getcoordp(that.md); // origin
+            var ax = that._axes[0];
+            that.orig_xlim = ax.xLim();
         }
     });
 
@@ -1927,12 +1936,14 @@ matplot.Figure = function Figure(id,width,height) {
         if (that.md !== null && that.md2 !== null) {
             p1 = getcoordp(that.md);
             p2 = getcoordp(that.md2);
-            
-            console.log('zoom ',p1,p2);
-            ax = that._axes[0];
-            ax.xLim([Math.min(p1[0],p2[0]),Math.max(p1[0],p2[0])]);
-            ax.yLim([Math.min(p1[1],p2[1]),Math.max(p1[1],p2[1])]);
-            that.draw();            
+
+            if (that.dragMode === 'zooming') {
+                console.log('zoom ',p1,p2);
+                ax = that._axes[0];
+                ax.xLim([Math.min(p1[0],p2[0]),Math.max(p1[0],p2[0])]);
+                ax.yLim([Math.min(p1[1],p2[1]),Math.max(p1[1],p2[1])]);
+                that.draw();    
+            }        
         };
 
         that.md = null;
@@ -1940,25 +1951,45 @@ matplot.Figure = function Figure(id,width,height) {
     });
 
     this.canvas.svg.addEventListener('mousemove',function(ev) {
-        var p1, p2, x, y, h, w;
-        if (that.md) {
-            if (that.dragRect) {
-                that.canvas.remove(that.dragRect);
-                that.dragRect = null;
-            }
+        var p1, p2, x, y, h, w, ax;
+        console.log('mousemove ',ev);
 
+
+        if (that.md) {
             that.md2 = ev;
             p1 = getcoord(ev);
             p2 = getcoord(that.md);
-            console.log('mousemove ',getcoord(ev),getcoord(that.md));
-            x = Math.min(p1[0],p2[0]);
-            w = Math.abs(p2[0]-p1[0]);
 
-            y = Math.min(p1[1],p2[1]);
-            h = Math.abs(p2[1]-p1[1]);
 
-            console.log('mousemove ',x,y,w,h);
-            that.dragRect = that.canvas.rect(x,y,w,h);
+            if (that.dragMode === 'zooming') {
+                if (that.dragRect) {
+                    that.canvas.remove(that.dragRect);
+                    that.dragRect = null;
+                }
+
+                console.log('mousemove ',getcoord(ev),getcoord(that.md));
+                x = Math.min(p1[0],p2[0]);
+                w = Math.abs(p2[0]-p1[0]);
+                
+                y = Math.min(p1[1],p2[1]);
+                h = Math.abs(p2[1]-p1[1]);
+
+                console.log('mousemove ',x,y,w,h);
+                that.dragRect = that.canvas.rect(x,y,w,h);
+            }
+            else {
+                var lim,r;
+                po = getcoordp(that.md); // origin
+                p1 = getcoordp(ev);
+
+                console.log('panning ',p1,po);
+                ax = that._axes[0];
+                lim = ax.xLim();
+                var xs = (p1[0]-that.po[0]);
+                r = [that.orig_xlim[0]-xs,that.orig_xlim[1]-xs];
+                ax.xLim(r);
+                that.draw();    
+            }
         }
     });
 
