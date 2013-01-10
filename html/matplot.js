@@ -300,7 +300,12 @@ matplot.mk = function mk(xmlns,tag,attribs,children) {
     attribs = attribs || {};
     children = children || [];
 
-    elem = document.createElementNS(xmlns, tag);
+    if (xmlns === '') {
+        elem = document.createElement(tag);
+    }
+    else {
+        elem = document.createElementNS(xmlns, tag);
+    }
 
     for (a in attribs) {
         if (attribs.hasOwnProperty(a) && attribs[a] !== undefined) {
@@ -344,6 +349,11 @@ matplot.mk = function mk(xmlns,tag,attribs,children) {
     }
     return elem;
 };
+
+matplot.html = function mk(tag,attribs,children) {
+    return matplot.mk('',tag,attribs,children);
+}
+
 
 matplot.SVGCanvas = function SVGCanvas(container,width,height) {
     this.xmlns = "http://www.w3.org/2000/svg";
@@ -1804,27 +1814,57 @@ matplot.Figure = function Figure(id,width,height) {
 
 
     this.outerDIV =
-        matplot.mk(null,'div',
-                   {style: {
-                       position: 'relative'}
-                   },
-                   [
-                       this.innerDIV =
-                           matplot.mk(null,'div',
-                                      {style: {
-                                          position: 'absolute'}
-                                      },
-                                      [])
-                   ]);
+        matplot.html('div',
+                     {style: {
+                         position: 'relative'}
+                     }
+/*,
+                     [
+                         this.innerDIV =
+                             matplot.html('div',
+                                          {style: {
+                                              position: 'absolute'}
+                                          },
+                                          [])
+                     ]
+*/
+);
+
+    this.outerDIV.appendChild(
+        this.contextmenu = matplot.html('div',{
+            'class': 'matplot-contextmenu',
+            'style': {
+                      'position': 'absolute',
+                      'display': 'none',
+                      'left': '0px',
+                      'top': '0px'}
+        },
+                                        [
+                                            matplot.html('ul',{},[
+                                                matplot.html('li',{},[
+                                                    matplot.html('a',{'href': '#', 
+                                                                      'onclick': function(ev) { return that.save(this); },
+                                                                      'download': 'figure.svg'},
+                                                                 ['Download'])
+                                                ]),
+                                                matplot.html('li',{},[
+                                                    matplot.html('a',{'href': '#', 
+                                                                      'onclick': function(ev) { return that.resetZoom(); }}, 
+                                                                 ['Reset zoom']),
+
+                                                    
+                                                ])
+                                            ])
+                                        ]));
 
     this.container.appendChild(this.outerDIV);
 
-    this.canvas = new matplot.SVGCanvas(this.container,width,height);
+    this.canvas = new matplot.SVGCanvas(this.outerDIV,width,height);
     this._axes = [];
 
 
     addWheelListener(this.canvas.svg, 
-                     function( ev ) { 
+                     function(ev) { 
                          var i,j, ax;
                          i = ev.pageX - that.container.offsetLeft;
                          j = ev.pageY - that.container.offsetTop;
@@ -1890,9 +1930,20 @@ matplot.Figure = function Figure(id,width,height) {
     this.md2 = null;
     this.dragRect = null;
 
+
     this.canvas.svg.addEventListener('mousedown',function(ev) {
-        that.md = ev;
-        console.log('mousedown ',ev,ev);
+        // dismiss context menu if shown
+        if (that.contextmenu.style.display === 'block') {
+            that.contextmenu.style.display = 'none';
+        }
+        
+        // check if left button is pressed
+        // IE8- behaviour is different, but IE9 should be W3C conform
+        // http://msdn.microsoft.com/en-us/library/ie/ff974877%28v=vs.85%29.aspx
+        if (ev.button === 1) {
+            that.md = ev;
+            console.log('mousedown ',ev,ev);
+        }
     });
 
     this.canvas.svg.addEventListener('mouseup',function(ev) {
@@ -1942,6 +1993,24 @@ matplot.Figure = function Figure(id,width,height) {
         }
     });
 
+    //this.outerDIV.addEventListener('contextmenu',function(ev) {
+    this.canvas.svg.addEventListener('contextmenu',function(ev) {
+        var i,j;
+        i = ev.pageX - that.container.offsetLeft;
+        j = ev.pageY - that.container.offsetTop;
+
+        that.contextmenu.style.display = 'block';
+        that.contextmenu.style.left = i + 'px';
+        that.contextmenu.style.top = j + 'px';
+
+        console.log('context ',ev)
+        ev.preventDefault();
+    });
+
+};
+
+matplot.Figure.prototype.closeContextmenu = function() {
+    this.contextmenu.style.display = 'none';    
 };
 
 matplot.Figure.prototype.axes = function(x,y,w,h) {
@@ -1952,6 +2021,30 @@ matplot.Figure.prototype.axes = function(x,y,w,h) {
 
 matplot.Figure.prototype.clear = function() {
     this.canvas.clear();
+};
+
+matplot.Figure.prototype.save = function(elem) {
+    var s, xml, blob;
+
+    s = new XMLSerializer();
+    xml = s.serializeToString(this.canvas.svg);
+    blob = new Blob(['<?xml version="1.0" encoding="UTF-8" standalone="no"?>' + xml],{'type': 'image/svg+xml'});
+    elem.href = URL.createObjectURL(blob);
+    this.closeContextmenu();
+};
+
+matplot.Figure.prototype.resetZoom = function() {
+    var ax;
+
+    ax = this._axes[0];
+    ax.xLimMode('auto');
+    ax.yLimMode('auto');
+    this.draw();            
+    this.closeContextmenu();
+};
+
+matplot.Figure.prototype.zoom = function() {
+
 };
 
 matplot.Figure.prototype.draw = function() {
