@@ -1206,7 +1206,8 @@ matplot.Axis.prototype.draw = function() {
         this._CameraUpVector = [0,1,0];
         this._CameraPosition = [this._CameraTarget[0],
                                 this._CameraTarget[1],
-                                this._CameraTarget[2]+10];
+                                this._CameraTarget[2]+1];
+        this._DataAspectRatio = [1,1,1];
     }
     else {
         this._CameraPosition = [-36.5257, -47.6012, 86.6025];
@@ -1215,9 +1216,12 @@ matplot.Axis.prototype.draw = function() {
         // z-direction if upward
 	this._CameraUpVector = [0, 0, 1];
 	this._CameraViewAngle = [13];
+        this._DataAspectRatio = [1,1,1/3];
     }
 
-    this.modelView = matplot.LookAt(this._CameraPosition,this._CameraTarget,this._CameraUpVector);
+    this.modelView = numeric.dot(
+        matplot.LookAt(this._CameraPosition,this._CameraTarget,this._CameraUpVector),
+        matplot.scale(this._DataAspectRatio));
     //console.log('modelView ',numeric.prettyPrint(this.modelView));
 
 
