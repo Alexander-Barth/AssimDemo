@@ -1213,11 +1213,6 @@ matplot.Axis.prototype.draw = function() {
                                      (this._yLim[1]-this._yLim[0])/this.h,
                                      1];
         }
-
-        // camera
-        this._CameraTarget = [(this._xLim[0]+this._xLim[1])/2,
-                              (this._yLim[0]+this._yLim[1])/2,
-                              (this._zLim[0]+this._zLim[1])/2];
         
         this._CameraPosition = [this._CameraTarget[0],
                                 this._CameraTarget[1],
@@ -1236,11 +1231,10 @@ matplot.Axis.prototype.draw = function() {
         this._DataAspectRatio = [1,1,2];
     }
 
-    this._CameraTarget = numeric.div(this._CameraTarget,this._DataAspectRatio);
-    this._CameraPosition = numeric.div(this._CameraPosition,this._DataAspectRatio);
-
     this.modelView = numeric.dot(
-        matplot.LookAt(this._CameraPosition,this._CameraTarget,this._CameraUpVector),
+        matplot.LookAt(numeric.div(this._CameraPosition,this._DataAspectRatio),
+                       numeric.div(this._CameraTarget,this._DataAspectRatio),
+                       numeric.div(this._CameraUpVector,this._DataAspectRatio)),
         numeric.inv(matplot.scale(this._DataAspectRatio)));
     //console.log('modelView ',numeric.prettyPrint(this.modelView));
 
