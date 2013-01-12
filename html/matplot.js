@@ -1227,8 +1227,21 @@ matplot.Axis.prototype.draw = function() {
         this._CameraPosition = [27.394,  35.701,   25.981];
         // z-direction if upward
 	this._CameraUpVector = [0, 0, 1];
-	this._CameraViewAngle = [13];
-        this._DataAspectRatio = [1,1,2];
+	this._CameraViewAngle = 10.339584907201978;
+
+
+        if (this._DataAspectRatioMode === 'auto') {
+            this._DataAspectRatio = [(this._xLim[1]-this._xLim[0]),
+                                     (this._yLim[1]-this._yLim[0]),
+                                     (this._zLim[1]-this._zLim[0])];
+
+            // scale such that smallest element is one
+            this._DataAspectRatio = numeric.div(
+                this._DataAspectRatio,
+                Math.min.apply(null, this._DataAspectRatio));
+
+            console.log('this._DataAspectRatio',this._DataAspectRatio);
+        }
     }
 
     this.modelView = numeric.dot(
