@@ -1001,10 +1001,25 @@ matplot.Axis.prototype.zoomIn = function() {
 
 matplot.Axis.prototype.project = function(x,y,z) {
     var i,j, b, v;
-    z = z || 0;
+    if (arguments.length === 1) {
+        v = x;
+        if (v.length == 2) {
+            v[2] = 0;
+        }
+
+        if (v.length == 3) {
+            v[3] = 1;
+        }
+    }
+    else if (arguments.length === 2) {
+        v = [x,y,0,1];
+    }
+    else {
+        v = [x,y,z,1];
+    }
 
     // Apply first ModelView matrix and then Projection matrix
-    v = numeric.dot(this.projectionModelView,[x,y,z,1]);
+    v = numeric.dot(this.projectionModelView,v);
 
     // Perspective division
     // http://www.glprogramming.com/red/chapter03.html
@@ -1020,9 +1035,9 @@ matplot.Axis.prototype.project = function(x,y,z) {
     return v;
 };
 
-matplot.Axis.prototype.unproject = function(i,j) {
+matplot.Axis.prototype.unproject = function(u) {
     var i,j, b, v;
-    v = [i,j,0,1];
+    v = [u[0],u[1],0,1];
 
     // inverse viewport transformation
     v = numeric.dot(this.invViewport,v);
@@ -1374,7 +1389,7 @@ matplot.Axis.prototype.draw = function() {
     
     for (var l = 0; l < 8; l++) {
         //v = numeric.dot(this.projectionModelView,databox[l]);
-        v = this.project(databox[l][0],databox[l][1],databox[l][2]);
+        v = this.project(databox[l]);
 
         console.log('project v', v);
         left = Math.min(left,v[0]);
@@ -1551,7 +1566,7 @@ matplot.Axis.prototype.drawXTicks = function() {
     }
 
     for (i = 0; i < this.xTick.length; i++) {
-        pos = this.project(this.xTick[i],y);
+        pos = this.project([this.xTick[i],y]);
 
         this.fig.canvas.line([pos[0],pos[0]],
                              [pos[1]-this.xTickLen/2,pos[1]+this.xTickLen/2],
@@ -1598,7 +1613,7 @@ matplot.Axis.prototype.drawYTicks = function() {
     }
 
     for (i = 0; i < this.yTick.length; i++) {
-        pos = this.project(x,this.yTick[i]);
+        pos = this.project([x,this.yTick[i]]);
 
         this.fig.canvas.line([pos[0]-this.yTickLen/2,pos[0]+this.yTickLen/2],
                              [pos[1],pos[1]],
@@ -1679,8 +1694,8 @@ matplot.Axis.prototype.drawLegend = function() {
 
 matplot.Axis.prototype.rect = function(x,y,v) {
     var color, info = null;
-    var ll = this.project(x[0],y[1]);
-    var up = this.project(x[1],y[0]);
+    var ll = this.project([x[0],y[1]]);
+    var up = this.project([x[1],y[0]]);
 
     if (typeof v === 'string') {
         color = v;
@@ -1699,7 +1714,7 @@ matplot.Axis.prototype.rect = function(x,y,v) {
 matplot.Axis.prototype.text = function(x,y,z,string,style) {
     var pos;
 
-    pos = this.project(x,y,z);
+    pos = this.project([x,y,z]);
     this.fig.canvas.text(pos[0],pos[1],string,style);
 };
 
@@ -1707,7 +1722,7 @@ matplot.Axis.prototype.polygon = function(x,y,z,v) {
     var pos, i = [], j = [], l, color, onclick, that = this;
 
     for (l = 0; l < x.length; l++) {
-        pos = this.project(x[l],y[l],z[l]);
+        pos = this.project([x[l],y[l],z[l]]);
         i.push(pos[0]);
         j.push(pos[1]);
     }
@@ -1744,7 +1759,7 @@ matplot.Axis.prototype.drawAnnotation = function(x,y,z,text,style) {
     var bbox, pos, an = {}, padding = 4, i, j, that = this, w, h;
     style = style || {};
 
-    pos = this.project(x,y,z);
+    pos = this.project([x,y,z]);
     bbox = this.fig.canvas.textBBox(text);
     i = pos[0];
     j = pos[1];
@@ -1821,7 +1836,7 @@ matplot.Axis.prototype.drawLine = function(x,y,z,style) {
     style = style || {};
 
     for (l = 0; l < x.length; l++) {
-        pos = this.project(x[l],y[l],z[l]);
+        pos = this.project([x[l],y[l],z[l]]);
         i.push(pos[0]);
         j.push(pos[1]);
     }
@@ -1974,7 +1989,7 @@ matplot.Figure = function Figure(id,width,height) {
         j = ev.pageY - that.container.offsetTop;
         
         ax = that._axes[0];
-        var v = ax.unproject(i,j);
+        var v = ax.unproject([i,j]);
         //return [v[0],v[1]];
         return [i,j];
     }
@@ -1985,7 +2000,7 @@ matplot.Figure = function Figure(id,width,height) {
         j = ev.pageY - that.container.offsetTop;
         
         ax = that._axes[0];
-        var v = ax.unproject(i,j);
+        var v = ax.unproject([i,j]);
         return [v[0],v[1]];
     }
 
@@ -2142,8 +2157,8 @@ matplot.Figure.prototype.zoom = function(delta,pageX,pageY) {
     ax = this._axes[0];
                          
                          
-    var v = ax.unproject(i,j);
-    var test = ax.project(v[0],v[1],v[2]);
+    var v = ax.unproject([i,j]);
+    var test = ax.project(v);
     console.log('unproject ',i,j,v,test);
                          
 
