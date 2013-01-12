@@ -1300,6 +1300,8 @@ matplot.Axis.prototype.draw = function() {
         right = Math.max(right,top);
         
         this.projection = matplot.ortho(left, right, left, right, near, far);
+
+        // scaling will be done later in viewport
         this.projection = numeric.identity(4);
         //console.log('projection ',numeric.prettyPrint(this.projection));
         v = numeric.dot(this.modelView,databox[0]);
