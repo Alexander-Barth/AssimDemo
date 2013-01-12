@@ -999,27 +999,24 @@ matplot.Axis.prototype.zoomIn = function() {
     
 }
 
-matplot.Axis.prototype.project = function(x,y,z) {
-    var i,j, b, v;
-    if (arguments.length === 1) {
-        v = x;
-        if (v.length == 2) {
-            v[2] = 0;
-        }
+matplot.Axis.prototype.project = function(u,options) {
+    var i,j, b, v, viewport, projectionModelView;
+    options = options || {};
+    viewport = options.viewport || this.viewport;
+    projectionModelView = options.projectionModelView || this.projectionModelView;
+    
+    // copy array so that we do not modify u
+    v = u.slice(0); 
 
-        if (v.length == 3) {
-            v[3] = 1;
-        }
+    if (v.length == 2) {
+        v[2] = 0;
     }
-    else if (arguments.length === 2) {
-        v = [x,y,0,1];
-    }
-    else {
-        v = [x,y,z,1];
+    if (v.length == 3) {
+        v[3] = 1;
     }
 
     // Apply first ModelView matrix and then Projection matrix
-    v = numeric.dot(this.projectionModelView,v);
+    v = numeric.dot(projectionModelView,v);
 
     // Perspective division
     // http://www.glprogramming.com/red/chapter03.html
@@ -1030,7 +1027,7 @@ matplot.Axis.prototype.project = function(x,y,z) {
     v[3] = v[3]/v[3];
 
     // viewport transformation
-    v = numeric.dot(this.viewport,v);
+    v = numeric.dot(viewport,v);
 
     return v;
 };
@@ -1330,13 +1327,11 @@ matplot.Axis.prototype.draw = function() {
     near = Infinity, far = -Infinity;
     
     for (var l = 0; l < 8; l++) {
-        v = numeric.dot(this.projectionModelView,databox[l]);
-        // Perspective division
-        // http://www.glprogramming.com/red/chapter03.html    
-        v[0] = v[0]/v[3];
-        v[1] = v[1]/v[3];
-        v[2] = v[2]/v[3];
-        v[3] = v[3]/v[3];
+        // project databox limit, but do not apply viewport 
+        // transformation (as we have to jet define it)
+
+        v = this.project(databox[l],
+                         {viewport: numeric.identity(4)});
 
         left = Math.min(left,v[0]);
         right = Math.max(right,v[0]);
