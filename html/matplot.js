@@ -1373,13 +1373,10 @@ matplot.Axis.prototype.draw = function() {
     near = Infinity, far = -Infinity;
     
     for (var l = 0; l < 8; l++) {
-        v = numeric.dot(this.projectionModelView,databox[l]);
-    v[0] = v[0]/v[3];
-    v[1] = v[1]/v[3];
-    v[2] = v[2]/v[3];
-    v[3] = v[3]/v[3];
+        //v = numeric.dot(this.projectionModelView,databox[l]);
+        v = this.project(databox[l][0],databox[l][1],databox[l][2]);
 
-        //console.log('v', v);
+        console.log('project v', v);
         left = Math.min(left,v[0]);
         right = Math.max(right,v[0]);
         
