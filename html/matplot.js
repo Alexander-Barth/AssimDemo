@@ -771,6 +771,8 @@ matplot.Axis = function Axis(fig,x,y,w,h) {
     this._cLim = [];
     this._cLimMode = 'auto';
 
+    this._DataAspectRatioMode = 'auto';
+    this._DataAspectRatio = [1,1,1];
 
     this._CameraPosition = [0,0,10];
     this._CameraTarget = [0,0,0];
@@ -1204,10 +1206,25 @@ matplot.Axis.prototype.draw = function() {
     if (this._projection === 'orthographic') {
         // y-direction if upward
         this._CameraUpVector = [0,1,0];
+
+        if (this._DataAspectRatioMode === 'auto') {
+            this._DataAspectRatio = [1,this.h/this.w,1];
+            this._DataAspectRatio = [(this._xLim[1]-this._xLim[0])/this.w,
+                                     (this._yLim[1]-this._yLim[0])/this.h,
+                                     1];
+        }
+
+        // camera
+        this._CameraTarget = [(this._xLim[0]+this._xLim[1])/2,
+                              (this._yLim[0]+this._yLim[1])/2,
+                              (this._zLim[0]+this._zLim[1])/2];
+        
         this._CameraPosition = [this._CameraTarget[0],
                                 this._CameraTarget[1],
                                 this._CameraTarget[2]+1];
-        this._DataAspectRatio = [1,1,1];
+
+
+
     }
     else {
         this._CameraPosition = [-36.5257, -47.6012, 86.6025];
@@ -1216,12 +1233,15 @@ matplot.Axis.prototype.draw = function() {
         // z-direction if upward
 	this._CameraUpVector = [0, 0, 1];
 	this._CameraViewAngle = [13];
-        this._DataAspectRatio = [1,1,1/3];
+        this._DataAspectRatio = [1,1,2];
     }
+
+    this._CameraTarget = numeric.div(this._CameraTarget,this._DataAspectRatio);
+    this._CameraPosition = numeric.div(this._CameraPosition,this._DataAspectRatio);
 
     this.modelView = numeric.dot(
         matplot.LookAt(this._CameraPosition,this._CameraTarget,this._CameraUpVector),
-        matplot.scale(this._DataAspectRatio));
+        numeric.inv(matplot.scale(this._DataAspectRatio)));
     //console.log('modelView ',numeric.prettyPrint(this.modelView));
 
 
@@ -1231,10 +1251,10 @@ matplot.Axis.prototype.draw = function() {
     
     for (var l = 0; l < 8; l++) {
         v = numeric.dot(this.modelView,databox[l]);
-        //console.log('v', v);
+        console.log('v', v);
         left = Math.min(left,v[0]);
         right = Math.max(right,v[0]);
-        
+
         top = Math.max(top,v[1]);
         bottom = Math.min(bottom,v[1]);
         
@@ -1242,15 +1262,29 @@ matplot.Axis.prototype.draw = function() {
         far = Math.max(far,v[2]);
     }
         
-    //console.log('rl', left, right, bottom, top, near, far);
-
-
+    console.log('rl', left, right, bottom, top, near, far);
+    var scale = this.h/2;
+    
     if (this._projection === 'orthographic') {
-        this.projection = matplot.ortho(left, right, bottom, top, near, far);
+        //this.projection = matplot.ortho(left, right, bottom, top, near, far);
+
+        if (right - left >= top - bottom) {
+            scale = this.w/2;
+        } 
+        else {
+            scale = this.h/2;
+        }
+
+        // find largest square that contained the data bounding box (transformed by modelView)
+        left = Math.min(left,bottom);
+        right = Math.max(right,top);
+        
+        this.projection = matplot.ortho(left, right, left, right, near, far);
 
         //console.log('projection ',numeric.prettyPrint(this.projection));
         v = numeric.dot(this.modelView,databox[0]);
-        v = numeric.dot(numeric.dot(this.projection,this.modelView),databox[0]);
+        //console.log('v ',v);
+
     }
     else {
         var aspect = 1;
@@ -1265,6 +1299,12 @@ matplot.Axis.prototype.draw = function() {
     }
 
     this.projectionModelView = numeric.dot(this.projection,this.modelView);
+
+    for (var l = 0; l < 8; l++) {
+        v = numeric.dot(this.projectionModelView,databox[l]);
+        console.log('db v ',databox[l],v);
+    }
+
 
     this.viewport = numeric.dot(
         matplot.translate([this.x+this.w/2,this.y+this.h/2,0]),
@@ -1281,7 +1321,8 @@ matplot.Axis.prototype.draw = function() {
         matplot.translate([this.x+this.w/2,this.y+this.h/2,0]),
         // from [-1,1] to [-w/2,w/2] 
         // (unit fraction of figure width/height)
-        matplot.scale([this.w/2,this.h/2,1])
+        //matplot.scale([this.w/2,this.h/2,1])
+        matplot.scale([scale,scale,1])
     );
 
     // inverse of this.viewport and this.projectionModelView
@@ -1425,12 +1466,12 @@ matplot.Axis.prototype.draw = function() {
     // exit clip rectangle
     this.fig.canvas.pop()
 
-    this.fig.canvas.rect(this.fig.canvas.width*this.x,
+/*    this.fig.canvas.rect(this.fig.canvas.width*this.x,
                          this.fig.canvas.height*this.y,
                          this.fig.canvas.width*this.w,
                          this.fig.canvas.height*this.h,
                              {fill: 'none', stroke: 'black'});
-
+*/
 
     if (is2D) {
         this.drawXTicks();
@@ -1468,6 +1509,12 @@ matplot.Axis.prototype.drawXTicks = function() {
         style.VerticalAlignment = 'bottom';
         style.offsetj = -this.xTickLen/2;
         y = this._yLim[1];
+    }
+
+    for (i = 0; i < 2; i++) {
+        this.drawLine([this._xLim[i],this._xLim[i]],
+                      this._yLim,
+                      [0,0]);
     }
 
     for (i = 0; i < this.xTick.length; i++) {
@@ -1509,6 +1556,12 @@ matplot.Axis.prototype.drawYTicks = function() {
         style.HorizontalAlignment = 'left';
         style.offseti = this.yTickLen/2;
         x = this._xLim[1];
+    }
+
+    for (i = 0; i < 2; i++) {
+        this.drawLine(this._xLim,
+                      [this._yLim[i],this._yLim[i]],
+                      [0,0]);
     }
 
     for (i = 0; i < this.yTick.length; i++) {
