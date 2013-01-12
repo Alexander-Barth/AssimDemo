@@ -1313,10 +1313,6 @@ matplot.Axis.prototype.draw = function() {
     }
 
 
-    this.viewport = numeric.dot(
-        matplot.translate([this.x+this.w/2,this.y+this.h/2,0]),
-        matplot.scale([this.w/2,this.h/2,1]));
-
     this.viewport = matplot.prod(
         // transform relative coordinates in pixels
         matplot.scale([this.fig.canvas.width,this.fig.canvas.height,1]),
