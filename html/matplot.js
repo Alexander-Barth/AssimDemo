@@ -1300,7 +1300,7 @@ matplot.Axis.prototype.draw = function() {
         right = Math.max(right,top);
         
         this.projection = matplot.ortho(left, right, left, right, near, far);
-
+        this.projection = numeric.identity(4);
         //console.log('projection ',numeric.prettyPrint(this.projection));
         v = numeric.dot(this.modelView,databox[0]);
         //console.log('v ',v);
@@ -1342,7 +1342,7 @@ matplot.Axis.prototype.draw = function() {
         console.log('db v ',databox[l],v);
     }
 
-    if (this._projection !== 'orthographic') {
+//    if (this._projection !== 'orthographic') {
         if (right - left >= top - bottom) {
             scale = this.w/2;
         } 
@@ -1354,7 +1354,7 @@ matplot.Axis.prototype.draw = function() {
         left = Math.min(left,bottom);
         right = Math.max(right,top);
         scale = scale/Math.max(right,-left);
-    }
+//    }
 
     this.viewport = matplot.prod(
         // transform relative coordinates in pixels
