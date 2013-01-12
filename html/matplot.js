@@ -1271,6 +1271,7 @@ matplot.Axis.prototype.draw = function() {
         
     console.log('rl', left, right, bottom, top, near, far);
     var scale = this.h/2;
+    scale = 0.35;
     
     if (this._projection === 'orthographic') {
         //this.projection = matplot.ortho(left, right, bottom, top, near, far);
@@ -1307,11 +1308,43 @@ matplot.Axis.prototype.draw = function() {
 
     this.projectionModelView = numeric.dot(this.projection,this.modelView);
 
+    var maxval = -Infinity;
+
+    right = -Infinity; left = Infinity;
+    top = -Infinity; bottom = Infinity;
+    near = Infinity, far = -Infinity;
+    
     for (var l = 0; l < 8; l++) {
         v = numeric.dot(this.projectionModelView,databox[l]);
+        // Perspective division
+        // http://www.glprogramming.com/red/chapter03.html    
+        v[0] = v[0]/v[3];
+        v[1] = v[1]/v[3];
+        v[2] = v[2]/v[3];
+        v[3] = v[3]/v[3];
+
+        left = Math.min(left,v[0]);
+        right = Math.max(right,v[0]);
+
+        top = Math.max(top,v[1]);
+        bottom = Math.min(bottom,v[1]);
+
         console.log('db v ',databox[l],v);
     }
 
+    if (this._projection !== 'orthographic') {
+        if (right - left >= top - bottom) {
+            scale = this.w/2;
+        } 
+        else {
+            scale = this.h/2;
+        }
+
+        // find largest square that contained the data bounding box (transformed by modelView)
+        left = Math.min(left,bottom);
+        right = Math.max(right,top);
+        scale = scale/Math.max(right,-left);
+    }
 
     this.viewport = matplot.prod(
         // transform relative coordinates in pixels
@@ -1469,12 +1502,12 @@ matplot.Axis.prototype.draw = function() {
     // exit clip rectangle
     this.fig.canvas.pop()
 
-/*    this.fig.canvas.rect(this.fig.canvas.width*this.x,
+    this.fig.canvas.rect(this.fig.canvas.width*this.x,
                          this.fig.canvas.height*this.y,
                          this.fig.canvas.width*this.w,
                          this.fig.canvas.height*this.h,
-                             {fill: 'none', stroke: 'black'});
-*/
+                             {fill: 'none', stroke: 'blue'});
+
 
     if (is2D) {
         this.drawXTicks();
