@@ -1146,7 +1146,7 @@ matplot.Axis.prototype.is2dim = function() {
 };
 
 matplot.Axis.prototype.draw = function() {
-    var i, j, k, is2D;
+    var i, j, k, is2D, databox2;
 
     function nz_range(lim) {
         var min = lim[0], max = lim[1];
@@ -1294,7 +1294,7 @@ matplot.Axis.prototype.draw = function() {
     right = -Infinity; left = Infinity;
     top = -Infinity; bottom = Infinity;
     near = Infinity, far = -Infinity;
-    
+
     for (var l = 0; l < 8; l++) {
         // project databox limit, but do not apply viewport 
         // transformation (as we have to jet define it)
@@ -1310,6 +1310,28 @@ matplot.Axis.prototype.draw = function() {
 
         //console.log('db v ',databox[l],v);
     }
+
+
+    databox2 = [];
+    for (i = 0; i < 2; i++) {
+        databox2[i] = [];
+        for (j = 0; j < 2; j++) {
+            databox2[i][j] = [];
+            for (k = 0; k < 2; k++) {
+                databox2[i][j][k] = [this._xLim[i],this._yLim[j],this._zLim[k],1];
+
+                v = this.project(databox2[i][j][k],
+                                 {viewport: numeric.identity(4)});
+
+                left = Math.min(left,v[0]);
+                right = Math.max(right,v[0]);
+                
+                top = Math.max(top,v[1]);
+                bottom = Math.min(bottom,v[1]);                
+            }
+        }
+    }
+
 
     if (right - left >= top - bottom) {
         scale = this.w/2;
@@ -1343,28 +1365,6 @@ matplot.Axis.prototype.draw = function() {
     this.invViewport = numeric.inv(this.viewport);
     this.invProjectionModelView = numeric.inv(this.projectionModelView);
 
-    // perspective test
-
-    var v, right = -Infinity, left = Infinity,
-    top = -Infinity, bottom = Infinity,
-    near = Infinity, far = -Infinity;
-    
-    for (var l = 0; l < 8; l++) {
-        //v = numeric.dot(this.projectionModelView,databox[l]);
-        v = this.project(databox[l]);
-
-        //console.log('project v', v);
-        left = Math.min(left,v[0]);
-        right = Math.max(right,v[0]);
-        
-        top = Math.max(top,v[1]);
-        bottom = Math.min(bottom,v[1]);
-        
-        near = Math.min(near,v[2]);
-        far = Math.max(far,v[2]);
-    }
-
-    //console.log('rl', left, right, bottom, top, near, far);
 
     if (!is2D) {
         k = 0;
