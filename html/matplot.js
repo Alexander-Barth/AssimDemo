@@ -1146,7 +1146,7 @@ matplot.Axis.prototype.is2dim = function() {
 };
 
 matplot.Axis.prototype.draw = function() {
-    var i, j, k, is2D, databox2;
+    var i, j, k, is2D, databox;
 
     function nz_range(lim) {
         var min = lim[0], max = lim[1];
@@ -1206,17 +1206,6 @@ matplot.Axis.prototype.draw = function() {
     this._CameraTarget = [(this._xLim[0]+this._xLim[1])/2,
                           (this._yLim[0]+this._yLim[1])/2,
                           (this._zLim[0]+this._zLim[1])/2];
-
-    var databox = [
-        [this._xLim[0],this._yLim[0],this._zLim[0],1],
-        [this._xLim[1],this._yLim[0],this._zLim[0],1],
-        [this._xLim[0],this._yLim[1],this._zLim[0],1],
-        [this._xLim[1],this._yLim[1],this._zLim[0],1],
-        [this._xLim[0],this._yLim[0],this._zLim[1],1],
-        [this._xLim[1],this._yLim[0],this._zLim[1],1],
-        [this._xLim[0],this._yLim[1],this._zLim[1],1],
-        [this._xLim[1],this._yLim[1],this._zLim[1],1]
-    ];
 
     if (this._projection === 'orthographic') {
         // y-direction if upward
@@ -1295,32 +1284,15 @@ matplot.Axis.prototype.draw = function() {
     top = -Infinity; bottom = Infinity;
     near = Infinity, far = -Infinity;
 
-    for (var l = 0; l < 8; l++) {
-        // project databox limit, but do not apply viewport 
-        // transformation (as we have to jet define it)
-
-        v = this.project(databox[l],
-                         {viewport: numeric.identity(4)});
-
-        left = Math.min(left,v[0]);
-        right = Math.max(right,v[0]);
-
-        top = Math.max(top,v[1]);
-        bottom = Math.min(bottom,v[1]);
-
-        //console.log('db v ',databox[l],v);
-    }
-
-
-    databox2 = [];
+    databox = [];
     for (i = 0; i < 2; i++) {
-        databox2[i] = [];
+        databox[i] = [];
         for (j = 0; j < 2; j++) {
-            databox2[i][j] = [];
+            databox[i][j] = [];
             for (k = 0; k < 2; k++) {
-                databox2[i][j][k] = [this._xLim[i],this._yLim[j],this._zLim[k],1];
+                databox[i][j][k] = [this._xLim[i],this._yLim[j],this._zLim[k],1];
 
-                v = this.project(databox2[i][j][k],
+                v = this.project(databox[i][j][k],
                                  {viewport: numeric.identity(4)});
 
                 left = Math.min(left,v[0]);
