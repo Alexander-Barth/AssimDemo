@@ -1255,7 +1255,7 @@ matplot.Axis.prototype.draw = function() {
                 this._DataAspectRatio,
                 Math.min.apply(null, this._DataAspectRatio));
 
-            console.log('this._DataAspectRatio',this._DataAspectRatio);
+            //console.log('this._DataAspectRatio',this._DataAspectRatio);
         }
     }
 
@@ -1308,7 +1308,7 @@ matplot.Axis.prototype.draw = function() {
         top = Math.max(top,v[1]);
         bottom = Math.min(bottom,v[1]);
 
-        console.log('db v ',databox[l],v);
+        //console.log('db v ',databox[l],v);
     }
 
     if (right - left >= top - bottom) {
@@ -1353,7 +1353,7 @@ matplot.Axis.prototype.draw = function() {
         //v = numeric.dot(this.projectionModelView,databox[l]);
         v = this.project(databox[l]);
 
-        console.log('project v', v);
+        //console.log('project v', v);
         left = Math.min(left,v[0]);
         right = Math.max(right,v[0]);
         
@@ -1371,14 +1371,14 @@ matplot.Axis.prototype.draw = function() {
         for (j = 0; j < this.yTick.length; j++) {
             this.drawLine(this._xLim,
                       [this.yTick[j],this.yTick[j]],
-                      [this.zTick[k],this.zTick[k]],
+                      [this._zLim[k],this._zLim[k]],
                       {linespec: this.gridLineStyle});
         }
 
         j = 0;
         for (k = 0; k < this.zTick.length; k++) {
             this.drawLine(this._xLim,
-                      [this.yTick[j],this.yTick[j]],
+                      [this._yLim[j],this._yLim[j]],
                       [this.zTick[k],this.zTick[k]],
                       {linespec: this.gridLineStyle});
         }
@@ -1387,13 +1387,13 @@ matplot.Axis.prototype.draw = function() {
         for (i = 0; i < this.xTick.length; i++) {
             this.drawLine([this.xTick[i],this.xTick[i]],
                       this._yLim,
-                      [this.zTick[k],this.zTick[k]],
+                      [this._zLim[k],this._zLim[k]],
                       {linespec: this.gridLineStyle});
         }
 
         i = 0;
         for (k = 0; k < this.zTick.length; k++) {
-            this.drawLine([this.xTick[i],this.xTick[i]],
+            this.drawLine([this._xLim[i],this._xLim[i]],
                       this._yLim,
                       [this.zTick[k],this.zTick[k]],
                       {linespec: this.gridLineStyle});
@@ -1402,14 +1402,14 @@ matplot.Axis.prototype.draw = function() {
         j = 0;
         for (i = 0; i < this.xTick.length; i++) {
             this.drawLine([this.xTick[i],this.xTick[i]],
-                      [this.yTick[j],this.yTick[j]],
+                      [this._yLim[j],this._yLim[j]],
                       this._zLim,
                       {linespec: this.gridLineStyle});
         }
 
         i = 0;
         for (j = 0; j < this.yTick.length; j++) {
-            this.drawLine([this.xTick[i],this.xTick[i]],
+            this.drawLine([this._xLim[i],this._xLim[i]],
                       [this.yTick[j],this.yTick[j]],
                       this._zLim,
                       {linespec: this.gridLineStyle});
@@ -1422,11 +1422,11 @@ matplot.Axis.prototype.draw = function() {
         dx = dy = dz = 0.15;
 
         // x-axis
-        this.drawLine(this._xLim,[this._yLim[j],this._yLim[j]],[this._zLim[k],this._zLim[k]],{color: 'red'});
+        this.drawLine(this._xLim,[this._yLim[j],this._yLim[j]],[this._zLim[k],this._zLim[k]]);
         for (i = 0; i < this.xTick.length; i++) {
             this.drawLine([this.xTick[i],this.xTick[i]],
                           [this._yLim[j]-dy,this._yLim[j]+dy],
-                          [this.zTick[k],this.zTick[k]]);
+                          [this._zLim[k],this._zLim[k]]);
 
             this.text(this.xTick[i],this._yLim[j]+3*dy,this._zLim[k],this.xTickLabel[i]);
         }
@@ -1439,7 +1439,7 @@ matplot.Axis.prototype.draw = function() {
         for (j = 0; j < this.yTick.length; j++) {
             this.drawLine([this._xLim[i]-dx,this._xLim[i]+dx],
                       [this.yTick[j],this.yTick[j]],
-                      [this.zTick[k],this.zTick[k]]);
+                      [this.zLim[k],this.zLim[k]]);
 
             this.text(this._xLim[i]+4*dx,this.yTick[j],this._zLim[k],this.yTickLabel[j]);
         }
@@ -1449,7 +1449,7 @@ matplot.Axis.prototype.draw = function() {
         this.drawLine([this._xLim[i],this._xLim[i]],[this._yLim[j],this._yLim[j]],this._zLim);
         for (k = 0; k < this.zTick.length; k++) {
             this.drawLine([this._xLim[i]-dx,this._xLim[i]+dx],
-                      [this.yTick[j],this.yTick[j]],
+                      [this.yLim[j],this.yLim[j]],
                       [this.zTick[k],this.zTick[k]]);
 
             this.text(this._xLim[i]+4*dx,this.yTick[j],this.zTick[k],this.zTickLabel[k]);
@@ -1818,9 +1818,10 @@ matplot.Axis.prototype.drawProjectedLine = function(i,j,style,x,y,z) {
             opt.data = [x[l],y[l]];
             opt['pointer-events'] = 'visible';
             opt.onclick = (function (l) {
-                return function (event) {
+                return function (ev) {
                     console.log('toggle annotation');                    
-                    that.toggleAnnotation(event,event.target,x[l],y[l],z[l]);
+                    that.toggleAnnotation(ev,ev.target,x[l],y[l],z[l]);
+                    //ev.stopPropagation();
                 };
             }(l));
         }
@@ -2015,8 +2016,9 @@ matplot.Figure = function Figure(id,width,height) {
         };
 
         that.md = null;
+        that.md2 = null;
         console.log('mouseup ',ev);
-    });
+    },false); // tigger event in bubbling phase (so that it might be cancled 
 
     this.canvas.svg.addEventListener('mousemove',function(ev) {
         var p1, p2, x, y, h, w, ax;
