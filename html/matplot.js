@@ -1146,7 +1146,7 @@ matplot.Axis.prototype.is2dim = function() {
 };
 
 matplot.Axis.prototype.draw = function() {
-    var i, j, k, is2D, databox, pdatabox=[], behindz=Infinity, behindind;
+    var i, j, k, is2D, databox, pdatabox=[], behindz=Infinity, behindind, frontz=-Infinity, frontind;
 
     function nz_range(lim) {
         var min = lim[0], max = lim[1];
@@ -1229,6 +1229,7 @@ matplot.Axis.prototype.draw = function() {
         this._CameraPosition = [-36.5257, -47.6012, 86.6025];
         //this._CameraPosition = [-27.394,  -35.701,   25.981];
         this._CameraPosition = [27.394,  35.701,   25.981];
+        this._CameraPosition = [-36.5257, -47.6012, 86.6025];
         // z-direction if upward
 	this._CameraUpVector = [0, 0, 1];
 	this._CameraViewAngle = 10.339584907201978;
@@ -1309,14 +1310,19 @@ matplot.Axis.prototype.draw = function() {
 
                 pdatabox[i][j][k] = v;
 
-                if (v[3] < behindz) {
-                    behindz = v[3];
+                if (v[2] < behindz) {
+                    behindz = v[2];
                     behindind = [i,j,k];
+                }
+
+                if (v[2] > frontz) {
+                    frontz = v[2];
+                    frontind = [i,j,k];
                 }
             }
         }
     }
-    console.log('behindz ',behindz);
+    console.log('behindz ',behindz,behindind,frontz,frontind);
 
     if (right - left >= top - bottom) {
         scale = this.w/2;
@@ -1352,7 +1358,7 @@ matplot.Axis.prototype.draw = function() {
 
 
     if (!is2D) {
-        k = 0;
+        k = behindind[2];
         for (j = 0; j < this.yTick.length; j++) {
             this.drawLine(this._xLim,
                       [this.yTick[j],this.yTick[j]],
@@ -1360,7 +1366,7 @@ matplot.Axis.prototype.draw = function() {
                       {linespec: this.gridLineStyle});
         }
 
-        j = 0;
+        j = behindind[1];
         for (k = 0; k < this.zTick.length; k++) {
             this.drawLine(this._xLim,
                       [this._yLim[j],this._yLim[j]],
@@ -1368,7 +1374,7 @@ matplot.Axis.prototype.draw = function() {
                       {linespec: this.gridLineStyle});
         }
 
-        k = 0;
+        k = behindind[2];
         for (i = 0; i < this.xTick.length; i++) {
             this.drawLine([this.xTick[i],this.xTick[i]],
                       this._yLim,
@@ -1376,7 +1382,7 @@ matplot.Axis.prototype.draw = function() {
                       {linespec: this.gridLineStyle});
         }
 
-        i = 0;
+        i = behindind[0];
         for (k = 0; k < this.zTick.length; k++) {
             this.drawLine([this._xLim[i],this._xLim[i]],
                       this._yLim,
@@ -1384,7 +1390,7 @@ matplot.Axis.prototype.draw = function() {
                       {linespec: this.gridLineStyle});
         }
 
-        j = 0;
+        j = behindind[1];
         for (i = 0; i < this.xTick.length; i++) {
             this.drawLine([this.xTick[i],this.xTick[i]],
                       [this._yLim[j],this._yLim[j]],
@@ -1392,7 +1398,7 @@ matplot.Axis.prototype.draw = function() {
                       {linespec: this.gridLineStyle});
         }
 
-        i = 0;
+        i = behindind[0];
         for (j = 0; j < this.yTick.length; j++) {
             this.drawLine([this._xLim[i],this._xLim[i]],
                       [this.yTick[j],this.yTick[j]],
@@ -1401,11 +1407,11 @@ matplot.Axis.prototype.draw = function() {
         }
 
 
-        k = 0;
-        j = 1;
         var dx, dy, dz;
         dx = dy = dz = 0.15;
 
+        k = 0;
+        j = 1;
         // x-axis
         this.drawLine(this._xLim,[this._yLim[j],this._yLim[j]],[this._zLim[k],this._zLim[k]]);
         for (i = 0; i < this.xTick.length; i++) {
