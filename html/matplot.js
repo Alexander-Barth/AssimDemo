@@ -1146,7 +1146,7 @@ matplot.Axis.prototype.is2dim = function() {
 };
 
 matplot.Axis.prototype.draw = function() {
-    var i, j, k, is2D, databox;
+    var i, j, k, is2D, databox, pdatabox=[], behindz=Infinity, behindind;
 
     function nz_range(lim) {
         var min = lim[0], max = lim[1];
@@ -1285,10 +1285,16 @@ matplot.Axis.prototype.draw = function() {
     near = Infinity, far = -Infinity;
 
     databox = [];
+    pdatabox = [];
+
     for (i = 0; i < 2; i++) {
         databox[i] = [];
+        pdatabox[i] = [];
+
         for (j = 0; j < 2; j++) {
             databox[i][j] = [];
+            pdatabox[i][j] = [];
+
             for (k = 0; k < 2; k++) {
                 databox[i][j][k] = [this._xLim[i],this._yLim[j],this._zLim[k],1];
 
@@ -1299,11 +1305,18 @@ matplot.Axis.prototype.draw = function() {
                 right = Math.max(right,v[0]);
                 
                 top = Math.max(top,v[1]);
-                bottom = Math.min(bottom,v[1]);                
+                bottom = Math.min(bottom,v[1]);
+
+                pdatabox[i][j][k] = v;
+
+                if (v[3] < behindz) {
+                    behindz = v[3];
+                    behindind = [i,j,k];
+                }
             }
         }
     }
-
+    console.log('behindz ',behindz);
 
     if (right - left >= top - bottom) {
         scale = this.w/2;
@@ -1411,7 +1424,7 @@ matplot.Axis.prototype.draw = function() {
         for (j = 0; j < this.yTick.length; j++) {
             this.drawLine([this._xLim[i]-dx,this._xLim[i]+dx],
                       [this.yTick[j],this.yTick[j]],
-                      [this.zLim[k],this.zLim[k]]);
+                      [this._zLim[k],this._zLim[k]]);
 
             this.text(this._xLim[i]+4*dx,this.yTick[j],this._zLim[k],this.yTickLabel[j]);
         }
@@ -1421,7 +1434,7 @@ matplot.Axis.prototype.draw = function() {
         this.drawLine([this._xLim[i],this._xLim[i]],[this._yLim[j],this._yLim[j]],this._zLim);
         for (k = 0; k < this.zTick.length; k++) {
             this.drawLine([this._xLim[i]-dx,this._xLim[i]+dx],
-                      [this.yLim[j],this.yLim[j]],
+                      [this._yLim[j],this._yLim[j]],
                       [this.zTick[k],this.zTick[k]]);
 
             this.text(this._xLim[i]+4*dx,this.yTick[j],this.zTick[k],this.zTickLabel[k]);
