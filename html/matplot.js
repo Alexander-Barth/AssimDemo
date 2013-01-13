@@ -858,6 +858,9 @@ matplot.Axis.prototype.xtick = getterSetterMode(function() { return this.xTick; 
 matplot.Axis.prototype.ytick = getterSetterMode(function() { return this.yTick; },'yTick','yTickMode');
 matplot.Axis.prototype.ztick = getterSetterMode(function() { return this.zTick; },'zTick','zTickMode');
 
+matplot.Axis.prototype.DataAspectRatio = getterSetterMode(function() { return this._DataAspectRatio; },'_DataAspectRatio','_DataAspectRatioMode');
+matplot.Axis.prototype.DataAspectRatioMode = getterSetterVal('_DataAspectRatioMode',['auto','manual']);
+
 
 // makes a product of all matrices provided as arguments
 
@@ -1220,7 +1223,6 @@ matplot.Axis.prototype.draw = function() {
         this._CameraUpVector = [0,1,0];
 
         if (this._DataAspectRatioMode === 'auto') {
-            this._DataAspectRatio = [1,this.h/this.w,1];
             this._DataAspectRatio = [(this._xLim[1]-this._xLim[0])/this.w,
                                      (this._yLim[1]-this._yLim[0])/this.h,
                                      1];
@@ -1233,7 +1235,8 @@ matplot.Axis.prototype.draw = function() {
 
 
     }
-    else {
+    else {        
+        // need way to calculate it
         this._CameraPosition = [-36.5257, -47.6012, 86.6025];
         //this._CameraPosition = [-27.394,  -35.701,   25.981];
         this._CameraPosition = [27.394,  35.701,   25.981];
@@ -1267,46 +1270,12 @@ matplot.Axis.prototype.draw = function() {
     var v, right = -Infinity, left = Infinity,
     top = -Infinity, bottom = Infinity,
     near = Infinity, far = -Infinity;
-    
-    for (var l = 0; l < 8; l++) {
-        v = numeric.dot(this.modelView,databox[l]);
-        console.log('v', v);
-        left = Math.min(left,v[0]);
-        right = Math.max(right,v[0]);
-
-        top = Math.max(top,v[1]);
-        bottom = Math.min(bottom,v[1]);
         
-        near = Math.min(near,v[2]);
-        far = Math.max(far,v[2]);
-    }
-        
-    console.log('rl', left, right, bottom, top, near, far);
-    var scale = this.h/2;
-    scale = 0.35;
-    
     if (this._projection === 'orthographic') {
         //this.projection = matplot.ortho(left, right, bottom, top, near, far);
 
-        if (right - left >= top - bottom) {
-            scale = this.w/2;
-        } 
-        else {
-            scale = this.h/2;
-        }
-
-        // find largest square that contained the data bounding box (transformed by modelView)
-        left = Math.min(left,bottom);
-        right = Math.max(right,top);
-        
-        this.projection = matplot.ortho(left, right, left, right, near, far);
-
         // scaling will be done later in viewport
         this.projection = numeric.identity(4);
-        //console.log('projection ',numeric.prettyPrint(this.projection));
-        v = numeric.dot(this.modelView,databox[0]);
-        //console.log('v ',v);
-
     }
     else {
         var aspect = 1;
@@ -1321,8 +1290,6 @@ matplot.Axis.prototype.draw = function() {
     }
 
     this.projectionModelView = numeric.dot(this.projection,this.modelView);
-
-    var maxval = -Infinity;
 
     right = -Infinity; left = Infinity;
     top = -Infinity; bottom = Infinity;
@@ -1344,19 +1311,17 @@ matplot.Axis.prototype.draw = function() {
         console.log('db v ',databox[l],v);
     }
 
-//    if (this._projection !== 'orthographic') {
-        if (right - left >= top - bottom) {
-            scale = this.w/2;
-        } 
-        else {
-            scale = this.h/2;
-        }
-
-        // find largest square that contained the data bounding box (transformed by modelView)
-        left = Math.min(left,bottom);
-        right = Math.max(right,top);
-        scale = scale/Math.max(right,-left);
-//    }
+    if (right - left >= top - bottom) {
+        scale = this.w/2;
+    } 
+    else {
+        scale = this.h/2;
+    }
+    
+    // find largest square that contained the data bounding box (transformed by modelView)
+    left = Math.min(left,bottom);
+    right = Math.max(right,top);
+    scale = scale/Math.max(right,-left);
 
     this.viewport = matplot.prod(
         // transform relative coordinates in pixels
@@ -1457,11 +1422,11 @@ matplot.Axis.prototype.draw = function() {
         dx = dy = dz = 0.15;
 
         // x-axis
-        this.drawLine(this._xLim,[this._yLim[j],this._yLim[j]],[this._zLim[k],this._zLim[k]]);
+        this.drawLine(this._xLim,[this._yLim[j],this._yLim[j]],[this._zLim[k],this._zLim[k]],{color: 'red'});
         for (i = 0; i < this.xTick.length; i++) {
             this.drawLine([this.xTick[i],this.xTick[i]],
-                      [this._yLim[j]-dy,this._yLim[j]+dy],
-                      [this.zTick[k],this.zTick[k]]);
+                          [this._yLim[j]-dy,this._yLim[j]+dy],
+                          [this.zTick[k],this.zTick[k]]);
 
             this.text(this.xTick[i],this._yLim[j]+3*dy,this._zLim[k],this.xTickLabel[i]);
         }
@@ -1854,6 +1819,7 @@ matplot.Axis.prototype.drawProjectedLine = function(i,j,style,x,y,z) {
             opt['pointer-events'] = 'visible';
             opt.onclick = (function (l) {
                 return function (event) {
+                    console.log('toggle annotation');                    
                     that.toggleAnnotation(event,event.target,x[l],y[l],z[l]);
                 };
             }(l));
@@ -2054,7 +2020,7 @@ matplot.Figure = function Figure(id,width,height) {
 
     this.canvas.svg.addEventListener('mousemove',function(ev) {
         var p1, p2, x, y, h, w, ax;
-        console.log('mousemove ',ev);
+        //console.log('mousemove ',ev);
 
 
         if (that.md) {
