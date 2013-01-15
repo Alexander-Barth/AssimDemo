@@ -1528,11 +1528,16 @@ matplot.Axis.prototype.draw = function() {
             
             if (j !== behindind[1]) {
                 // in y-direction
+                console.log('j',j);
+                // determine tick length (unprojected)
+
+                p1 = this.project([this.xTick[i],this._yLim[j],this._zLim[k]]);
+                p2 = this.project([this.xTick[i],this._yLim[j]+1,this._zLim[k]]);
+                dy = this.xTickLen/(2*Math.sqrt(Math.pow(p2[0]-p1[0],2) + Math.pow(p2[1]-p1[1],2)));
+
                 this.drawLine([this.xTick[i],this.xTick[i]],
                               [this._yLim[j]-dy,this._yLim[j]+dy],
                               [this._zLim[k],this._zLim[k]],{color: 'blue'});
-
-                console.log('j',j);
                 
                 this.text(this.xTick[i],
                           this._yLim[j] + (j === 0 ? -1 : 1) * 2*dy,
@@ -1543,13 +1548,18 @@ matplot.Axis.prototype.draw = function() {
             else {
                 console.log('k',k);
                 // in z-direction
+
+                p1 = this.project([this.xTick[i],this._yLim[j],this._zLim[k]]);
+                p2 = this.project([this.xTick[i],this._yLim[j],this._zLim[k]+1]);
+                dz = this.xTickLen/(2*Math.sqrt(Math.pow(p2[0]-p1[0],2) + Math.pow(p2[1]-p1[1],2)));
+
                 this.drawLine([this.xTick[i],this.xTick[i]],
                               [this._yLim[j],this._yLim[j]],
                               [this._zLim[k]-dz,this._zLim[k]+dz]);
             
                 this.text(this.xTick[i],
                           this._yLim[j],
-                          this._zLim[k] + (k === 0 ? -1 : 1)*dz,
+                          this._zLim[k] + (k === 0 ? -1 : 1)* 2 * dz,
                           this.xTickLabel[i],
                           style);
             }
