@@ -1551,102 +1551,102 @@ matplot.Axis.prototype.drawAxis = function(v) {
     var bbox = [this._xLim,this._yLim,this._zLim];
 
     for (j = 0; j < 2; j++) {
-            for (k = 0; k < 2; k++) {
-                // emulate x-or
-                if ( (behindind[1] === j) !== (behindind[2] === k) ) {
-                    // from the two possible locations choose the one 
-                    // which are closest to the lower right corner
+        for (k = 0; k < 2; k++) {
+            // emulate x-or
+            if ( (behindind[1] === j) !== (behindind[2] === k) ) {
+                // from the two possible locations choose the one 
+                // which are closest to the lower right corner
 
-                    // project start and end point of axis
-                    p1 = this.project([this._xLim[0],this._yLim[j],this._zLim[k]],
-                                      {viewport: numeric.identity(4)});
+                // project start and end point of axis
+                p1 = this.project([this._xLim[0],this._yLim[j],this._zLim[k]],
+                                  {viewport: numeric.identity(4)});
 
-                    p2 = this.project([this._xLim[1],this._yLim[j],this._zLim[k]],
-                                      {viewport: numeric.identity(4)});
+                p2 = this.project([this._xLim[1],this._yLim[j],this._zLim[k]],
+                                  {viewport: numeric.identity(4)});
 
-                    // middle point
-                    v = [(p1[0]+p2[0])/2,(p1[1]+p2[1])/2];
+                // middle point
+                v = [(p1[0]+p2[0])/2,(p1[1]+p2[1])/2];
 
-                    //v = this.project([(this._xLim[0]+this._xLim[1])/2,this._yLim[j],this._zLim[k]],
-                    //                 {viewport: numeric.identity(4)});
-                    
-                    // distance (squared) to point (-1,-1)
-                    tmp = (v[0]+1)*(v[0]+1) + (v[1]+1)*(v[1]+1);
-                    
-                    if (tmp < dist2) {
-                        dist2 = tmp;
-                        axind = [j,k];
+                //v = this.project([(this._xLim[0]+this._xLim[1])/2,this._yLim[j],this._zLim[k]],
+                //                 {viewport: numeric.identity(4)});
+                
+                // distance (squared) to point (-1,-1)
+                tmp = (v[0]+1)*(v[0]+1) + (v[1]+1)*(v[1]+1);
+                
+                if (tmp < dist2) {
+                    dist2 = tmp;
+                    axind = [j,k];
 
-                        // determine if axis is mostly horizontal or vertical 
-                        // for the position of the tick labels
-                        if (Math.abs(p2[0]-p1[0]) > Math.abs(p2[1]-p1[1])) {
-                            orientation = 'h';
-                            style = {HorizontalAlignment: 'center',
-                                     VerticalAlignment: 'top'}
-                        }
-                        else {
-                            orientation = 'v';
-                            style = {HorizontalAlignment: 'right',
-                                     VerticalAlignment: 'middle'}
-                        }
-                            
+                    // determine if axis is mostly horizontal or vertical 
+                    // for the position of the tick labels
+                    if (Math.abs(p2[0]-p1[0]) > Math.abs(p2[1]-p1[1])) {
+                        orientation = 'h';
+                        style = {HorizontalAlignment: 'center',
+                                 VerticalAlignment: 'top'}
+                    }
+                    else {
+                        orientation = 'v';
+                        style = {HorizontalAlignment: 'right',
+                                 VerticalAlignment: 'middle'}
                     }
                     
                 }
+                
             }
         }
+    }
 
-        console.log(style);
-        j = axind[0];
-        k = axind[1];
-        // x-axis
-        this.drawLine(this._xLim,[this._yLim[j],this._yLim[j]],[this._zLim[k],this._zLim[k]],{color: 'red'});
+    console.log(style);
+    j = axind[0];
+    k = axind[1];
+    // x-axis
+    this.drawLine(this._xLim,[this._yLim[j],this._yLim[j]],[this._zLim[k],this._zLim[k]],{color: 'red'});
     var args = [];
     //this._xLim,[this._yLim[j],this._yLim[j]],[this._zLim[k],this._zLim[k]]
 
 
-        for (i = 0; i < this.xTick.length; i++) {
+    for (i = 0; i < this.xTick.length; i++) {
 
-            // in which orientation show we draw the tick-lines
+        // in which orientation show we draw the tick-lines
+        
+        if (j !== behindind[1]) {
+            // in y-direction
+            console.log('j',j);
+            // determine tick length (unprojected)
+
+            p1 = this.project([this.xTick[i],this._yLim[j],this._zLim[k]]);
+            p2 = this.project([this.xTick[i],this._yLim[j]+1,this._zLim[k]]);
+            dy = this.xTickLen/(2*Math.sqrt(Math.pow(p2[0]-p1[0],2) + Math.pow(p2[1]-p1[1],2)));
+
+            this.drawLine([this.xTick[i],this.xTick[i]],
+                          [this._yLim[j]-dy,this._yLim[j]+dy],
+                          [this._zLim[k],this._zLim[k]],{color: 'blue'});
             
-            if (j !== behindind[1]) {
-                // in y-direction
-                console.log('j',j);
-                // determine tick length (unprojected)
+            this.text(this.xTick[i],
+                      this._yLim[j] + (j === 0 ? -1 : 1) * 2*dy,
+                      this._zLim[k],
+                      this.xTickLabel[i],style);
 
-                p1 = this.project([this.xTick[i],this._yLim[j],this._zLim[k]]);
-                p2 = this.project([this.xTick[i],this._yLim[j]+1,this._zLim[k]]);
-                dy = this.xTickLen/(2*Math.sqrt(Math.pow(p2[0]-p1[0],2) + Math.pow(p2[1]-p1[1],2)));
-
-                this.drawLine([this.xTick[i],this.xTick[i]],
-                              [this._yLim[j]-dy,this._yLim[j]+dy],
-                              [this._zLim[k],this._zLim[k]],{color: 'blue'});
-                
-                this.text(this.xTick[i],
-                          this._yLim[j] + (j === 0 ? -1 : 1) * 2*dy,
-                          this._zLim[k],
-                          this.xTickLabel[i],style);
-
-            }
-            else {
-                console.log('k',k);
-                // in z-direction
-
-                p1 = this.project([this.xTick[i],this._yLim[j],this._zLim[k]]);
-                p2 = this.project([this.xTick[i],this._yLim[j],this._zLim[k]+1]);
-                dz = this.xTickLen/(2*Math.sqrt(Math.pow(p2[0]-p1[0],2) + Math.pow(p2[1]-p1[1],2)));
-
-                this.drawLine([this.xTick[i],this.xTick[i]],
-                              [this._yLim[j],this._yLim[j]],
-                              [this._zLim[k]-dz,this._zLim[k]+dz]);
-            
-                this.text(this.xTick[i],
-                          this._yLim[j],
-                          this._zLim[k] + (k === 0 ? -1 : 1)* 2 * dz,
-                          this.xTickLabel[i],
-                          style);
-            }
         }
+        else {
+            console.log('k',k);
+            // in z-direction
+
+            p1 = this.project([this.xTick[i],this._yLim[j],this._zLim[k]]);
+            p2 = this.project([this.xTick[i],this._yLim[j],this._zLim[k]+1]);
+            dz = this.xTickLen/(2*Math.sqrt(Math.pow(p2[0]-p1[0],2) + Math.pow(p2[1]-p1[1],2)));
+
+            this.drawLine([this.xTick[i],this.xTick[i]],
+                          [this._yLim[j],this._yLim[j]],
+                          [this._zLim[k]-dz,this._zLim[k]+dz]);
+            
+            this.text(this.xTick[i],
+                      this._yLim[j],
+                      this._zLim[k] + (k === 0 ? -1 : 1)* 2 * dz,
+                      this.xTickLabel[i],
+                      style);
+        }
+    }
 };
 
 
