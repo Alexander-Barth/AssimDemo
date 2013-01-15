@@ -857,6 +857,9 @@ function getterSetterVal(prop,vals) {
 // obs.fooMode(val) will set the value to obj._fooMode to 'auto' or 'manual' (no other values are permitted)
 
 installGetterSetterMode = function(prop,func) {
+    if (func === undefined) {
+        func = function() { this['sensible' + prop].call(this); };
+    }
 
     matplot.Axis.prototype[prop] = getterSetterMode(func,'_' + prop,'_' + prop + 'Mode');
     matplot.Axis.prototype[prop + 'Mode'] = getterSetterVal('_' + prop + 'Mode',['auto','manual']);
@@ -886,6 +889,7 @@ matplot.Axis.prototype.DataAspectRatio = getterSetterMode(function() { return th
 matplot.Axis.prototype.DataAspectRatioMode = getterSetterVal('_DataAspectRatioMode',['auto','manual']);
 
 installGetterSetterMode('CameraPosition',function() { return this._CameraPosition; });
+installGetterSetterMode('CameraUpVector');
 
 // makes a product of all matrices provided as arguments
 
@@ -1170,6 +1174,15 @@ matplot.Axis.prototype.is2dim = function() {
     return (_zrange[0] === _zrange[1]);
 };
 
+matplot.Axis.prototype.sensibleCameraUpVector = function() {
+    if (this._projection === 'orthographic') {
+        // y-direction if upward
+        return [0,1,0];
+    }
+    // z-direction if upward
+    return [0, 0, 1];
+};
+
 matplot.Axis.prototype.draw = function() {
     var i, j, k, is2D, databox, pdatabox=[], behindz=Infinity, behindind, frontz=-Infinity, frontind;
 
@@ -1232,6 +1245,10 @@ matplot.Axis.prototype.draw = function() {
                           (this._yLim[0]+this._yLim[1])/2,
                           (this._zLim[0]+this._zLim[1])/2];
 
+    if (this._CameraUpVectorMode === 'auto') {
+        this._CameraUpVector = this.sensibleCameraUpVector();
+    }
+
     if (this._projection === 'orthographic') {
         // y-direction if upward
         this._CameraUpVector = [0,1,0];
@@ -1259,8 +1276,6 @@ matplot.Axis.prototype.draw = function() {
             this._CameraPosition = [-36.5257, -47.6012, 86.6025];
         }
 
-        // z-direction if upward
-	this._CameraUpVector = [0, 0, 1];
 	this._CameraViewAngle = 10.339584907201978;
 
 
@@ -1453,7 +1468,7 @@ matplot.Axis.prototype.draw = function() {
         }
 */
 
-        var dist2 = Infinity, tmp, axind, p1, p2;
+        var dist2 = Infinity, tmp, axind, p1, p2, style;
 
         for (j = 0; j < 2; j++) {
             for (k = 0; k < 2; k++) {
@@ -1486,9 +1501,13 @@ matplot.Axis.prototype.draw = function() {
                         // for the position of the tick labels
                         if (Math.abs(p2[0]-p1[0]) > Math.abs(p2[1]-p1[1])) {
                             orientation = 'h';
+                            style = {HorizontalAlignment: 'center',
+                                     VerticalAlignment: 'top'}
                         }
                         else {
                             orientation = 'v';
+                            style = {HorizontalAlignment: 'right',
+                                     VerticalAlignment: 'middle'}
                         }
                             
                     }
@@ -1496,7 +1515,8 @@ matplot.Axis.prototype.draw = function() {
                 }
             }
         }
-        
+
+        console.log(style);
         j = axind[0];
         k = axind[1];
         // x-axis
@@ -1511,12 +1531,17 @@ matplot.Axis.prototype.draw = function() {
                 this.drawLine([this.xTick[i],this.xTick[i]],
                               [this._yLim[j]-dy,this._yLim[j]+dy],
                               [this._zLim[k],this._zLim[k]],{color: 'blue'});
-            
+
+                console.log('j',j);
+                
                 this.text(this.xTick[i],
-                          this._yLim[j] + (j === 0 ? -1 : 1) * 3*dy,
-                          this._zLim[k],this.xTickLabel[i]);
+                          this._yLim[j] + (j === 0 ? -1 : 1) * 2*dy,
+                          this._zLim[k],
+                          this.xTickLabel[i],style);
+
             }
             else {
+                console.log('k',k);
                 // in z-direction
                 this.drawLine([this.xTick[i],this.xTick[i]],
                               [this._yLim[j],this._yLim[j]],
@@ -1524,9 +1549,9 @@ matplot.Axis.prototype.draw = function() {
             
                 this.text(this.xTick[i],
                           this._yLim[j],
-                          this._zLim[k] - 3*dz,this.xTickLabel[i],
-                          {'HorizontalAlignment': 'center',
-                           'VerticalAlignment': 'top'});
+                          this._zLim[k] + (k === 0 ? -1 : 1)*dz,
+                          this.xTickLabel[i],
+                          style);
             }
         }
 
@@ -1571,7 +1596,7 @@ matplot.Axis.prototype.draw = function() {
 
     // draw all children
     for (i = 0; i<this.children.length; i++) {
-//        this.children[i].draw(this);
+        this.children[i].draw(this);
     }
 
     // exit clip rectangle
