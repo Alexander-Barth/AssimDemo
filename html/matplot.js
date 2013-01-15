@@ -19,6 +19,8 @@
 /*global jQuery: false, $: false, numeric: false, MathJax */
 
 
+"use strict";
+
 var matplot = {};
 
 // creates a global "addwheelListener" method
@@ -856,7 +858,7 @@ function getterSetterVal(prop,vals) {
 // obs.fooMode() will return the state of obj._fooMode
 // obs.fooMode(val) will set the value to obj._fooMode to 'auto' or 'manual' (no other values are permitted)
 
-installGetterSetterMode = function(prop,func) {
+function installGetterSetterMode (prop,func) {
     if (func === undefined) {
         func = function() { this['sensible' + prop].call(this); };
     }
@@ -866,7 +868,6 @@ installGetterSetterMode = function(prop,func) {
 
 };
 
-(function() { return this.lim('x'); },'_xLim','_xLimMode');
 
 matplot.Axis.prototype.xLim = getterSetterMode(function() { return this.lim('x'); },'_xLim','_xLimMode');
 matplot.Axis.prototype.yLim = getterSetterMode(function() { return this.lim('y'); },'_yLim','_yLimMode');
@@ -1184,7 +1185,7 @@ matplot.Axis.prototype.sensibleCameraUpVector = function() {
 };
 
 matplot.Axis.prototype.draw = function() {
-    var i, j, k, is2D, databox, pdatabox=[], behindz=Infinity, behindind, frontz=-Infinity, frontind;
+    var i, j, k, is2D, databox, pdatabox=[], behindz=Infinity, behindind, frontz=-Infinity, frontind, scale;
 
     function nz_range(lim) {
         var min = lim[0], max = lim[1];
@@ -1544,8 +1545,8 @@ matplot.Axis.prototype.draw = function() {
     }
 };
 
-matplot.Axis.prototype.drawAxis = function(v) {
-    var dist2 = Infinity, tmp, axind, p1, p2, style;
+matplot.Axis.prototype.drawAxis = function(l) {
+    var dist2 = Infinity, tmp, axind, p1, p2, style, i, j, k, v, dx, dy, dz;
     var behindind = this.behindind;
 
     var bbox = [this._xLim,this._yLim,this._zLim];
@@ -1567,9 +1568,6 @@ matplot.Axis.prototype.drawAxis = function(v) {
                 // middle point
                 v = [(p1[0]+p2[0])/2,(p1[1]+p2[1])/2];
 
-                //v = this.project([(this._xLim[0]+this._xLim[1])/2,this._yLim[j],this._zLim[k]],
-                //                 {viewport: numeric.identity(4)});
-                
                 // distance (squared) to point (-1,-1)
                 tmp = (v[0]+1)*(v[0]+1) + (v[1]+1)*(v[1]+1);
                 
@@ -1580,12 +1578,10 @@ matplot.Axis.prototype.drawAxis = function(v) {
                     // determine if axis is mostly horizontal or vertical 
                     // for the position of the tick labels
                     if (Math.abs(p2[0]-p1[0]) > Math.abs(p2[1]-p1[1])) {
-                        orientation = 'h';
                         style = {HorizontalAlignment: 'center',
                                  VerticalAlignment: 'top'}
                     }
                     else {
-                        orientation = 'v';
                         style = {HorizontalAlignment: 'right',
                                  VerticalAlignment: 'middle'}
                     }
@@ -1599,10 +1595,38 @@ matplot.Axis.prototype.drawAxis = function(v) {
     console.log(style);
     j = axind[0];
     k = axind[1];
+
+    function cshift(v,n) {
+        if (n === 0) {
+            return v;
+        }
+        if (n === 1) {
+            return [v[1],v[2],v[0]];
+        }
+        else {
+            return cshift(cshift(v,1),n-1);
+        }
+    }
+
+    if (v === 1) {
+        var tmp = this.xLim;
+        this.xLim = this.yLim;
+        this.yLim = this.zLim;
+        this.zLim = tmp;
+    }
+        
     // x-axis
-    this.drawLine(this._xLim,[this._yLim[j],this._yLim[j]],[this._zLim[k],this._zLim[k]],{color: 'red'});
-    var args = [];
+    //this.drawLine(this._xLim,[this._yLim[j],this._yLim[j]],[this._zLim[k],this._zLim[k]],{color: 'red'});
+    this.drawLine.apply(this,[this._xLim,[this._yLim[j],this._yLim[j]],[this._zLim[k],this._zLim[k]],{color: 'red'}]);
     //this._xLim,[this._yLim[j],this._yLim[j]],[this._zLim[k],this._zLim[k]]
+
+
+    if (v === 1) {
+        var tmp = this.zLim;
+        this.zLim = this.yLim;
+        this.yLim = this.xLim;
+        this.zLim = tmp;
+    }
 
 
     for (i = 0; i < this.xTick.length; i++) {
