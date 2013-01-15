@@ -16,7 +16,7 @@
 */
 
 /*jslint browse: true, continue : true, devel : true, indent : 4, maxerr : 50, newcap : false, nomen : true, plusplus : false, regexp : true, sloppy : true, vars : true, white : false, nomen: false */
-/*global jQuery: false, $: false, numeric: false, MathJax */
+/*global jQuery: false, $: false, numeric: false, MathJax: false, XMLSerializer: false, Blob: false, URL: false */
 
 
 "use strict";
@@ -42,7 +42,7 @@ var matplot = {};
     // detect available wheel event
     if ( document.onmousewheel !== undefined ) {
         // Webkit and IE support at least "mousewheel"
-        support = "mousewheel"
+        support = "mousewheel";
     }
     try {
         // Modern browsers support "wheel"
@@ -58,15 +58,17 @@ var matplot = {};
         _addWheelListener( elem, support, callback, useCapture );
  
         // handle MozMousePixelScroll in older Firefox
-        if( support == "DOMMouseScroll" ) {
+        if( support === "DOMMouseScroll" ) {
             _addWheelListener( elem, "MozMousePixelScroll", callback, useCapture );
         }
     };
  
     function _addWheelListener( elem, eventName, callback, useCapture ) {
-        elem[ _addEventListener ]( prefix + eventName, support == "wheel" ? callback : function( originalEvent ) {
-            !originalEvent && ( originalEvent = window.event );
- 
+        elem[ _addEventListener ]( prefix + eventName, support === "wheel" ? callback : function( originalEvent ) {
+            if (!originalEvent) {
+                originalEvent = window.event;
+            }
+
             // create a normalized event object
             var event = {
                 // keep a ref to the original event object
@@ -354,7 +356,7 @@ matplot.mk = function mk(xmlns,tag,attribs,children) {
 
 matplot.html = function mk(tag,attribs,children) {
     return matplot.mk('',tag,attribs,children);
-}
+};
 
 
 matplot.SVGCanvas = function SVGCanvas(container,width,height) {
@@ -421,7 +423,7 @@ matplot.SVGCanvas.prototype.clipRect = function(x,y,w,h) {
             ])
         ]));
     
-    this.push(this.group({'clip-path': 'url(#' + id + ')'}))
+    this.push(this.group({'clip-path': 'url(#' + id + ')'}));
 };
 
 matplot.SVGCanvas.prototype.group = function(style) {
@@ -866,7 +868,7 @@ function installGetterSetterMode (prop,func) {
     matplot.Axis.prototype[prop] = getterSetterMode(func,'_' + prop,'_' + prop + 'Mode');
     matplot.Axis.prototype[prop + 'Mode'] = getterSetterVal('_' + prop + 'Mode',['auto','manual']);
 
-};
+}
 
 
 matplot.Axis.prototype.xLim = getterSetterMode(function() { return this.lim('x'); },'_xLim','_xLimMode');
@@ -1028,9 +1030,8 @@ Compute U' = S x L.
 };
 
 matplot.Axis.prototype.zoomIn = function() {
-    var xl = this.xLim();
-    
-}
+    var xl = this.xLim();    
+};
 
 matplot.Axis.prototype.project = function(u,options) {
     var i,j, b, v, viewport, projectionModelView;
@@ -1041,10 +1042,10 @@ matplot.Axis.prototype.project = function(u,options) {
     // copy array so that we do not modify u
     v = u.slice(0); 
 
-    if (v.length == 2) {
+    if (v.length === 2) {
         v[2] = 0;
     }
-    if (v.length == 3) {
+    if (v.length === 3) {
         v[3] = 1;
     }
 
@@ -1270,7 +1271,7 @@ matplot.Axis.prototype.draw = function() {
     else {        
         // need way to calculate it
 
-        if (this._CameraPositionMode == 'auto') {
+        if (this._CameraPositionMode === 'auto') {
             this._CameraPosition = [-36.5257, -47.6012, 86.6025];
             //this._CameraPosition = [-27.394,  -35.701,   25.981];
             this._CameraPosition = [27.394,  35.701,   25.981];
@@ -1328,7 +1329,7 @@ matplot.Axis.prototype.draw = function() {
 
     right = -Infinity; left = Infinity;
     top = -Infinity; bottom = Infinity;
-    near = Infinity, far = -Infinity;
+    near = Infinity; far = -Infinity;
 
     databox = [];
     pdatabox = [];
@@ -1518,7 +1519,7 @@ matplot.Axis.prototype.draw = function() {
     }
 
     // exit clip rectangle
-    this.fig.canvas.pop()
+    this.fig.canvas.pop();
 
     this.fig.canvas.rect(this.fig.canvas.width*this.x,
                          this.fig.canvas.height*this.y,
@@ -1579,11 +1580,11 @@ matplot.Axis.prototype.drawAxis = function(l) {
                     // for the position of the tick labels
                     if (Math.abs(p2[0]-p1[0]) > Math.abs(p2[1]-p1[1])) {
                         style = {HorizontalAlignment: 'center',
-                                 VerticalAlignment: 'top'}
+                                 VerticalAlignment: 'top'};
                     }
                     else {
                         style = {HorizontalAlignment: 'right',
-                                 VerticalAlignment: 'middle'}
+                                 VerticalAlignment: 'middle'};
                     }
                     
                 }
@@ -1609,7 +1610,7 @@ matplot.Axis.prototype.drawAxis = function(l) {
     }
 
     if (v === 1) {
-        var tmp = this.xLim;
+        tmp = this.xLim;
         this.xLim = this.yLim;
         this.yLim = this.zLim;
         this.zLim = tmp;
@@ -1622,7 +1623,7 @@ matplot.Axis.prototype.drawAxis = function(l) {
 
 
     if (v === 1) {
-        var tmp = this.zLim;
+        tmp = this.zLim;
         this.zLim = this.yLim;
         this.yLim = this.xLim;
         this.zLim = tmp;
@@ -2186,7 +2187,7 @@ matplot.Figure = function Figure(id,width,height) {
                 ax.yLim([Math.min(p1[1],p2[1]),Math.max(p1[1],p2[1])]);
                 that.draw();    
             }        
-        };
+        }
 
         that.md = null;
         that.md2 = null;
@@ -2194,7 +2195,8 @@ matplot.Figure = function Figure(id,width,height) {
     },false); // tigger event in bubbling phase (so that it might be cancled 
 
     this.canvas.svg.addEventListener('mousemove',function(ev) {
-        var p1, p2, x, y, h, w, ax;
+        var p1, p2, x, y, h, w, ax, lim, r, po;
+
         //console.log('mousemove ',ev);
 
 
@@ -2221,7 +2223,6 @@ matplot.Figure = function Figure(id,width,height) {
                 that.dragRect = that.canvas.rect(x,y,w,h);
             }
             else {
-                var lim,r;
                 po = getcoordp(that.md); // origin
                 p1 = getcoordp(ev);
 
@@ -2246,7 +2247,7 @@ matplot.Figure = function Figure(id,width,height) {
         that.contextmenu.style.left = i + 'px';
         that.contextmenu.style.top = j + 'px';
 
-        console.log('context ',ev)
+        console.log('context ',ev);
         ev.preventDefault();
     });
 
