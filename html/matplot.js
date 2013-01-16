@@ -1455,7 +1455,7 @@ matplot.Axis.prototype.draw = function() {
 
     // draw all children
     for (i = 0; i<this.children.length; i++) {
-//        this.children[i].draw(this);
+        this.children[i].draw(this);
     }
 
     // exit clip rectangle
@@ -1511,7 +1511,6 @@ matplot.Axis.prototype.drawAxis = function(sv,tickLabel,tickLen) {
             return cshift(cshift(v,1),n-1);
         }
     }
-    console.log('this.behindind before ',this.behindind,this._xLim,this._yLim,this._zLim);
   
     ref = cshift([this._xLim, this._yLim, this._zLim],sv);
     this._xLim = ref[0];
@@ -1531,7 +1530,6 @@ matplot.Axis.prototype.drawAxis = function(sv,tickLabel,tickLen) {
         return save_project.call(this,cshift(v,-sv),opt);
     };
 
-
     this.drawAxisX(tickLabel,tickLen);
 
     // restore
@@ -1549,12 +1547,6 @@ matplot.Axis.prototype.drawAxis = function(sv,tickLabel,tickLen) {
     this.yTick = ref[1];
     this.zTick = ref[2];
 
-/*
-    tmp = this._zLim;
-    this._zLim = this._yLim;
-    this._yLim = this._xLim;
-    this._xLim = tmp;
-*/
     console.log('this.behindind after ',this.behindind,this._xLim,this._yLim,this._zLim);
 };
 
@@ -1631,8 +1623,7 @@ matplot.Axis.prototype.drawAxisX = function(tickLabel,tickLen) {
     k = axind[1];
 
     // x-axis
-    this.drawLine(this._xLim,[this._yLim[j],this._yLim[j]],[this._zLim[k],this._zLim[k]],{color: 'red'});
-
+    this.drawLine(this._xLim,[this._yLim[j],this._yLim[j]],[this._zLim[k],this._zLim[k]]);
 
     for (i = 0; i < this.xTick.length; i++) {
         // in which orientation show we draw the tick-lines
@@ -1648,7 +1639,7 @@ matplot.Axis.prototype.drawAxisX = function(tickLabel,tickLen) {
 
             this.drawLine([this.xTick[i],this.xTick[i]],
                           [this._yLim[j]-dy,this._yLim[j]+dy],
-                          [this._zLim[k],this._zLim[k]],{color: 'blue'});
+                          [this._zLim[k],this._zLim[k]]);
             
             this.text(this.xTick[i],
                       this._yLim[j] + (j === 0 ? -1 : 1) * 2*dy,
