@@ -616,23 +616,26 @@ matplot.isArray = function(arr) {
     return Object.prototype.toString.call(arr) === '[object Array]';
 };
 
-matplot.arrayForEach = function ArrayForEach(arr,fun) {
-    var i;
+matplot.arrayMap = function arrayMap(arr,fun) {
+    var i, tmp;
 
     for (i = 0; i < arr.length; i++) {
         if (matplot.isArray(arr[i])) {
-            ArrayForEach(arr[i],fun);
+            arrayMap(arr[i],fun);
         }
         else {
-            fun(arr[i]);
+            tmp = fun(arr[i]);
+            if (tmp !== undefined) {
+                arr[i] = tmp;
+            }
         }
     }
 };
 
-matplot.DataRange = function DataRange(arr) {
+matplot.dataRange = function(arr) {
     var i, tmp, min=Infinity, max=-Infinity;
 
-    matplot.arrayForEach(arr,function(v) {
+    matplot.arrayMap(arr,function(v) {
         if (!isNaN(v)) {
             min = Math.min(min,v);
             max = Math.max(max,v);
@@ -651,18 +654,8 @@ matplot.Surface = function Surface(x,y,z,c,style) {
 };
 
 matplot.Surface.prototype.lim = function(what) {
-    var i, j, min, max, tmp = this[what];
-    min = max = tmp[0][0];
-
-    for (i=0; i<tmp.length; i++) {
-        for (j=0; j<tmp[0].length; j++) {
-            min = Math.min(min,tmp[i][j]);
-            max = Math.max(max,tmp[i][j]);
-        }
-    }
-    
-    console.log('matplot.DataRange', matplot.DataRange(tmp), min,max);
-    return [min,max];
+    var tmp = this[what];
+    return matplot.dataRange(tmp);
 };
 
 matplot.Surface.prototype.draw = function(axis) {
@@ -699,13 +692,7 @@ matplot.Line.prototype.lim = function(what) {
     if (what === 'c') {
         return [NaN,NaN];
     }
-    min = max = tmp[0];
-
-    for (i=0; i<tmp.length; i++) {
-        min = Math.min(min,tmp[i]);
-        max = Math.max(max,tmp[i]);
-    }
-    return [min,max];
+    return matplot.dataRange(tmp);
 };
 
 matplot.Line.prototype.draw = function(axis) {
