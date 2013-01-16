@@ -1442,9 +1442,9 @@ matplot.Axis.prototype.draw = function() {
 
 
     if (!is2D) {
-        this.drawAxis(0,this.xTick,this.xTickLabel,this.xTickLen);
-        this.drawAxis(1,this.yTick,this.yTickLabel,this.yTickLen);
-        this.drawAxis(2,this.zTick,this.zTickLabel,this.zTickLen);
+        this.drawAxis(0,this.xTickLabel,this.xTickLen);
+        this.drawAxis(1,this.yTickLabel,this.yTickLen);
+        this.drawAxis(2,this.zTickLabel,this.zTickLen);
     }
 
     // define clip rectangle
@@ -1488,7 +1488,7 @@ matplot.Axis.prototype.draw = function() {
 };
 
 
-matplot.Axis.prototype.drawAxis = function(sv,tick,tickLabel,tickLen) {
+matplot.Axis.prototype.drawAxis = function(sv,tickLabel,tickLen) {
     var dist2 = Infinity, tmp, axind, p1, p2, style, i, j, k, v=1, ref;
     var behindind = this.behindind, save_project;
 
@@ -1532,7 +1532,7 @@ matplot.Axis.prototype.drawAxis = function(sv,tick,tickLabel,tickLen) {
     };
 
 
-    this.drawAxisX(tick,tickLabel,tickLen);
+    this.drawAxisX(tickLabel,tickLen);
 
     // restore
     this.project = save_project;
@@ -1563,7 +1563,7 @@ matplot.Axis.prototype.drawAxis = function(sv,tick,tickLabel,tickLen) {
 
 
 
-matplot.Axis.prototype.drawAxisX = function(tick,tickLabel,tickLen) {
+matplot.Axis.prototype.drawAxisX = function(tickLabel,tickLen) {
     var dist2 = Infinity, tmp, axind, p1, p2, style, i, j, k, v, dx, dy, dz;
     var behindind = this.behindind;
 
@@ -1634,7 +1634,7 @@ matplot.Axis.prototype.drawAxisX = function(tick,tickLabel,tickLen) {
     this.drawLine(this._xLim,[this._yLim[j],this._yLim[j]],[this._zLim[k],this._zLim[k]],{color: 'red'});
 
 
-    for (i = 0; i < tick.length; i++) {
+    for (i = 0; i < this.xTick.length; i++) {
         // in which orientation show we draw the tick-lines
         
         if (j !== behindind[1]) {
@@ -1642,15 +1642,15 @@ matplot.Axis.prototype.drawAxisX = function(tick,tickLabel,tickLen) {
             console.log('j',j);
             // determine tick length (unprojected)
 
-            p1 = this.project([tick[i],this._yLim[j],this._zLim[k]]);
-            p2 = this.project([tick[i],this._yLim[j]+1,this._zLim[k]]);
+            p1 = this.project([this.xTick[i],this._yLim[j],this._zLim[k]]);
+            p2 = this.project([this.xTick[i],this._yLim[j]+1,this._zLim[k]]);
             dy = tickLen/(2*Math.sqrt(Math.pow(p2[0]-p1[0],2) + Math.pow(p2[1]-p1[1],2)));
 
-            this.drawLine([tick[i],tick[i]],
+            this.drawLine([this.xTick[i],this.xTick[i]],
                           [this._yLim[j]-dy,this._yLim[j]+dy],
                           [this._zLim[k],this._zLim[k]],{color: 'blue'});
             
-            this.text(tick[i],
+            this.text(this.xTick[i],
                       this._yLim[j] + (j === 0 ? -1 : 1) * 2*dy,
                       this._zLim[k],
                       tickLabel[i],style);
@@ -1660,15 +1660,15 @@ matplot.Axis.prototype.drawAxisX = function(tick,tickLabel,tickLen) {
             console.log('k',k);
             // in z-direction
 
-            p1 = this.project([tick[i],this._yLim[j],this._zLim[k]]);
-            p2 = this.project([tick[i],this._yLim[j],this._zLim[k]+1]);
+            p1 = this.project([this.xTick[i],this._yLim[j],this._zLim[k]]);
+            p2 = this.project([this.xTick[i],this._yLim[j],this._zLim[k]+1]);
             dz = tickLen/(2*Math.sqrt(Math.pow(p2[0]-p1[0],2) + Math.pow(p2[1]-p1[1],2)));
 
-            this.drawLine([tick[i],tick[i]],
+            this.drawLine([this.xTick[i],this.xTick[i]],
                           [this._yLim[j],this._yLim[j]],
                           [this._zLim[k]-dz,this._zLim[k]+dz]);
             
-            this.text(tick[i],
+            this.text(this.xTick[i],
                       this._yLim[j],
                       this._zLim[k] + (k === 0 ? -1 : 1)* 2 * dz,
                       tickLabel[i],
