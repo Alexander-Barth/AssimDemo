@@ -15,9 +15,8 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-/*jslint browse: true, continue : true, devel : true, indent : 4, maxerr : 50, newcap : false, nomen : true, plusplus : false, regexp : true, sloppy : true, vars : true, white : false, nomen: false */
-/*global jQuery: false, $: false, numeric: false, MathJax: false, XMLSerializer: false, Blob: false, URL: false */
-
+/*jslint browse: true, continue : true, devel : true, indent : 4, maxerr : 50, newcap : false, plusplus : false, regexp : true, sloppy : true, vars : true, white : false, nomen: false */
+/*global jQuery: false, $: false, numeric: false, MathJax: false, XMLSerializer: false, Blob: false, URL: false, WheelEvent */
 
 "use strict";
 
@@ -53,16 +52,7 @@ var matplot = {};
         // let's assume that remaining browsers are older Firefox
         support = "DOMMouseScroll";
     }
- 
-    window.addWheelListener = function( elem, callback, useCapture ) {
-        _addWheelListener( elem, support, callback, useCapture );
- 
-        // handle MozMousePixelScroll in older Firefox
-        if( support === "DOMMouseScroll" ) {
-            _addWheelListener( elem, "MozMousePixelScroll", callback, useCapture );
-        }
-    };
- 
+
     function _addWheelListener( elem, eventName, callback, useCapture ) {
         elem[ _addEventListener ]( prefix + eventName, support === "wheel" ? callback : function( originalEvent ) {
             if (!originalEvent) {
@@ -75,21 +65,26 @@ var matplot = {};
                 originalEvent: originalEvent,
                 target: originalEvent.target || originalEvent.srcElement,
                 type: "wheel",
-                deltaMode: originalEvent.type == "MozMousePixelScroll" ? 0 : 1,
+                deltaMode: originalEvent.type === "MozMousePixelScroll" ? 0 : 1,
                 deltaX: 0,
                 delatZ: 0,
                 preventDefault: function() {
-                    originalEvent.preventDefault ?
-                        originalEvent.preventDefault() :
+                    if (originalEvent.preventDefault) {
+                        originalEvent.preventDefault();
+                    }
+                    else {
                         originalEvent.returnValue = false;
+                    }
                 }
             };
              
             // calculate deltaY (and deltaX) according to the event
-            if ( support == "mousewheel" ) {
+            if ( support === "mousewheel" ) {
                 event.deltaY = - 1/40 * originalEvent.wheelDelta;
                 // Webkit also support wheelDeltaX
-                originalEvent.wheelDeltaX && ( event.deltaX = - 1/40 * originalEvent.wheelDeltaX );
+                if (originalEvent.wheelDeltaX) {
+                    event.deltaX = - 1/40 * originalEvent.wheelDeltaX;
+                }
 
                 // Alex: position of mouse during scroll event
                 event.pageX = originalEvent.pageX;
@@ -106,7 +101,17 @@ var matplot = {};
         }, useCapture || false );
     }
  
-})(window,document);
+    window.addWheelListener = function( elem, callback, useCapture ) {
+        _addWheelListener( elem, support, callback, useCapture );
+ 
+        // handle MozMousePixelScroll in older Firefox
+        if( support === "DOMMouseScroll" ) {
+            _addWheelListener( elem, "MozMousePixelScroll", callback, useCapture );
+        }
+    };
+ 
+
+}(window,document));
 
 
 matplot.colormaps = {'jet':
@@ -2108,7 +2113,7 @@ matplot.Figure = function Figure(id,width,height) {
     this._axes = [];
 
 
-    addWheelListener(this.canvas.svg, 
+    window.addWheelListener(this.canvas.svg, 
                      function(ev) { 
                          that.zoom(ev.deltaY,ev.pageX,ev.pageY);
                          ev.preventDefault(); 
