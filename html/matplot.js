@@ -508,9 +508,9 @@ matplot.SVGCanvas.prototype.textBBox = function(string,style) {
 
     // text should not be visible
     text = this.mk('text',{'x': -10000,
-                              'y': 0,
-                              'font-family': FontFamily,
-                              'font-size': FontSize},[string]);
+                           'y': 0,
+                           'font-family': FontFamily,
+                           'font-size': FontSize},[string]);
 
     this.parent().appendChild(text);
     bbox = text.getBBox();

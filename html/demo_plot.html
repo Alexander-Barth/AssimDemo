@@ -37,12 +37,6 @@
         //ax.xtick([]);
         //ax.ytick([]);
         fig.draw();
-
-
- s = new XMLSerializer();
- xml = s.serializeToString(document.getElementsByTagName('svg')[0]);
- blob = new Blob(['<?xml version="1.0" encoding="UTF-8" standalone="no"?>' + xml],{'type': 'image/svg+xml'});
- document.getElementById('download').href = URL.createObjectURL(blob);
 }
 
       
@@ -52,6 +46,5 @@
     <h1>matplot: pcolor</h1>
     <div id="plot">
     </div>
-    <a id="download" href="http://google.com" download="toto.svg">Download</a>
   </body>
 </html>
