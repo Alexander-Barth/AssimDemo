@@ -1442,94 +1442,9 @@ matplot.Axis.prototype.draw = function() {
 
 
     if (!is2D) {
-/*
-        k = behindind[2];
-        for (i = 0; i < this.xTick.length; i++) {
-            this.drawLine([this.xTick[i],this.xTick[i]],
-                      this._yLim,
-                      [this._zLim[k],this._zLim[k]],
-                      {linespec: this.gridLineStyle});
-        }
-
-        i = behindind[0];
-        for (k = 0; k < this.zTick.length; k++) {
-            this.drawLine([this._xLim[i],this._xLim[i]],
-                      this._yLim,
-                      [this.zTick[k],this.zTick[k]],
-                      {linespec: this.gridLineStyle});
-        }
-
-        j = behindind[1];
-        for (i = 0; i < this.xTick.length; i++) {
-            this.drawLine([this.xTick[i],this.xTick[i]],
-                      [this._yLim[j],this._yLim[j]],
-                      this._zLim,
-                      {linespec: this.gridLineStyle});
-        }
-
-        i = behindind[0];
-        for (j = 0; j < this.yTick.length; j++) {
-            this.drawLine([this._xLim[i],this._xLim[i]],
-                      [this.yTick[j],this.yTick[j]],
-                      this._zLim,
-                      {linespec: this.gridLineStyle});
-        }
-
-*/
-        var dx, dy, dz;
-        dx = dy = dz = 0.15;
-
-/*
-        k = 0;
-        j = 1;
-        // x-axis
-        this.drawLine(this._xLim,[this._yLim[j],this._yLim[j]],[this._zLim[k],this._zLim[k]],{color: 'red'});
-        for (i = 0; i < this.xTick.length; i++) {
-            this.drawLine([this.xTick[i],this.xTick[i]],
-                          [this._yLim[j]-dy,this._yLim[j]+dy],
-                          [this._zLim[k],this._zLim[k]]);
-
-            this.text(this.xTick[i],this._yLim[j]+3*dy,this._zLim[k],this.xTickLabel[i]);
-        }
-*/
-
-
         this.drawAxis(0,this.xTick,this.xTickLabel,this.xTickLen);
         this.drawAxis(1,this.yTick,this.yTickLabel,this.yTickLen);
         this.drawAxis(2,this.zTick,this.zTickLabel,this.zTickLen);
-
-
-        j = k = 0;
-        i = 1;
-/*
-        // y-axis
-        this.drawLine([this._xLim[i],this._xLim[i]],this._yLim,[this._zLim[k],this._zLim[k]]);
-        for (j = 0; j < this.yTick.length; j++) {
-            this.drawLine([this._xLim[i]-dx,this._xLim[i]+dx],
-                      [this.yTick[j],this.yTick[j]],
-                      [this._zLim[k],this._zLim[k]]);
-
-            this.text(this._xLim[i]+4*dx,this.yTick[j],this._zLim[k],this.yTickLabel[j]);
-        }
-*/
-        j = 0;
-/*
-        // z-axis
-
-        this.drawLine([this._xLim[i],this._xLim[i]],[this._yLim[j],this._yLim[j]],this._zLim);
-        for (k = 0; k < this.zTick.length; k++) {
-            this.drawLine([this._xLim[i]-dx,this._xLim[i]+dx],
-                      [this._yLim[j],this._yLim[j]],
-                      [this.zTick[k],this.zTick[k]]);
-
-            this.text(this._xLim[i]+4*dx,this.yTick[j],this.zTick[k],this.zTickLabel[k]);
-        }
-*/
-
-
-        //this.drawLine([this._xLim[i],this._xLim[i]],[this._yLim[j],this._yLim[j]],[this._zLim[k],this._zLim[k]]);
-
-
     }
 
     // define clip rectangle
