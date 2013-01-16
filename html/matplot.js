@@ -1442,22 +1442,7 @@ matplot.Axis.prototype.draw = function() {
 
 
     if (!is2D) {
-        k = behindind[2];
-        for (j = 0; j < this.yTick.length; j++) {
-            this.drawLine(this._xLim,
-                      [this.yTick[j],this.yTick[j]],
-                      [this._zLim[k],this._zLim[k]],
-                      {linespec: this.gridLineStyle});
-        }
-
-        j = behindind[1];
-        for (k = 0; k < this.zTick.length; k++) {
-            this.drawLine(this._xLim,
-                      [this._yLim[j],this._yLim[j]],
-                      [this.zTick[k],this.zTick[k]],
-                      {linespec: this.gridLineStyle});
-        }
-
+/*
         k = behindind[2];
         for (i = 0; i < this.xTick.length; i++) {
             this.drawLine([this.xTick[i],this.xTick[i]],
@@ -1490,7 +1475,7 @@ matplot.Axis.prototype.draw = function() {
                       {linespec: this.gridLineStyle});
         }
 
-
+*/
         var dx, dy, dz;
         dx = dy = dz = 0.15;
 
@@ -1509,9 +1494,9 @@ matplot.Axis.prototype.draw = function() {
 */
 
 
-        this.drawAxisY(2,this.zTick,this.zTickLabel,this.zTickLen);
-        this.drawAxisY(1,this.yTick,this.yTickLabel,this.yTickLen);
-        this.drawAxisX(this.xTick,this.xTickLabel,this.xTickLen);
+        this.drawAxis(0,this.xTick,this.xTickLabel,this.xTickLen);
+        this.drawAxis(1,this.yTick,this.yTickLabel,this.yTickLen);
+        this.drawAxis(2,this.zTick,this.zTickLabel,this.zTickLen);
 
 
         j = k = 0;
@@ -1588,7 +1573,7 @@ matplot.Axis.prototype.draw = function() {
 };
 
 
-matplot.Axis.prototype.drawAxisY = function(sv,tick,tickLabel,tickLen) {
+matplot.Axis.prototype.drawAxis = function(sv,tick,tickLabel,tickLen) {
     var dist2 = Infinity, tmp, axind, p1, p2, style, i, j, k, v=1, ref;
     var behindind = this.behindind, save_project;
 
@@ -1618,12 +1603,16 @@ matplot.Axis.prototype.drawAxisY = function(sv,tick,tickLabel,tickLen) {
     this._yLim = ref[1];
     this._zLim = ref[2];
 
+    ref = cshift([this.xTick, this.yTick, this.zTick],sv);
+    this.xTick = ref[0];
+    this.yTick = ref[1];
+    this.zTick = ref[2];
+
 
     save_project = this.project;
 
     this.behindind = cshift(this.behindind,sv);
     this.project = function(v,opt) {
-//        return save.project.call(this,[v[2],v[0],v[1]],opt);
         return save_project.call(this,cshift(v,-sv),opt);
     };
 
@@ -1639,6 +1628,11 @@ matplot.Axis.prototype.drawAxisY = function(sv,tick,tickLabel,tickLen) {
     this._xLim = ref[0];
     this._yLim = ref[1];
     this._zLim = ref[2];
+
+    ref = cshift([this.xTick, this.yTick, this.zTick],-sv);
+    this.xTick = ref[0];
+    this.yTick = ref[1];
+    this.zTick = ref[2];
 
 /*
     tmp = this._zLim;
@@ -1657,6 +1651,24 @@ matplot.Axis.prototype.drawAxisY = function(sv,tick,tickLabel,tickLen) {
 matplot.Axis.prototype.drawAxisX = function(tick,tickLabel,tickLen) {
     var dist2 = Infinity, tmp, axind, p1, p2, style, i, j, k, v, dx, dy, dz;
     var behindind = this.behindind;
+
+    // draw grid lines
+    k = behindind[2];
+    for (j = 0; j < this.yTick.length; j++) {
+        this.drawLine(this._xLim,
+                      [this.yTick[j],this.yTick[j]],
+                      [this._zLim[k],this._zLim[k]],
+                      {linespec: this.gridLineStyle});
+    }
+
+    j = behindind[1];
+    for (k = 0; k < this.zTick.length; k++) {
+        this.drawLine(this._xLim,
+                      [this._yLim[j],this._yLim[j]],
+                      [this.zTick[k],this.zTick[k]],
+                      {linespec: this.gridLineStyle});
+    }
+
 
     for (j = 0; j < 2; j++) {
         for (k = 0; k < 2; k++) {
