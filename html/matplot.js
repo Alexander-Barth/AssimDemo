@@ -612,7 +612,35 @@ matplot.SVGCanvas.prototype.line = function(x,y,style) {
     return polyline;
 };
 
+matplot.isArray = function(arr) {
+    return Object.prototype.toString.call(arr) === '[object Array]';
+};
 
+matplot.arrayForEach = function ArrayForEach(arr,fun) {
+    var i;
+
+    for (i = 0; i < arr.length; i++) {
+        if (matplot.isArray(arr[i])) {
+            ArrayForEach(arr[i],fun);
+        }
+        else {
+            fun(arr[i]);
+        }
+    }
+};
+
+matplot.DataRange = function DataRange(arr) {
+    var i, tmp, min=Infinity, max=-Infinity;
+
+    matplot.arrayForEach(arr,function(v) {
+        if (!isNaN(v)) {
+            min = Math.min(min,v);
+            max = Math.max(max,v);
+        }
+    });
+        
+    return [min,max];    
+};
 
 matplot.Surface = function Surface(x,y,z,c,style) {
     this.x = x;
@@ -632,6 +660,8 @@ matplot.Surface.prototype.lim = function(what) {
             max = Math.max(max,tmp[i][j]);
         }
     }
+    
+    console.log('matplot.DataRange', matplot.DataRange(tmp), min,max);
     return [min,max];
 };
 
@@ -644,12 +674,13 @@ matplot.Surface.prototype.draw = function(axis) {
             /*axis.rect([this.x[i][j],this.x[i+1][j]],
                      [this.y[i][j],this.y[i+1][j+1]],
                      this.c[i][j]);*/
-
-            axis.polygon([this.x[i][j],this.x[i+1][j],this.x[i+1][j+1],this.x[i][j+1]],
-                         [this.y[i][j],this.y[i+1][j],this.y[i+1][j+1],this.y[i][j+1]],
-                         [this.z[i][j],this.z[i+1][j],this.z[i+1][j+1],this.z[i][j+1]],
-                         this.c[i][j]);
-
+            
+            if (!isNaN(this.c[i][j])) {
+                axis.polygon([this.x[i][j],this.x[i+1][j],this.x[i+1][j+1],this.x[i][j+1]],
+                             [this.y[i][j],this.y[i+1][j],this.y[i+1][j+1],this.y[i][j+1]],
+                             [this.z[i][j],this.z[i+1][j],this.z[i+1][j+1],this.z[i][j+1]],
+                             this.c[i][j]);
+            }
         }
     }
 };
@@ -1472,8 +1503,8 @@ matplot.Axis.prototype.draw = function() {
 */
 
 
-        this.drawAxis(0);
-        this.drawAxis(1);
+        this.drawAxis2(0);
+        this.drawAxis2(1);
 
 /*
 
@@ -1545,6 +1576,144 @@ matplot.Axis.prototype.draw = function() {
         this.drawAnnotation(an.x,an.y,an.z,an.text,an.style);
     }
 };
+
+
+matplot.Axis.prototype.drawAxis2 = function(l) {
+    var dist2 = Infinity, tmp, axind, p1, p2, style, i, j, k, v, dx, dy, dz;
+    var behindind = this.behindind;
+
+    var bbox = [this._xLim,this._yLim,this._zLim];
+
+    function cshift(v,n) {
+        if (n === 0) {
+            return v;
+        }
+        if (n === 1) {
+            return [v[1],v[2],v[0]];
+        }
+        else {
+            return cshift(cshift(v,1),n-1);
+        }
+    }
+
+    if (v === 1) {
+        tmp = this.xLim;
+        this.xLim = this.yLim;
+        this.yLim = this.zLim;
+        this.zLim = tmp;
+    }
+
+    
+    // indices for behind point (except index l)
+    var bh = behindind.splice(1,0).splice(l,1);
+
+    for (j = 0; j < 2; j++) {
+        for (k = 0; k < 2; k++) {
+            // emulate x-or
+            if ( (bh[0] === j) !== (bh[1] === k) ) {
+                // from the two possible locations choose the one 
+                // which are closest to the lower right corner
+
+                // project start and end point of axis
+                p1 = this.project([this._xLim[0],this._yLim[j],this._zLim[k]],
+                                  {viewport: numeric.identity(4)});
+
+                p2 = this.project([this._xLim[1],this._yLim[j],this._zLim[k]],
+                                  {viewport: numeric.identity(4)});
+
+                // middle point
+                v = [(p1[0]+p2[0])/2,(p1[1]+p2[1])/2];
+
+                // distance (squared) to point (-1,-1)
+                tmp = (v[0]+1)*(v[0]+1) + (v[1]+1)*(v[1]+1);
+                
+                if (tmp < dist2) {
+                    dist2 = tmp;
+                    axind = [j,k];
+
+                    // determine if axis is mostly horizontal or vertical 
+                    // for the position of the tick labels
+                    if (Math.abs(p2[0]-p1[0]) > Math.abs(p2[1]-p1[1])) {
+                        style = {HorizontalAlignment: 'center',
+                                 VerticalAlignment: 'top'};
+                    }
+                    else {
+                        style = {HorizontalAlignment: 'right',
+                                 VerticalAlignment: 'middle'};
+                    }
+                    
+                }
+                
+            }
+        }
+    }
+
+    console.log(style);
+    j = axind[0];
+    k = axind[1];
+        
+    // x-axis
+    //this.drawLine(this._xLim,[this._yLim[j],this._yLim[j]],[this._zLim[k],this._zLim[k]],{color: 'red'});
+    this.drawLine.apply(this,[this._xLim,[this._yLim[j],this._yLim[j]],[this._zLim[k],this._zLim[k]],{color: 'red'}]);
+    //this._xLim,[this._yLim[j],this._yLim[j]],[this._zLim[k],this._zLim[k]]
+
+
+    if (v === 1) {
+        tmp = this.zLim;
+        this.zLim = this.yLim;
+        this.yLim = this.xLim;
+        this.zLim = tmp;
+    }
+
+
+    for (i = 0; i < this.xTick.length; i++) {
+
+        // in which orientation show we draw the tick-lines
+        
+        if (j !== behindind[1]) {
+            // in y-direction
+            console.log('j',j);
+            // determine tick length (unprojected)
+
+            p1 = this.project([this.xTick[i],this._yLim[j],this._zLim[k]]);
+            p2 = this.project([this.xTick[i],this._yLim[j]+1,this._zLim[k]]);
+            dy = this.xTickLen/(2*Math.sqrt(Math.pow(p2[0]-p1[0],2) + Math.pow(p2[1]-p1[1],2)));
+
+            this.drawLine([this.xTick[i],this.xTick[i]],
+                          [this._yLim[j]-dy,this._yLim[j]+dy],
+                          [this._zLim[k],this._zLim[k]],{color: 'blue'});
+            
+            this.text(this.xTick[i],
+                      this._yLim[j] + (j === 0 ? -1 : 1) * 2*dy,
+                      this._zLim[k],
+                      this.xTickLabel[i],style);
+
+        }
+        else {
+            console.log('k',k);
+            // in z-direction
+
+            p1 = this.project([this.xTick[i],this._yLim[j],this._zLim[k]]);
+            p2 = this.project([this.xTick[i],this._yLim[j],this._zLim[k]+1]);
+            dz = this.xTickLen/(2*Math.sqrt(Math.pow(p2[0]-p1[0],2) + Math.pow(p2[1]-p1[1],2)));
+
+            this.drawLine([this.xTick[i],this.xTick[i]],
+                          [this._yLim[j],this._yLim[j]],
+                          [this._zLim[k]-dz,this._zLim[k]+dz]);
+            
+            this.text(this.xTick[i],
+                      this._yLim[j],
+                      this._zLim[k] + (k === 0 ? -1 : 1)* 2 * dz,
+                      this.xTickLabel[i],
+                      style);
+        }
+    }
+};
+
+
+//-------------
+
+
 
 matplot.Axis.prototype.drawAxis = function(l) {
     var dist2 = Infinity, tmp, axind, p1, p2, style, i, j, k, v, dx, dy, dz;
