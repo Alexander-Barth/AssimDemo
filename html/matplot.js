@@ -1156,13 +1156,14 @@ matplot.Axis.prototype.plot = function(x,y,z,style) {
 };
 
 matplot.Axis.prototype.pcolor = function(x,y,v) {
-    var i, j, z = [];
+    var i, j, z = [], tmpx, tmpy;
 
     if (arguments.length === 1) {
         v = x;
         x = [];
         y = [];
 
+        x = y = [];
         for (i=0; i<v.length; i++) {
             x[i] = [];
             y[i] = [];
@@ -1178,6 +1179,24 @@ matplot.Axis.prototype.pcolor = function(x,y,v) {
         z[i] = [];
         for (j=0; j<v[0].length; j++) {
             z[i][j] = 0;
+        }
+    }
+
+    // if x and y are vectors, make matrices
+    if (!matplot.isArray(x[0])) {
+        tmpx = x;
+        tmpy = y;
+
+        x = [];
+        y = [];
+        for (i=0; i<v.length; i++) {
+            x[i] = [];
+            y[i] = [];
+
+            for (j=0; j<v[0].length; j++) {
+                x[i][j] = tmpx[i];
+                y[i][j] = tmpy[j];
+            }
         }
     }
 
@@ -1490,13 +1509,13 @@ matplot.Axis.prototype.draw = function() {
 */
 
 
-        this.drawAxis2(0);
-        this.drawAxis2(1);
+        this.drawAxisY(this.yTick,this.yTickLabel,this.yTickLen);
+        this.drawAxisX(this.xTick,this.xTickLabel,this.xTickLen);
 
-/*
 
         j = k = 0;
         i = 1;
+/*
         // y-axis
         this.drawLine([this._xLim[i],this._xLim[i]],this._yLim,[this._zLim[k],this._zLim[k]]);
         for (j = 0; j < this.yTick.length; j++) {
@@ -1506,7 +1525,7 @@ matplot.Axis.prototype.draw = function() {
 
             this.text(this._xLim[i]+4*dx,this.yTick[j],this._zLim[k],this.yTickLabel[j]);
         }
-
+*/
         j = 0;
         // z-axis
         this.drawLine([this._xLim[i],this._xLim[i]],[this._yLim[j],this._yLim[j]],this._zLim);
@@ -1518,7 +1537,7 @@ matplot.Axis.prototype.draw = function() {
             this.text(this._xLim[i]+4*dx,this.yTick[j],this.zTick[k],this.zTickLabel[k]);
         }
 
-*/
+
 
         //this.drawLine([this._xLim[i],this._xLim[i]],[this._yLim[j],this._yLim[j]],[this._zLim[k],this._zLim[k]]);
 
@@ -1533,18 +1552,19 @@ matplot.Axis.prototype.draw = function() {
 
     // draw all children
     for (i = 0; i<this.children.length; i++) {
-        this.children[i].draw(this);
+//        this.children[i].draw(this);
     }
 
     // exit clip rectangle
     this.fig.canvas.pop();
 
+/*
     this.fig.canvas.rect(this.fig.canvas.width*this.x,
                          this.fig.canvas.height*this.y,
                          this.fig.canvas.width*this.w,
                          this.fig.canvas.height*this.h,
                              {fill: 'none', stroke: 'blue'});
-
+*/
 
     if (is2D) {
         this.drawXTicks();
@@ -1565,13 +1585,19 @@ matplot.Axis.prototype.draw = function() {
 };
 
 
-matplot.Axis.prototype.drawAxis2 = function(l) {
-    var dist2 = Infinity, tmp, axind, p1, p2, style, i, j, k, v, dx, dy, dz;
-    var behindind = this.behindind;
+matplot.Axis.prototype.drawAxisY = function(tick,tickLabel,tickLen) {
+    var dist2 = Infinity, tmp, axind, p1, p2, style, i, j, k, v=1, ref;
+    var behindind = this.behindind, save = {};
 
     var bbox = [this._xLim,this._yLim,this._zLim];
 
+    function mod(x,n) {
+        return ((x%n)+n)%n;
+    }
+
     function cshift(v,n) {
+        n = mod(n,v.length);
+
         if (n === 0) {
             return v;
         }
@@ -1582,119 +1608,49 @@ matplot.Axis.prototype.drawAxis2 = function(l) {
             return cshift(cshift(v,1),n-1);
         }
     }
+    console.log('this.behindind before ',this.behindind,this._xLim,this._yLim,this._zLim);
 
-    if (v === 1) {
-        tmp = this.xLim;
-        this.xLim = this.yLim;
-        this.yLim = this.zLim;
-        this.zLim = tmp;
-    }
-
-    
-    // indices for behind point (except index l)
-    var bh = behindind.splice(1,0).splice(l,1);
-
-    for (j = 0; j < 2; j++) {
-        for (k = 0; k < 2; k++) {
-            // emulate x-or
-            if ( (bh[0] === j) !== (bh[1] === k) ) {
-                // from the two possible locations choose the one 
-                // which are closest to the lower right corner
-
-                // project start and end point of axis
-                p1 = this.project([this._xLim[0],this._yLim[j],this._zLim[k]],
-                                  {viewport: numeric.identity(4)});
-
-                p2 = this.project([this._xLim[1],this._yLim[j],this._zLim[k]],
-                                  {viewport: numeric.identity(4)});
-
-                // middle point
-                v = [(p1[0]+p2[0])/2,(p1[1]+p2[1])/2];
-
-                // distance (squared) to point (-1,-1)
-                tmp = (v[0]+1)*(v[0]+1) + (v[1]+1)*(v[1]+1);
-                
-                if (tmp < dist2) {
-                    dist2 = tmp;
-                    axind = [j,k];
-
-                    // determine if axis is mostly horizontal or vertical 
-                    // for the position of the tick labels
-                    if (Math.abs(p2[0]-p1[0]) > Math.abs(p2[1]-p1[1])) {
-                        style = {HorizontalAlignment: 'center',
-                                 VerticalAlignment: 'top'};
-                    }
-                    else {
-                        style = {HorizontalAlignment: 'right',
-                                 VerticalAlignment: 'middle'};
-                    }
-                    
-                }
-                
-            }
-        }
-    }
-
-    console.log(style);
-    j = axind[0];
-    k = axind[1];
-        
-    // x-axis
-    //this.drawLine(this._xLim,[this._yLim[j],this._yLim[j]],[this._zLim[k],this._zLim[k]],{color: 'red'});
-    this.drawLine.apply(this,[this._xLim,[this._yLim[j],this._yLim[j]],[this._zLim[k],this._zLim[k]],{color: 'red'}]);
-    //this._xLim,[this._yLim[j],this._yLim[j]],[this._zLim[k],this._zLim[k]]
+/*
+    tmp = this._xLim;
+    this._xLim = this._yLim;
+    this._yLim = this._zLim;
+    this._zLim = tmp;
+  */
+  
+    ref = cshift([this._xLim, this._yLim, this._zLim],1);
+    this._xLim = ref[0];
+    this._yLim = ref[1];
+    this._zLim = ref[2];
 
 
-    if (v === 1) {
-        tmp = this.zLim;
-        this.zLim = this.yLim;
-        this.yLim = this.xLim;
-        this.zLim = tmp;
-    }
+    save.project = this.project;
+
+    this.behindind = cshift(this.behindind,1);
+    this.project = function(v,opt) {
+//        return save.project.call(this,[v[2],v[0],v[1]],opt);
+        return save.project.call(this,cshift(v,-1),opt);
+    };
 
 
-    for (i = 0; i < this.xTick.length; i++) {
+    this.drawAxisX(tick,tickLabel,tickLen);
 
-        // in which orientation show we draw the tick-lines
-        
-        if (j !== behindind[1]) {
-            // in y-direction
-            console.log('j',j);
-            // determine tick length (unprojected)
+    // restore
+    this.project = save.project;
+    this.behindind = cshift(this.behindind,2);
 
-            p1 = this.project([this.xTick[i],this._yLim[j],this._zLim[k]]);
-            p2 = this.project([this.xTick[i],this._yLim[j]+1,this._zLim[k]]);
-            dy = this.xTickLen/(2*Math.sqrt(Math.pow(p2[0]-p1[0],2) + Math.pow(p2[1]-p1[1],2)));
 
-            this.drawLine([this.xTick[i],this.xTick[i]],
-                          [this._yLim[j]-dy,this._yLim[j]+dy],
-                          [this._zLim[k],this._zLim[k]],{color: 'blue'});
-            
-            this.text(this.xTick[i],
-                      this._yLim[j] + (j === 0 ? -1 : 1) * 2*dy,
-                      this._zLim[k],
-                      this.xTickLabel[i],style);
+    ref = cshift([this._xLim, this._yLim, this._zLim],-1);
+    this._xLim = ref[0];
+    this._yLim = ref[1];
+    this._zLim = ref[2];
 
-        }
-        else {
-            console.log('k',k);
-            // in z-direction
-
-            p1 = this.project([this.xTick[i],this._yLim[j],this._zLim[k]]);
-            p2 = this.project([this.xTick[i],this._yLim[j],this._zLim[k]+1]);
-            dz = this.xTickLen/(2*Math.sqrt(Math.pow(p2[0]-p1[0],2) + Math.pow(p2[1]-p1[1],2)));
-
-            this.drawLine([this.xTick[i],this.xTick[i]],
-                          [this._yLim[j],this._yLim[j]],
-                          [this._zLim[k]-dz,this._zLim[k]+dz]);
-            
-            this.text(this.xTick[i],
-                      this._yLim[j],
-                      this._zLim[k] + (k === 0 ? -1 : 1)* 2 * dz,
-                      this.xTickLabel[i],
-                      style);
-        }
-    }
+/*
+    tmp = this._zLim;
+    this._zLim = this._yLim;
+    this._yLim = this._xLim;
+    this._xLim = tmp;
+*/
+    console.log('this.behindind after ',this.behindind,this._xLim,this._yLim,this._zLim);
 };
 
 
@@ -1702,11 +1658,9 @@ matplot.Axis.prototype.drawAxis2 = function(l) {
 
 
 
-matplot.Axis.prototype.drawAxis = function(l) {
+matplot.Axis.prototype.drawAxisX = function(tick,tickLabel,tickLen) {
     var dist2 = Infinity, tmp, axind, p1, p2, style, i, j, k, v, dx, dy, dz;
     var behindind = this.behindind;
-
-    var bbox = [this._xLim,this._yLim,this._zLim];
 
     for (j = 0; j < 2; j++) {
         for (k = 0; k < 2; k++) {
@@ -1753,41 +1707,11 @@ matplot.Axis.prototype.drawAxis = function(l) {
     j = axind[0];
     k = axind[1];
 
-    function cshift(v,n) {
-        if (n === 0) {
-            return v;
-        }
-        if (n === 1) {
-            return [v[1],v[2],v[0]];
-        }
-        else {
-            return cshift(cshift(v,1),n-1);
-        }
-    }
-
-    if (v === 1) {
-        tmp = this.xLim;
-        this.xLim = this.yLim;
-        this.yLim = this.zLim;
-        this.zLim = tmp;
-    }
-        
     // x-axis
-    //this.drawLine(this._xLim,[this._yLim[j],this._yLim[j]],[this._zLim[k],this._zLim[k]],{color: 'red'});
-    this.drawLine.apply(this,[this._xLim,[this._yLim[j],this._yLim[j]],[this._zLim[k],this._zLim[k]],{color: 'red'}]);
-    //this._xLim,[this._yLim[j],this._yLim[j]],[this._zLim[k],this._zLim[k]]
+    this.drawLine(this._xLim,[this._yLim[j],this._yLim[j]],[this._zLim[k],this._zLim[k]],{color: 'red'});
 
 
-    if (v === 1) {
-        tmp = this.zLim;
-        this.zLim = this.yLim;
-        this.yLim = this.xLim;
-        this.zLim = tmp;
-    }
-
-
-    for (i = 0; i < this.xTick.length; i++) {
-
+    for (i = 0; i < tick.length; i++) {
         // in which orientation show we draw the tick-lines
         
         if (j !== behindind[1]) {
@@ -1795,36 +1719,36 @@ matplot.Axis.prototype.drawAxis = function(l) {
             console.log('j',j);
             // determine tick length (unprojected)
 
-            p1 = this.project([this.xTick[i],this._yLim[j],this._zLim[k]]);
-            p2 = this.project([this.xTick[i],this._yLim[j]+1,this._zLim[k]]);
-            dy = this.xTickLen/(2*Math.sqrt(Math.pow(p2[0]-p1[0],2) + Math.pow(p2[1]-p1[1],2)));
+            p1 = this.project([tick[i],this._yLim[j],this._zLim[k]]);
+            p2 = this.project([tick[i],this._yLim[j]+1,this._zLim[k]]);
+            dy = tickLen/(2*Math.sqrt(Math.pow(p2[0]-p1[0],2) + Math.pow(p2[1]-p1[1],2)));
 
-            this.drawLine([this.xTick[i],this.xTick[i]],
+            this.drawLine([tick[i],tick[i]],
                           [this._yLim[j]-dy,this._yLim[j]+dy],
                           [this._zLim[k],this._zLim[k]],{color: 'blue'});
             
-            this.text(this.xTick[i],
+            this.text(tick[i],
                       this._yLim[j] + (j === 0 ? -1 : 1) * 2*dy,
                       this._zLim[k],
-                      this.xTickLabel[i],style);
+                      tickLabel[i],style);
 
         }
         else {
             console.log('k',k);
             // in z-direction
 
-            p1 = this.project([this.xTick[i],this._yLim[j],this._zLim[k]]);
-            p2 = this.project([this.xTick[i],this._yLim[j],this._zLim[k]+1]);
-            dz = this.xTickLen/(2*Math.sqrt(Math.pow(p2[0]-p1[0],2) + Math.pow(p2[1]-p1[1],2)));
+            p1 = this.project([tick[i],this._yLim[j],this._zLim[k]]);
+            p2 = this.project([tick[i],this._yLim[j],this._zLim[k]+1]);
+            dz = tickLen/(2*Math.sqrt(Math.pow(p2[0]-p1[0],2) + Math.pow(p2[1]-p1[1],2)));
 
-            this.drawLine([this.xTick[i],this.xTick[i]],
+            this.drawLine([tick[i],tick[i]],
                           [this._yLim[j],this._yLim[j]],
                           [this._zLim[k]-dz,this._zLim[k]+dz]);
             
-            this.text(this.xTick[i],
+            this.text(tick[i],
                       this._yLim[j],
                       this._zLim[k] + (k === 0 ? -1 : 1)* 2 * dz,
-                      this.xTickLabel[i],
+                      tickLabel[i],
                       style);
         }
     }
