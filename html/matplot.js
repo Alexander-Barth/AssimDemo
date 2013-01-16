@@ -1509,7 +1509,8 @@ matplot.Axis.prototype.draw = function() {
 */
 
 
-        this.drawAxisY(this.yTick,this.yTickLabel,this.yTickLen);
+        this.drawAxisY(2,this.zTick,this.zTickLabel,this.zTickLen);
+        this.drawAxisY(1,this.yTick,this.yTickLabel,this.yTickLen);
         this.drawAxisX(this.xTick,this.xTickLabel,this.xTickLen);
 
 
@@ -1527,7 +1528,9 @@ matplot.Axis.prototype.draw = function() {
         }
 */
         j = 0;
+/*
         // z-axis
+
         this.drawLine([this._xLim[i],this._xLim[i]],[this._yLim[j],this._yLim[j]],this._zLim);
         for (k = 0; k < this.zTick.length; k++) {
             this.drawLine([this._xLim[i]-dx,this._xLim[i]+dx],
@@ -1536,7 +1539,7 @@ matplot.Axis.prototype.draw = function() {
 
             this.text(this._xLim[i]+4*dx,this.yTick[j],this.zTick[k],this.zTickLabel[k]);
         }
-
+*/
 
 
         //this.drawLine([this._xLim[i],this._xLim[i]],[this._yLim[j],this._yLim[j]],[this._zLim[k],this._zLim[k]]);
@@ -1585,9 +1588,9 @@ matplot.Axis.prototype.draw = function() {
 };
 
 
-matplot.Axis.prototype.drawAxisY = function(tick,tickLabel,tickLen) {
+matplot.Axis.prototype.drawAxisY = function(sv,tick,tickLabel,tickLen) {
     var dist2 = Infinity, tmp, axind, p1, p2, style, i, j, k, v=1, ref;
-    var behindind = this.behindind, save = {};
+    var behindind = this.behindind, save_project;
 
     var bbox = [this._xLim,this._yLim,this._zLim];
 
@@ -1609,37 +1612,30 @@ matplot.Axis.prototype.drawAxisY = function(tick,tickLabel,tickLen) {
         }
     }
     console.log('this.behindind before ',this.behindind,this._xLim,this._yLim,this._zLim);
-
-/*
-    tmp = this._xLim;
-    this._xLim = this._yLim;
-    this._yLim = this._zLim;
-    this._zLim = tmp;
-  */
   
-    ref = cshift([this._xLim, this._yLim, this._zLim],1);
+    ref = cshift([this._xLim, this._yLim, this._zLim],sv);
     this._xLim = ref[0];
     this._yLim = ref[1];
     this._zLim = ref[2];
 
 
-    save.project = this.project;
+    save_project = this.project;
 
-    this.behindind = cshift(this.behindind,1);
+    this.behindind = cshift(this.behindind,sv);
     this.project = function(v,opt) {
 //        return save.project.call(this,[v[2],v[0],v[1]],opt);
-        return save.project.call(this,cshift(v,-1),opt);
+        return save_project.call(this,cshift(v,-sv),opt);
     };
 
 
     this.drawAxisX(tick,tickLabel,tickLen);
 
     // restore
-    this.project = save.project;
-    this.behindind = cshift(this.behindind,2);
+    this.project = save_project;
+    this.behindind = cshift(this.behindind,-sv);
 
 
-    ref = cshift([this._xLim, this._yLim, this._zLim],-1);
+    ref = cshift([this._xLim, this._yLim, this._zLim],-sv);
     this._xLim = ref[0];
     this._yLim = ref[1];
     this._zLim = ref[2];
