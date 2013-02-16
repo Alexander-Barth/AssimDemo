@@ -380,6 +380,7 @@ matplot.SVGCanvas = function SVGCanvas(container,width,height) {
     this.height = height;
 
     this.container = container;
+
     this.container.appendChild(
         this.svg = this.mk('svg',{width: width, 
                                   height: height,
@@ -388,6 +389,7 @@ matplot.SVGCanvas = function SVGCanvas(container,width,height) {
                                  },
                            [this.axis = this.mk('g',{})]));
 
+    return;
     this.parentStack = [this.axis];
 
     this.idconter = 0;
@@ -631,6 +633,59 @@ matplot.isArray = function(arr) {
     return Object.prototype.toString.call(arr) === '[object Array]';
 };
 
+// subreference a multidimensional array arr
+// using the list of indices in parameter ind
+//
+// elements of ind can be:
+// number representing the index of arr
+// ':': all indices of the corresponding dimension
+// [start,end] a range of indices
+// [start,step,end] a range of indices
+// 
+// For example:
+// A = [[1,2],[3,4]]
+// subsref(A,[0,1]) is 2 (the same as A[0][1])
+// subsref(A,[':',1]) is [2,4] (the same as [A[0][1],A[1][1]])
+
+
+matplot.subsref = function subsref(arr,ind) {
+    var i = ind[0], j, x, ind2;
+
+    if (i === ':') {
+        i = [0,1,arr.length-1];
+    }        
+
+    if (i instanceof Array) {
+        // i represents a range
+
+        if (i.length === 2) {
+            i = [i[0],1,i[1]];
+        }
+        
+        // copy of ind
+        ind2 = ind.slice(0);
+
+        x = [];
+        for (j = i[0]; j <= i[2]; j += i[1]) {
+            ind2[0] = j;
+            x.push(subsref(arr,ind2));            
+        }
+
+        return x;
+    }
+    else {
+        // i represents an index
+        x = arr[i];
+
+        if (ind.length === 1) {
+            return x;
+        }
+        else {
+            return subsref(x,ind.slice(1));
+        }
+    }
+}
+
 matplot.arrayMap = function arrayMap(arr,fun) {
     var i, tmp;
 
@@ -659,6 +714,16 @@ matplot.dataRange = function(arr) {
         
     return [min,max];    
 };
+
+function nz_range(lim) {
+    var min = lim[0], max = lim[1];
+    if (min === max) {
+        min = min-1;
+        max = max+1;
+    }
+    return [min,max];
+}
+
 
 matplot.Surface = function Surface(x,y,z,c,style) {
     this.x = x;
@@ -1096,6 +1161,9 @@ matplot.Axis.prototype.project = function(u,options) {
     // viewport transformation
     v = numeric.dot(viewport,v);
 
+    if (isNaN(v[0])) {
+        throw "Internal error";
+    }
     return v;
 };
 
@@ -1240,19 +1308,11 @@ matplot.Axis.prototype.sensibleCameraUpVector = function() {
 matplot.Axis.prototype.draw = function() {
     var i, j, k, is2D, databox, pdatabox=[], behindz=Infinity, behindind, frontz=-Infinity, frontind, scale;
 
-    function nz_range(lim) {
-        var min = lim[0], max = lim[1];
-        if (min === max) {
-            min = min-1;
-            max = max+1;
-        }
-        return [min,max];
-    }
-
     // real range of x, y and z variable (might be [0,0])
     this._xrange = this.xLim();
     this._yrange = this.yLim();
     this._zrange = this.zLim();
+    this._crange = this.cLim();
 
 
     // range for plotting which is never zero in length
@@ -1260,7 +1320,7 @@ matplot.Axis.prototype.draw = function() {
     this._yLim = nz_range(this._yrange);
     this._zLim = nz_range(this._zrange);
 
-    this.cmap.cLim = this.cLim();
+    this.cmap.cLim = nz_range(this._crange);
 
     is2D = this.is2dim();
 
@@ -2067,7 +2127,7 @@ matplot.Axis.prototype.colorbar = function() {
 matplot.Figure = function Figure(id,width,height) {
     var that = this;
     this.container = document.getElementById(id);
-
+    //return;
 
     this.outerDIV =
         matplot.html('div',
@@ -2085,6 +2145,8 @@ matplot.Figure = function Figure(id,width,height) {
                      ]
 */
 );
+
+    //return;
 
     this.outerDIV.appendChild(
         this.contextmenu = matplot.html('div',{
@@ -2116,12 +2178,16 @@ matplot.Figure = function Figure(id,width,height) {
                                                                  ['Reset zoom'])])
                                             ])
                                         ]));
+    //return;
 
     this.container.appendChild(this.outerDIV);
+    //return;
 
     this.canvas = new matplot.SVGCanvas(this.outerDIV,width,height);
+    return;
     this._axes = [];
 
+    //return;
 
     window.addWheelListener(this.canvas.svg, 
                      function(ev) { 
