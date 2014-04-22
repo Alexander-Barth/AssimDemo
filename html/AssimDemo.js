@@ -371,6 +371,10 @@ function AssimDemo() {
         that.resetModel();
     });
 
+    $('#download').click(function() {
+        that.download();
+    });
+
     $(window).resize(function() {
         that.resize();
     });
@@ -673,6 +677,13 @@ AssimDemo.prototype.run = function () {
 
     $('#loading').hide();
     this.plot();
+};
+
+AssimDemo.prototype.download = function () {
+    //console.log(this.result);
+
+    var blob = new Blob([JSON.stringify(this.result)], {type: "text/plain;charset=utf-8"});
+    saveAs(blob, "result.json");
 };
 
 AssimDemo.prototype.resize = function () {
