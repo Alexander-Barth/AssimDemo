@@ -682,7 +682,7 @@ AssimDemo.prototype.run = function () {
 AssimDemo.prototype.download = function () {
     //console.log(this.result);
 
-    var blob = new Blob([JSON.stringify(this.result)], {type: "text/plain;charset=utf-8"});
+    var blob = new Blob([JSON.stringify(this.result)], {type: "application/json"});
     saveAs(blob, "result.json");
 };
 
